@@ -34,7 +34,7 @@ ALLOW_JEOPARDY_SWAPS = True
 NO_PREF = "ANY"
 
 # --- Optimizer defaults (overridable via CLI) ---
-DEFAULT_MAX_SWAPS_PER_PERSON = 3    # max swaps any single person can make;
+DEFAULT_MAX_SWAPS_PER_PERSON = -1    # max swaps any single person can make;
                                      # -1 = unlimited.  Ensures equity.
 # ALLOW_MULTI_SWAPS: False = 1:1 trades only (cycle length 2);
 #                    True  = also allow 3-way trades (cycle length 3, the cap).
@@ -49,4 +49,4 @@ IGNORE_WEIGHT = False
 # --- Start Date Filter ---
 # Empty string corresponds to allowing all dates, otherwise should be a datetime object.
 # Before this date, all scheduled shifts should be tossed out.
-START_DATE = ""
+START_DATE = datetime(2026, 6, 29)

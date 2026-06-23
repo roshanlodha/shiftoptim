@@ -119,7 +119,19 @@ def load_preferences(csv_path) -> dict[str, Resident]:
         # Zero-out weights whose preference is ANY.
         w_loc = 0.0 if loc_pref == NO_PREF else float(row["location_weight"])
         w_typ = 0.0 if type_pref == NO_PREF else float(row["time_weight"])
-        w_str = float(row["days_weight"])
+
+        # Determine if streak preference is declared
+        days_pref_raw = str(row["days_pref"]).strip().lower()
+        if days_pref_raw in ("", "no preference", "any", "none"):
+            w_str = 0.0
+            days_pref_val = 5
+        else:
+            w_str = float(row["days_weight"])
+            try:
+                days_pref_val = int(float(row["days_pref"]))
+                days_pref_val = int(max(3, min(6, days_pref_val)))
+            except (ValueError, TypeError):
+                days_pref_val = 5
 
         if config.IGNORE_WEIGHT:
             w_loc = 1.0 if w_loc > 0 else 0.0
@@ -129,12 +141,6 @@ def load_preferences(csv_path) -> dict[str, Resident]:
         total = w_loc + w_typ + w_str
         if total > 0:
             w_loc, w_typ, w_str = w_loc/total, w_typ/total, w_str/total
-
-        try:
-            days_pref_val = int(float(row["days_pref"]))
-            days_pref_val = int(max(3, min(6, days_pref_val)))
-        except (ValueError, TypeError):
-            days_pref_val = 5
 
         name = str(row["resident"]).lower().strip()
         residents[name] = Resident(

@@ -68,16 +68,17 @@ def _off_streaks(timeline: list[date], worked_dates: set[date]) -> list[int]:
 
 
 def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[Shift], timeline: list[date]) -> dict:
-    orig_runs = _streaks({s.work_date for s in orig_shifts})
-    orig_avg_work = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
-    final_runs = _streaks({s.work_date for s in final_shifts})
-    final_avg_work = sum(final_runs)/len(final_runs) if final_runs else 0.0
+    orig_runs = _off_streaks(timeline, {s.work_date for s in orig_shifts})
+    orig_avg_off = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
+    final_runs = _off_streaks(timeline, {s.work_date for s in final_shifts})
+    final_avg_off = sum(final_runs)/len(final_runs) if final_runs else 0.0
 
     return {
         "name": r.name,
         "locPref": r.loc_pref,
         "typePref": r.type_pref,
         "daysPref": r.days_pref,
+        "daysWeight": r.days_weight,
         "daysOff": [d.isoformat() for d in sorted(r.days_off)],
         "loc": {
             "orig": round(phi_loc(orig_shifts, r) * 100),
@@ -88,8 +89,8 @@ def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[
             "opt": round(phi_type(final_shifts, r) * 100),
         },
         "streak": {
-            "orig": round(orig_avg_work, 1),
-            "opt": round(final_avg_work, 1),
+            "orig": round(orig_avg_off, 1),
+            "opt": round(final_avg_off, 1),
         },
         "happiness": {
             "orig": round(utility(orig_shifts, r) * 100),
@@ -1636,15 +1637,19 @@ function renderPrefs() {
       + barHtml + '</div>';
   };
 
-  const streakRow = (icon, label, orig, opt, target) => {
-    const improved = Math.abs(opt - target) < Math.abs(orig - target);
+  const streakRow = (icon, label, orig, opt, target, weight) => {
+    const isAny = weight === 0.0;
+    const body = isAny 
+      ? '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); font-style:italic;">No preference declared</div>'
+      : '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target Work Streak: ' + target + ' days</div>';
+    const improved = !isAny && (Math.abs(opt - target) < Math.abs(orig - target));
     const colorStyle = improved ? ' style="color: var(--md-sys-color-tertiary); font-weight: 700;"' : '';
     return '<div class="pref-row">'
       + '<div class="pref-lbl-row">'
       + '<span class="pref-lbl"><i data-lucide="' + icon + '" style="width:16px; height:16px;"></i>' + label + '</span>'
       + '<span class="pref-val"' + colorStyle + '>' + orig.toFixed(1) + ' &rarr; ' + opt.toFixed(1) + ' days</span>'
       + '</div>'
-      + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target Work Streak: ' + target + ' days</div>'
+      + body
       + '</div>';
   };
 
@@ -1663,7 +1668,7 @@ function renderPrefs() {
     + '<hr class="divider">'
     + row('clock', 'Time Preference', r.typePref, r.typePref === 'ANY', r.type.orig, r.type.opt)
     + '<hr class="divider">'
-    + streakRow('repeat', 'Avg Work Streak', r.streak.orig, r.streak.opt, r.daysPref)
+    + streakRow('repeat', 'Avg Days Off Streak', r.streak.orig, r.streak.opt, r.daysPref, r.daysWeight)
     + '<hr class="divider">'
     + happinessRow(r.happiness.orig, r.happiness.opt);
   updateLucide();
