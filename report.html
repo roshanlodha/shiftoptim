@@ -984,9 +984,6 @@ body {
       <span class="md3-select-label">Resident</span>
       <select id="rsel" class="md3-select"></select>
     </div>
-    <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-      <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
-    </button>
   </div>
 </header>
 
@@ -996,10 +993,6 @@ body {
       <div class="sec-header">
         <h2 class="section-title">Schedule View</h2>
         <div style="display: flex; align-items: center; gap: 16px;">
-          <div class="md3-segmented-button-container">
-            <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
-            <button class="md3-segmented-button" id="toggle-original">Original</button>
-          </div>
           <div class="week-nav">
             <button class="md3-btn-icon-outlined" id="prev-week" title="Previous week">
               <span class="material-symbols-outlined" style="font-size: 20px;">chevron_left</span>
@@ -1020,6 +1013,15 @@ body {
     <aside>
       <div class="sec-header">
         <h2 class="section-title">Metrics</h2>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="md3-segmented-button-container">
+            <button class="md3-segmented-button" id="toggle-original">Original</button>
+            <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
+          </div>
+          <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+            <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
+          </button>
+        </div>
       </div>
       <div class="prefs-card" id="prefs"></div>
     </aside>
@@ -1044,11 +1046,11 @@ const DATA = {
       "daysOff": [],
       "loc": {
         "orig": 53,
-        "opt": 71
+        "opt": 67
       },
       "type": {
         "orig": 33,
-        "opt": 50
+        "opt": 53
       },
       "streak": {
         "orig": 1.7,
@@ -1471,78 +1473,78 @@ const DATA = {
   },
   "originalAssignment": {
     "roshan": [
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
       "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "a7f08738-553b-41fd-85a6-49601899911d",
       "6d067d23-9ffc-44f6-812d-0987596827d1",
       "65d51711-e06b-448a-b105-3ee41369dce2",
-      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "a7f08738-553b-41fd-85a6-49601899911d",
       "2583d041-c479-46b0-b1c3-e12f5e21e57d",
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "a6661004-baca-4ddd-99be-1065353d2543",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
       "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e"
     ],
     "justin": [
-      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
-      "80665341-85f1-4053-a47a-7a2c678ea196",
       "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
       "e6f87fdf-64e1-417c-a61c-5327480517fb",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
+      "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
       "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
       "b388829d-84a7-42cf-979e-3b8b15ee1570",
-      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
-      "4cf82896-f630-4307-b3d9-22ac90364435",
-      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
-      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
-      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
-      "dea2d46b-ea78-42d6-87fe-b1055860c891",
       "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
-      "91230273-7f6d-4178-be00-2c6dce01e401",
-      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
-      "eaa8834d-0544-4548-9f23-954a4d2a865f"
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
+      "91230273-7f6d-4178-be00-2c6dce01e401"
     ]
   },
   "finalAssignment": {
     "roshan": [
-      "4cf82896-f630-4307-b3d9-22ac90364435",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
       "a7f08738-553b-41fd-85a6-49601899911d",
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "a6661004-baca-4ddd-99be-1065353d2543",
-      "91230273-7f6d-4178-be00-2c6dce01e401",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
-      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
       "6d067d23-9ffc-44f6-812d-0987596827d1",
-      "b388829d-84a7-42cf-979e-3b8b15ee1570",
       "65d51711-e06b-448a-b105-3ee41369dce2",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
       "2583d041-c479-46b0-b1c3-e12f5e21e57d",
-      "bf70f21e-0036-490e-8dcb-64e2d0c36b51"
+      "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
+      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "91230273-7f6d-4178-be00-2c6dce01e401"
     ],
     "justin": [
-      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
       "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
-      "e6f87fdf-64e1-417c-a61c-5327480517fb",
-      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
-      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
       "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
       "05dce116-ff14-4c4c-ad79-8b225e750f6c",
       "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
-      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
-      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "e6f87fdf-64e1-417c-a61c-5327480517fb",
       "eaa8834d-0544-4548-9f23-954a4d2a865f",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0"
     ]
   },
   "swaps": {
@@ -1618,24 +1620,6 @@ const DATA = {
         "recvEnd": "4:00 PM",
         "delta": 0.0222,
         "swapWith": "justin"
-      },
-      {
-        "giveUid": "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-        "giveSummary": "BWH Jr.  - FF Jr 7a-4p",
-        "giveDate": "2026-06-28",
-        "giveLoc": "BWH",
-        "giveType": "Morning",
-        "giveStart": "7:00 AM",
-        "giveEnd": "4:00 PM",
-        "recvUid": "80665341-85f1-4053-a47a-7a2c678ea196",
-        "recvSummary": "MGH Jr. - Jeopardy 1",
-        "recvDate": "2026-06-28",
-        "recvLoc": null,
-        "recvType": null,
-        "recvStart": "7:00 AM",
-        "recvEnd": "6:59 AM",
-        "delta": 0.0048,
-        "swapWith": "justin"
       }
     ],
     "justin": [
@@ -1708,24 +1692,6 @@ const DATA = {
         "recvType": "Swing",
         "recvStart": "12:00 PM",
         "recvEnd": "12:00 AM",
-        "delta": 0.0,
-        "swapWith": "roshan"
-      },
-      {
-        "giveUid": "80665341-85f1-4053-a47a-7a2c678ea196",
-        "giveSummary": "MGH Jr. - Jeopardy 1",
-        "giveDate": "2026-06-28",
-        "giveLoc": null,
-        "giveType": null,
-        "giveStart": "7:00 AM",
-        "giveEnd": "6:59 AM",
-        "recvUid": "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-        "recvSummary": "BWH Jr.  - FF Jr 7a-4p",
-        "recvDate": "2026-06-28",
-        "recvLoc": "BWH",
-        "recvType": "Morning",
-        "recvStart": "7:00 AM",
-        "recvEnd": "4:00 PM",
         "delta": 0.0,
         "swapWith": "roshan"
       }

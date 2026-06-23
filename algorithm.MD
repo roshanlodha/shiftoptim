@@ -85,11 +85,18 @@ $[1,6]$, targets in $[3,6]$), guaranteeing $\phi_{\text{str}}\in[0,1]$. If a
 resident states no preference on a dimension, that score is set to $1$.
 
 Some shifts are *attribute-agnostic*. Backup ("jeopardy") shifts have no
-meaningful location or time of day; they are fully tradeable, but they are
-excluded from the location and time sums above (they appear in neither the
-numerator nor the denominator). They are, however, ordinary worked days and so
-contribute to the consecutive-day runs $\mathcal{B}(A_i)$ that drive
-$\phi_{\text{str}}$ and the feasibility checks of Section 3.
+meaningful location or time of day; they are excluded from the location and time
+sums above (they appear in neither the numerator nor the denominator). They are,
+however, ordinary worked days and so contribute to the consecutive-day runs
+$\mathcal{B}(A_i)$ that drive $\phi_{\text{str}}$ and the feasibility checks of
+Section 3.
+
+**Jeopardy swap isolation.** To prevent cross-type trades that would transform a
+light backup shift into a full clinical shift (or vice versa), jeopardy shifts
+may *only* be swapped with other jeopardy shifts. Regular (non-jeopardy) shifts
+may only be swapped with other regular shifts. When the toggle
+`ALLOW_JEOPARDY_SWAPS` is set to `False`, jeopardy shifts are *pinned*: they are
+excluded from the trade graph entirely and never participate in any trade.
 
 ### 2.2 Individual utility
 
@@ -134,6 +141,8 @@ $v\in A_j$ with $i\ne j$, and $A_i'=(A_i\setminus\{u\})\cup\{v\}$, then
 $$
 (u\to v)\in E
 \iff
+\mathrm{jeop}(u)=\mathrm{jeop}(v)
+\;\wedge\;
 V(A_i')=1
 \;\wedge\;
 \mathrm{date}(v)\notin \text{DaysOff}_i
@@ -141,8 +150,12 @@ V(A_i')=1
 U_i(A_i')\ge U_i(A_i).
 $$
 
-In words: the edge exists only if receiving $v$ keeps resident $i$ legal,
-respects their days off, and does not lower their happiness.
+In words: the edge exists only if $u$ and $v$ are of the same type (both
+jeopardy or both regular), receiving $v$ keeps resident $i$ legal, respects
+their days off, and does not lower their happiness.
+
+When `ALLOW_JEOPARDY_SWAPS` is `False`, jeopardy shifts are removed from the
+node set entirely and cannot appear on either side of any edge.
 
 A **trade** corresponds to a directed cycle in this graph. A 2-cycle
 $u\!\to\!v\!\to\!u$ is a simple 1-for-1 swap. A 3-cycle
@@ -158,11 +171,14 @@ tractability and transparency.
 
 ## 5. The Algorithm
 
-Two hyperparameters give the scheduler direct control:
+Three hyperparameters give the scheduler direct control:
 
 - $K$ — the **swap budget**: the total number of shifts allowed to change hands.
 - $n_{\max}$ — the **maximum cycle length**: $2$ for 1-for-1 trades only, $3$ to
   also allow three-way rotations.
+- `ALLOW_JEOPARDY_SWAPS` — when `True` (default), jeopardy shifts participate in
+  trading but are type-isolated (jeopardy trades only with jeopardy); when
+  `False`, jeopardy shifts are pinned and excluded from all trading.
 
 The mechanism iterates:
 

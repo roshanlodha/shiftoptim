@@ -1145,9 +1145,6 @@ body {
       <span class="md3-select-label">Resident</span>
       <select id="rsel" class="md3-select"></select>
     </div>
-    <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-      <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
-    </button>
   </div>
 </header>
 
@@ -1157,10 +1154,6 @@ body {
       <div class="sec-header">
         <h2 class="section-title">Schedule View</h2>
         <div style="display: flex; align-items: center; gap: 16px;">
-          <div class="md3-segmented-button-container">
-            <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
-            <button class="md3-segmented-button" id="toggle-original">Original</button>
-          </div>
           <div class="week-nav">
             <button class="md3-btn-icon-outlined" id="prev-week" title="Previous week">
               <span class="material-symbols-outlined" style="font-size: 20px;">chevron_left</span>
@@ -1183,6 +1176,19 @@ body {
         <h2 class="section-title">Metrics</h2>
       </div>
       <div class="prefs-card" id="prefs"></div>
+
+      <div class="sec-header" style="margin-top: 24px;">
+        <h2 class="section-title">View</h2>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="md3-segmented-button-container">
+            <button class="md3-segmented-button" id="toggle-original">Original</button>
+            <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
+          </div>
+          <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+            <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
+          </button>
+        </div>
+      </div>
     </aside>
   </div>
 

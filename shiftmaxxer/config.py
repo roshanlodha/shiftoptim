@@ -25,6 +25,11 @@ VALID_LOCATIONS = {"MGH", "BWH"}
 #     time-of-day scores. They DO count as a worked day toward the streak. ---
 JEOPARDY_KEYWORDS = ("jeopardy", "backup")
 
+# --- Jeopardy/backup shift swap behavior ---
+# True  = jeopardy shifts can be swapped, but ONLY with other jeopardy shifts.
+# False = jeopardy shifts are pinned and never participate in any trade.
+ALLOW_JEOPARDY_SWAPS = True
+
 # --- Sentinel values for "no preference" ---
 NO_PREF = "ANY"
 

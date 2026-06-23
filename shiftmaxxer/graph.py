@@ -2,6 +2,7 @@ import networkx as nx
 from .feasibility import is_valid_swap
 from .utility import utility
 from .models import Schedule
+from . import config
 
 
 def build_trade_graph(sched: Schedule) -> nx.DiGraph:
@@ -15,9 +16,15 @@ def build_trade_graph(sched: Schedule) -> nx.DiGraph:
 
     shifts = sched.shifts
     for u, su in shifts.items():
+        # If jeopardy swaps are disabled, pin jeopardy shifts entirely.
+        if su.is_jeopardy and not config.ALLOW_JEOPARDY_SWAPS:
+            continue
         i = su.owner; ri = sched.residents[i]
         for v, sv in shifts.items():
             if sv.owner == i:                      # can't trade with yourself
+                continue
+            # Jeopardy ↔ regular cross-trading is never allowed.
+            if su.is_jeopardy != sv.is_jeopardy:
                 continue
             if sv.work_date in ri.days_off:        # explicit day-off rejection
                 continue

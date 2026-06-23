@@ -106,4 +106,111 @@ def test_days_off_streak_calculation():
     assert avg == 2.5
 
 
+def _make_shift(uid, owner, work_date, is_jeopardy=False, loc="MGH", stype="Morning"):
+    """Helper: build a minimal Shift for unit tests."""
+    from datetime import datetime, timedelta
+    from dateutil import tz
+    from shiftmaxxer.models import Shift
+    LOCAL = tz.gettz("America/New_York")
+    t_start = datetime(work_date.year, work_date.month, work_date.day, 7, 0, tzinfo=LOCAL)
+    t_end = t_start + timedelta(hours=9)
+    return Shift(
+        uid=uid, owner=owner, t_start=t_start, t_end=t_end,
+        loc=None if is_jeopardy else loc,
+        type=None if is_jeopardy else stype,
+        work_date=work_date, summary="test", is_jeopardy=is_jeopardy,
+    )
+
+
+def test_jeopardy_isolation_no_cross_type_edges():
+    """Jeopardy shifts must never have trade-graph edges to/from regular shifts."""
+    from datetime import date
+    from shiftmaxxer.models import Resident, Schedule
+    from shiftmaxxer.graph import build_trade_graph
+
+    d1, d2 = date(2026, 7, 1), date(2026, 7, 2)
+    s_reg = _make_shift("reg1", "alice", d1, is_jeopardy=False, loc="BWH")
+    s_jep = _make_shift("jep1", "bob",   d2, is_jeopardy=True)
+
+    alice = Resident("alice", "MGH", 0.5, "Morning", 0.5, 4, 0.0, frozenset())
+    bob   = Resident("bob",   "MGH", 0.5, "Morning", 0.5, 4, 0.0, frozenset())
+
+    sched = Schedule(
+        assignment={"alice": {"reg1"}, "bob": {"jep1"}},
+        shifts={"reg1": s_reg, "jep1": s_jep},
+        residents={"alice": alice, "bob": bob},
+    )
+
+    orig_allow = config.ALLOW_JEOPARDY_SWAPS
+    try:
+        config.ALLOW_JEOPARDY_SWAPS = True
+        G = build_trade_graph(sched)
+        # No edge in either direction between a jeopardy and a regular shift.
+        assert not G.has_edge("reg1", "jep1"), "regular→jeopardy edge should not exist"
+        assert not G.has_edge("jep1", "reg1"), "jeopardy→regular edge should not exist"
+    finally:
+        config.ALLOW_JEOPARDY_SWAPS = orig_allow
+
+
+def test_jeopardy_swaps_enabled_same_type():
+    """Two jeopardy shifts owned by different residents CAN form edges."""
+    from datetime import date
+    from shiftmaxxer.models import Resident, Schedule
+    from shiftmaxxer.graph import build_trade_graph
+
+    d1, d2 = date(2026, 7, 1), date(2026, 7, 2)
+    s1 = _make_shift("j1", "alice", d1, is_jeopardy=True)
+    s2 = _make_shift("j2", "bob",   d2, is_jeopardy=True)
+
+    # Both residents are indifferent — swapping is feasible and non-harmful.
+    alice = Resident("alice", "ANY", 0.0, "ANY", 0.0, 4, 1.0, frozenset())
+    bob   = Resident("bob",   "ANY", 0.0, "ANY", 0.0, 4, 1.0, frozenset())
+
+    sched = Schedule(
+        assignment={"alice": {"j1"}, "bob": {"j2"}},
+        shifts={"j1": s1, "j2": s2},
+        residents={"alice": alice, "bob": bob},
+    )
+
+    orig_allow = config.ALLOW_JEOPARDY_SWAPS
+    try:
+        config.ALLOW_JEOPARDY_SWAPS = True
+        G = build_trade_graph(sched)
+        # At least one direction should have an edge (swap is neutral/improving).
+        has_edge = G.has_edge("j1", "j2") or G.has_edge("j2", "j1")
+        assert has_edge, "same-type jeopardy swap should produce at least one edge"
+    finally:
+        config.ALLOW_JEOPARDY_SWAPS = orig_allow
+
+
+def test_jeopardy_swaps_disabled_pins_shifts():
+    """When ALLOW_JEOPARDY_SWAPS is False, jeopardy shifts have zero edges."""
+    from datetime import date
+    from shiftmaxxer.models import Resident, Schedule
+    from shiftmaxxer.graph import build_trade_graph
+
+    d1, d2 = date(2026, 7, 1), date(2026, 7, 2)
+    s1 = _make_shift("j1", "alice", d1, is_jeopardy=True)
+    s2 = _make_shift("j2", "bob",   d2, is_jeopardy=True)
+
+    alice = Resident("alice", "ANY", 0.0, "ANY", 0.0, 4, 1.0, frozenset())
+    bob   = Resident("bob",   "ANY", 0.0, "ANY", 0.0, 4, 1.0, frozenset())
+
+    sched = Schedule(
+        assignment={"alice": {"j1"}, "bob": {"j2"}},
+        shifts={"j1": s1, "j2": s2},
+        residents={"alice": alice, "bob": bob},
+    )
+
+    orig_allow = config.ALLOW_JEOPARDY_SWAPS
+    try:
+        config.ALLOW_JEOPARDY_SWAPS = False
+        G = build_trade_graph(sched)
+        assert not G.has_edge("j1", "j2"), "pinned jeopardy should have no outgoing edges"
+        assert not G.has_edge("j2", "j1"), "pinned jeopardy should have no outgoing edges"
+        # Verify zero total edges involving jeopardy nodes.
+        assert G.degree("j1") == 0, "pinned jeopardy node j1 should be isolated"
+        assert G.degree("j2") == 0, "pinned jeopardy node j2 should be isolated"
+    finally:
+        config.ALLOW_JEOPARDY_SWAPS = orig_allow
 
