@@ -29,7 +29,7 @@ JEOPARDY_KEYWORDS = ("jeopardy", "backup")
 NO_PREF = "ANY"
 
 # --- Optimizer defaults (overridable via CLI) ---
-DEFAULT_MAX_TOTAL_SWAPS = 5        # K: total shifts allowed to change hands
+DEFAULT_MAX_TOTAL_SWAPS = 20        # K: total shifts allowed to change hands
 # ALLOW_MULTI_SWAPS: False = 1:1 trades only (cycle length 2);
 #                    True  = also allow 3-way trades (cycle length 3, the cap).
 ALLOW_MULTI_SWAPS = False

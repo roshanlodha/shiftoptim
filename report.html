@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShiftMaxxer &mdash; Swap Report</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F1F5F9;--surface:#FFFFFF;--border:#E2E8F0;
+  --text:#0F172A;--muted:#64748B;
+  --mgh:#2563EB;--mgh-l:#DBEAFE;
+  --bwh:#059669;--bwh-l:#D1FAE5;
+  --give:#DC2626;--give-l:#FEE2E2;
+  --recv:#16A34A;--recv-l:#DCFCE7;
+  --jeop:#6B7280;--jeop-l:#F3F4F6;
+  --accent:#6366F1;--accent-l:#EEF2FF;
+  --r:12px;--sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --sh-lg:0 10px 25px -5px rgba(0,0,0,.1),0 4px 10px -3px rgba(0,0,0,.05);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;font-size:14px}
+
+/* ── Header ── */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:.875rem 2rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:50;box-shadow:var(--sh)}
+.logo{font-size:1.125rem;font-weight:800;background:linear-gradient(135deg,var(--accent),#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+.logo-sub{color:var(--muted);font-size:.8rem;font-weight:400;-webkit-text-fill-color:var(--muted)}
+.sel-wrap{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.sel-wrap label{font-size:.8rem;color:var(--muted);font-weight:500}
+select{padding:.45rem .75rem;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text);cursor:pointer;outline:none;font-family:inherit}
+select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+
+/* ── Layout ── */
+.main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem 3rem}
+.top-grid{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;align-items:start}
+@media(max-width:900px){.top-grid{grid-template-columns:1fr}}
+.sec-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem}
+hr.div{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+
+/* ── Calendar ── */
+.months-wrap{display:flex;flex-wrap:wrap;gap:1rem}
+.month-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;box-shadow:var(--sh);min-width:260px;flex:1}
+.month-title{font-weight:700;text-align:center;margin-bottom:.75rem;font-size:.875rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-hdr{font-size:.62rem;font-weight:700;text-align:center;color:var(--muted);padding:3px 0}
+.cal-day{min-height:58px;padding:2px;border-radius:6px;vertical-align:top}
+.cal-day.blank{opacity:0}
+.day-num{font-size:.67rem;color:var(--muted);padding:2px 3px;line-height:1}
+.pill{font-size:.58rem;border-radius:3px;padding:2px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;cursor:default;display:block;line-height:1.4}
+.p-mgh{background:var(--mgh-l);color:var(--mgh)}
+.p-bwh{background:var(--bwh-l);color:var(--bwh)}
+.p-jeop{background:var(--jeop-l);color:var(--jeop)}
+.p-give{background:var(--give-l);color:var(--give);text-decoration:line-through;opacity:.75}
+.p-recv{background:var(--recv-l);color:var(--recv);font-weight:700}
+.legend{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.875rem}
+.leg{display:flex;align-items:center;gap:.3rem;font-size:.68rem;color:var(--muted)}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── Preferences ── */
+.prefs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;box-shadow:var(--sh)}
+.pref-row{margin-bottom:1rem}
+.pref-row:last-child{margin-bottom:0}
+.pref-lbl{font-size:.67rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:.2rem}
+.pref-val{font-size:.875rem;font-weight:600}
+.pref-val.any{color:var(--muted);font-style:italic;font-weight:400}
+.wbar-wrap{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}
+.wbar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.wfill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.wlbl{font-size:.65rem;color:var(--muted);min-width:28px;text-align:right}
+.doff-list{font-size:.75rem;color:var(--give);margin-top:.2rem}
+.doff-none{font-size:.75rem;color:var(--muted);font-style:italic}
+.pref-icon{margin-right:.3rem}
+
+/* ── Swap Cards ── */
+.swaps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem}
+.no-swaps{background:var(--surface);border:1px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;color:var(--muted);font-size:.875rem}
+.swap-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;transition:box-shadow .15s}
+.swap-card:hover{box-shadow:var(--sh-lg)}
+.card-hdr{padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.card-hdr.pos{background:#F0FDF4;border-color:#BBF7D0}
+.card-hdr.neu{background:var(--bg)}
+.card-hdr-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.card-hdr.pos .card-hdr-title{color:var(--recv)}
+.delta-pill{background:rgba(255,255,255,.9);border:1px solid currentColor;border-radius:999px;padding:1px 8px;font-size:.67rem;font-weight:700}
+.card-hdr.pos .delta-pill{color:var(--recv)}
+.card-hdr.neu .delta-pill{color:var(--muted)}
+.card-body{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:.4rem;padding:.875rem}
+.shift-blk{padding:.65rem .75rem;border-radius:8px}
+.shift-blk.give{background:var(--give-l);border:1px solid #FECACA}
+.shift-blk.recv{background:var(--recv-l);border:1px solid #BBF7D0}
+.blk-lbl{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem}
+.shift-blk.give .blk-lbl{color:var(--give)}
+.shift-blk.recv .blk-lbl{color:var(--recv)}
+.blk-summary{font-size:.78rem;font-weight:700;line-height:1.35;margin-bottom:.3rem}
+.blk-meta{font-size:.65rem;color:var(--muted);line-height:1.7}
+.loc-tag{display:inline-block;border-radius:3px;padding:1px 6px;font-size:.62rem;font-weight:700;margin-top:.3rem}
+.lt-mgh{background:var(--mgh-l);color:var(--mgh)}
+.lt-bwh{background:var(--bwh-l);color:var(--bwh)}
+.lt-none{background:var(--jeop-l);color:var(--jeop)}
+.arrow{text-align:center;font-size:1.1rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div>
+    <span class="logo">ShiftMaxxer</span>
+    <span class="logo-sub">&nbsp;Swap Report</span>
+  </div>
+  <div class="sel-wrap">
+    <label for="rsel">Viewing</label>
+    <select id="rsel"></select>
+  </div>
+</header>
+
+<main class="main">
+  <div class="top-grid">
+    <section>
+      <div class="sec-label">Schedule</div>
+      <div id="months-wrap" class="months-wrap"></div>
+      <div class="legend" id="legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--mgh-l);border:1px solid var(--mgh)"></div>MGH (kept)</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--bwh-l);border:1px solid var(--bwh)"></div>BWH (kept)</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--give-l);border:1px solid var(--give)"></div>Given away</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--recv-l);border:1px solid var(--recv)"></div>Received</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--jeop-l);border:1px solid var(--jeop)"></div>Jeopardy</div>
+      </div>
+    </section>
+    <aside>
+      <div class="sec-label">Preferences</div>
+      <div class="prefs-card" id="prefs"></div>
+    </aside>
+  </div>
+
+  <hr class="div">
+
+  <section>
+    <div class="sec-label">Proposed Swaps</div>
+    <div id="swaps-grid" class="swaps-grid"></div>
+  </section>
+</main>
+
+<script>
+const DATA = {
+  "residents": {
+    "roshan": {
+      "name": "roshan",
+      "locPref": "MGH",
+      "locWeight": 40,
+      "typePref": "Morning",
+      "typeWeight": 20,
+      "daysPref": 5,
+      "daysWeight": 40,
+      "daysOff": []
+    },
+    "justin": {
+      "name": "justin",
+      "locPref": "BWH",
+      "locWeight": 33,
+      "typePref": "Swing",
+      "typeWeight": 33,
+      "daysPref": 3,
+      "daysWeight": 33,
+      "daysOff": []
+    }
+  },
+  "shifts": {
+    "820230d9-ea33-4e37-891b-0121f9cf0cf0": {
+      "uid": "820230d9-ea33-4e37-891b-0121f9cf0cf0",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-09",
+      "isJeopardy": false
+    },
+    "e6f87fdf-64e1-417c-a61c-5327480517fb": {
+      "uid": "e6f87fdf-64e1-417c-a61c-5327480517fb",
+      "summary": "MGH Jr. - AC PGY1 7a-5p",
+      "startFmt": "7:00 AM",
+      "endFmt": "5:00 PM",
+      "loc": "MGH",
+      "type": "Morning",
+      "workDate": "2026-07-17",
+      "isJeopardy": false
+    },
+    "b388829d-84a7-42cf-979e-3b8b15ee1570": {
+      "uid": "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "summary": "MGH Jr. - AC PGY1 7a-5p",
+      "startFmt": "7:00 AM",
+      "endFmt": "5:00 PM",
+      "loc": "MGH",
+      "type": "Morning",
+      "workDate": "2026-07-23",
+      "isJeopardy": false
+    },
+    "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788": {
+      "uid": "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "summary": "BWH Jr.  - Exe Jr 3p-12a",
+      "startFmt": "3:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-06-25",
+      "isJeopardy": false
+    },
+    "f23e2c4a-3459-4911-a8ab-93f5d25e5304": {
+      "uid": "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "summary": "BWH Jr.  - FF Jr 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-07-18",
+      "isJeopardy": false
+    },
+    "77ce6f94-e12b-48f0-b61c-2ff783a123ae": {
+      "uid": "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "summary": "BWH Jr.  - Exe Jr 12p-12a",
+      "startFmt": "12:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-21",
+      "isJeopardy": false
+    },
+    "4cf82896-f630-4307-b3d9-22ac90364435": {
+      "uid": "4cf82896-f630-4307-b3d9-22ac90364435",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-02",
+      "isJeopardy": false
+    },
+    "bf70f21e-0036-490e-8dcb-64e2d0c36b51": {
+      "uid": "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "summary": "MGH Jr. - AC PGY2 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "MGH",
+      "type": "Morning",
+      "workDate": "2026-07-11",
+      "isJeopardy": false
+    },
+    "dea2d46b-ea78-42d6-87fe-b1055860c891": {
+      "uid": "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "summary": "MGH Jr. - AC PGY1 1p-11p",
+      "startFmt": "1:00 PM",
+      "endFmt": "11:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-24",
+      "isJeopardy": false
+    },
+    "eaa8834d-0544-4548-9f23-954a4d2a865f": {
+      "uid": "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "summary": "BWH Jr.  - FF Jr 3p-12a",
+      "startFmt": "3:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-06-26",
+      "isJeopardy": false
+    },
+    "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed": {
+      "uid": "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
+      "summary": "MGH Jr. - AC PGY1 7a-5p",
+      "startFmt": "7:00 AM",
+      "endFmt": "5:00 PM",
+      "loc": "MGH",
+      "type": "Morning",
+      "workDate": "2026-07-16",
+      "isJeopardy": false
+    },
+    "91230273-7f6d-4178-be00-2c6dce01e401": {
+      "uid": "91230273-7f6d-4178-be00-2c6dce01e401",
+      "summary": "BWH Jr.  - FF Jr 8a-4p",
+      "startFmt": "8:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-07-07",
+      "isJeopardy": false
+    },
+    "80665341-85f1-4053-a47a-7a2c678ea196": {
+      "uid": "80665341-85f1-4053-a47a-7a2c678ea196",
+      "summary": "MGH Jr. - Jeopardy 1",
+      "startFmt": "7:00 AM",
+      "endFmt": "6:59 AM",
+      "loc": null,
+      "type": null,
+      "workDate": "2026-06-28",
+      "isJeopardy": true
+    },
+    "a5dc4f92-d675-4a85-bb82-5bf7a806ac12": {
+      "uid": "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "summary": "MGH Jr. - East Jr 11p-7a",
+      "startFmt": "11:00 PM",
+      "endFmt": "7:00 AM",
+      "loc": "MGH",
+      "type": "Overnight",
+      "workDate": "2026-07-04",
+      "isJeopardy": false
+    },
+    "05dce116-ff14-4c4c-ad79-8b225e750f6c": {
+      "uid": "05dce116-ff14-4c4c-ad79-8b225e750f6c",
+      "summary": "BWH Jr.  - FF Jr 3p-12a",
+      "startFmt": "3:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-03",
+      "isJeopardy": false
+    },
+    "93ab9022-07d7-46d9-b9f5-acc352dff8f0": {
+      "uid": "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "summary": "BWH Jr.  - Exe Jr 3p-12a",
+      "startFmt": "3:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-26",
+      "isJeopardy": false
+    },
+    "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c": {
+      "uid": "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "summary": "MGH Jr. - AC PGY2 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "MGH",
+      "type": "Morning",
+      "workDate": "2026-07-04",
+      "isJeopardy": false
+    },
+    "b1b0203e-a974-4cc1-aee5-102d35d09f67": {
+      "uid": "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "summary": "MGH Jr. - East Jr 11p-7a",
+      "startFmt": "11:00 PM",
+      "endFmt": "7:00 AM",
+      "loc": "MGH",
+      "type": "Overnight",
+      "workDate": "2026-07-18",
+      "isJeopardy": false
+    },
+    "812ea479-1d9d-4b91-b27c-394f49831b5e": {
+      "uid": "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "summary": "BWH Jr.  - FF Jr 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-07-25",
+      "isJeopardy": false
+    },
+    "6fcae363-b5fb-4fdd-8c2d-eff45bb69198": {
+      "uid": "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-06-27",
+      "isJeopardy": false
+    },
+    "a7f08738-553b-41fd-85a6-49601899911d": {
+      "uid": "a7f08738-553b-41fd-85a6-49601899911d",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-03",
+      "isJeopardy": false
+    },
+    "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0": {
+      "uid": "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "summary": "MGH Jr. - East Jr 11p-7a",
+      "startFmt": "11:00 PM",
+      "endFmt": "7:00 AM",
+      "loc": "MGH",
+      "type": "Overnight",
+      "workDate": "2026-07-09",
+      "isJeopardy": false
+    },
+    "adbe7f96-80fb-401f-bf31-a0411ceb12c8": {
+      "uid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-23",
+      "isJeopardy": false
+    },
+    "2583d041-c479-46b0-b1c3-e12f5e21e57d": {
+      "uid": "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "summary": "BWH Jr.  - FF Jr 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-07-05",
+      "isJeopardy": false
+    },
+    "d5882e55-abd9-4148-a536-c0287b521cd6": {
+      "uid": "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "summary": "MGH Jr. - AC PGY1 1p-11p",
+      "startFmt": "1:00 PM",
+      "endFmt": "11:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-16",
+      "isJeopardy": false
+    },
+    "a6661004-baca-4ddd-99be-1065353d2543": {
+      "uid": "a6661004-baca-4ddd-99be-1065353d2543",
+      "summary": "MGH Jr. - FT 11a-8p",
+      "startFmt": "11:00 AM",
+      "endFmt": "8:00 PM",
+      "loc": "MGH",
+      "type": "Swing",
+      "workDate": "2026-07-26",
+      "isJeopardy": false
+    },
+    "6952a8f7-56f9-44a7-a23b-9e1192dfb08b": {
+      "uid": "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "summary": "BWH Jr.  - FF Jr 7a-4p",
+      "startFmt": "7:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-06-28",
+      "isJeopardy": false
+    },
+    "6d067d23-9ffc-44f6-812d-0987596827d1": {
+      "uid": "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "summary": "BWH Jr.  - FF Jr 8a-4p",
+      "startFmt": "8:00 AM",
+      "endFmt": "4:00 PM",
+      "loc": "BWH",
+      "type": "Morning",
+      "workDate": "2026-06-30",
+      "isJeopardy": false
+    },
+    "76e63094-d2e5-4db1-bafb-265ca4f7e85e": {
+      "uid": "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "summary": "BWH Jr.  - Exe Jr 12p-12a",
+      "startFmt": "12:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-07",
+      "isJeopardy": false
+    },
+    "9e8f53c6-1ed7-40ed-92cf-3c23682f963c": {
+      "uid": "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "summary": "BWH Jr.  - Exe Jr 12p-12a",
+      "startFmt": "12:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-11",
+      "isJeopardy": false
+    },
+    "243551b6-9359-4185-9aa8-6f8a42d4c63e": {
+      "uid": "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "summary": "BWH Jr.  - Exe Jr 3p-12a",
+      "startFmt": "3:00 PM",
+      "endFmt": "12:00 AM",
+      "loc": "BWH",
+      "type": "Swing",
+      "workDate": "2026-07-12",
+      "isJeopardy": false
+    },
+    "65d51711-e06b-448a-b105-3ee41369dce2": {
+      "uid": "65d51711-e06b-448a-b105-3ee41369dce2",
+      "summary": "MGH Jr. - Jeopardy 1",
+      "startFmt": "7:00 AM",
+      "endFmt": "6:59 AM",
+      "loc": null,
+      "type": null,
+      "workDate": "2026-06-25",
+      "isJeopardy": true
+    }
+  },
+  "originalAssignment": {
+    "roshan": [
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e"
+    ],
+    "justin": [
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
+      "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "e6f87fdf-64e1-417c-a61c-5327480517fb",
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
+      "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "91230273-7f6d-4178-be00-2c6dce01e401",
+      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed"
+    ]
+  },
+  "finalAssignment": {
+    "roshan": [
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "91230273-7f6d-4178-be00-2c6dce01e401",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67"
+    ],
+    "justin": [
+      "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "e6f87fdf-64e1-417c-a61c-5327480517fb",
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed"
+    ]
+  },
+  "swaps": {
+    "roshan": [
+      {
+        "giveUid": "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+        "giveSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "giveDate": "2026-07-11",
+        "giveLoc": "BWH",
+        "giveType": "Swing",
+        "giveStart": "12:00 PM",
+        "giveEnd": "12:00 AM",
+        "recvUid": "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+        "recvSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "recvDate": "2026-07-11",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.04
+      },
+      {
+        "giveUid": "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+        "giveSummary": "BWH Jr.  - Exe Jr 3p-12a",
+        "giveDate": "2026-07-12",
+        "giveLoc": "BWH",
+        "giveType": "Swing",
+        "giveStart": "3:00 PM",
+        "giveEnd": "12:00 AM",
+        "recvUid": "4cf82896-f630-4307-b3d9-22ac90364435",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-02",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0267
+      },
+      {
+        "giveUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-23",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "b388829d-84a7-42cf-979e-3b8b15ee1570",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-23",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0133
+      },
+      {
+        "giveUid": "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+        "giveSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "giveDate": "2026-07-07",
+        "giveLoc": "BWH",
+        "giveType": "Swing",
+        "giveStart": "12:00 PM",
+        "giveEnd": "12:00 AM",
+        "recvUid": "91230273-7f6d-4178-be00-2c6dce01e401",
+        "recvSummary": "BWH Jr.  - FF Jr 8a-4p",
+        "recvDate": "2026-07-07",
+        "recvLoc": "BWH",
+        "recvType": "Morning",
+        "recvStart": "8:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0133
+      },
+      {
+        "giveUid": "812ea479-1d9d-4b91-b27c-394f49831b5e",
+        "giveSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "giveDate": "2026-07-25",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "dea2d46b-ea78-42d6-87fe-b1055860c891",
+        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "recvDate": "2026-07-24",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "1:00 PM",
+        "recvEnd": "11:00 PM",
+        "delta": 0.0133
+      }
+    ],
+    "justin": [
+      {
+        "giveUid": "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+        "giveSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "giveDate": "2026-07-11",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+        "recvSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "recvDate": "2026-07-11",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "12:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0444
+      },
+      {
+        "giveUid": "4cf82896-f630-4307-b3d9-22ac90364435",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-02",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+        "recvSummary": "BWH Jr.  - Exe Jr 3p-12a",
+        "recvDate": "2026-07-12",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "3:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0222
+      },
+      {
+        "giveUid": "b388829d-84a7-42cf-979e-3b8b15ee1570",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-23",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-23",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0222
+      },
+      {
+        "giveUid": "91230273-7f6d-4178-be00-2c6dce01e401",
+        "giveSummary": "BWH Jr.  - FF Jr 8a-4p",
+        "giveDate": "2026-07-07",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "8:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+        "recvSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "recvDate": "2026-07-07",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "12:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0222
+      },
+      {
+        "giveUid": "dea2d46b-ea78-42d6-87fe-b1055860c891",
+        "giveSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "giveDate": "2026-07-24",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "1:00 PM",
+        "giveEnd": "11:00 PM",
+        "recvUid": "812ea479-1d9d-4b91-b27c-394f49831b5e",
+        "recvSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "recvDate": "2026-07-25",
+        "recvLoc": "BWH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0
+      }
+    ]
+  }
+};
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DNAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+let cur = null;
+
+function init() {
+  const names = Object.keys(DATA.residents).sort();
+  const sel = document.getElementById('rsel');
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n;
+    o.textContent = n.charAt(0).toUpperCase() + n.slice(1);
+    sel.appendChild(o);
+  });
+  cur = names[0];
+  sel.value = cur;
+  render();
+  sel.addEventListener('change', e => { cur = e.target.value; render(); });
+}
+
+function render() {
+  renderPrefs();
+  renderCalendar();
+  renderSwaps();
+}
+
+/* ── Preferences ── */
+function renderPrefs() {
+  const r = DATA.residents[cur];
+  const fmtDate = iso => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return MONTHS[m-1].slice(0,3) + ' ' + d + ', ' + y;
+  };
+  const row = (icon, label, val, isAny, weight) => {
+    const bar = weight != null
+      ? '<div class="wbar-wrap"><div class="wbar"><div class="wfill" style="width:' + weight + '%"></div></div><div class="wlbl">' + weight + '%</div></div>'
+      : '';
+    return '<div class="pref-row">'
+      + '<div class="pref-lbl">' + icon + ' ' + label + '</div>'
+      + '<div class="pref-val' + (isAny ? ' any' : '') + '">' + (isAny ? 'No preference' : val) + '</div>'
+      + bar + '</div>';
+  };
+  const doff = r.daysOff.length
+    ? '<div class="doff-list">' + r.daysOff.map(fmtDate).join(', ') + '</div>'
+    : '<div class="doff-none">None declared</div>';
+  document.getElementById('prefs').innerHTML =
+    row('&#128205;', 'Location', r.locPref, r.locPref === 'ANY', r.locWeight)
+    + row('&#128336;', 'Time of Day', r.typePref, r.typePref === 'ANY', r.typeWeight)
+    + row('&#128197;', 'Preferred Streak', r.daysPref + ' consecutive days', false, r.daysWeight)
+    + '<div class="pref-row"><div class="pref-lbl">&#128683; Days Off</div>' + doff + '</div>';
+}
+
+/* ── Calendar ── */
+function renderCalendar() {
+  const orig = new Set(DATA.originalAssignment[cur] || []);
+  const final = new Set(DATA.finalAssignment[cur] || []);
+  const gives = new Set((DATA.swaps[cur] || []).map(s => s.giveUid));
+  const recvs = new Set((DATA.swaps[cur] || []).map(s => s.recvUid));
+  const all = new Set([...orig, ...final]);
+
+  // Build date -> [{shift, status}] map
+  const dm = {};
+  all.forEach(uid => {
+    const s = DATA.shifts[uid];
+    if (!s) return;
+    const k = s.workDate;
+    if (!dm[k]) dm[k] = [];
+    let st = 'keep';
+    if (gives.has(uid)) st = 'give';
+    else if (recvs.has(uid)) st = 'recv';
+    dm[k].push({ s, st });
+  });
+
+  if (!Object.keys(dm).length) {
+    document.getElementById('months-wrap').innerHTML = '<p style="color:var(--muted);font-size:.875rem">No shifts found.</p>';
+    return;
+  }
+
+  const dates = Object.keys(dm).sort();
+  const [minY, minM] = dates[0].split('-').map(Number);
+  const [maxY, maxM] = dates[dates.length - 1].split('-').map(Number);
+
+  const html = [];
+  let y = minY, m = minM;
+  while (y < maxY || (y === maxY && m <= maxM)) {
+    html.push(buildMonth(y, m, dm));
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  document.getElementById('months-wrap').innerHTML = html.join('');
+}
+
+function buildMonth(y, m, dm) {
+  const firstDow = new Date(y, m - 1, 1).getDay();
+  const days = new Date(y, m, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+
+  let cells = DNAMES.map(d => '<div class="cal-hdr">' + d + '</div>').join('');
+  for (let i = 0; i < firstDow; i++) cells += '<div class="cal-day blank"></div>';
+
+  for (let d = 1; d <= days; d++) {
+    const iso = y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const entries = dm[iso] || [];
+    const pills = entries.map(({ s, st }) => {
+      let cls = s.isJeopardy ? 'p-jeop' : st === 'give' ? 'p-give' : st === 'recv' ? 'p-recv' : s.loc === 'MGH' ? 'p-mgh' : 'p-bwh';
+      const label = s.isJeopardy ? 'Jeopardy' : (s.loc || '') + (s.type ? ' ' + s.type[0] : '');
+      return '<span class="pill ' + cls + '" title="' + s.summary + ' (' + s.startFmt + '-' + s.endFmt + ')">' + label + '</span>';
+    }).join('');
+    const todayCls = iso === today ? ' style="background:var(--accent-l)"' : '';
+    cells += '<div class="cal-day"' + todayCls + '>'
+      + '<div class="day-num"' + (iso === today ? ' style="color:var(--accent);font-weight:700"' : '') + '>' + d + '</div>'
+      + pills + '</div>';
+  }
+
+  return '<div class="month-card"><div class="month-title">' + MONTHS[m-1] + ' ' + y + '</div>'
+    + '<div class="cal-grid">' + cells + '</div></div>';
+}
+
+/* ── Swap Cards ── */
+function renderSwaps() {
+  const list = DATA.swaps[cur] || [];
+  const grid = document.getElementById('swaps-grid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="no-swaps">No proposed swaps for this resident.</div>';
+    return;
+  }
+
+  const fmtDate = iso => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return MONTHS[m-1].slice(0,3) + ' ' + d;
+  };
+
+  grid.innerHTML = list.map((sw, i) => {
+    const pct = (sw.delta * 100).toFixed(1);
+    const isPos = sw.delta >= 0;
+    const deltaLabel = sw.delta > 0.0001 ? '+' + pct + '% happiness'
+                     : sw.delta < -0.0001 ? pct + '% happiness'
+                     : 'Neutral';
+    return '<div class="swap-card">'
+      + '<div class="card-hdr ' + (isPos ? 'pos' : 'neu') + '">'
+      + '<span class="card-hdr-title">Swap ' + (i+1) + '</span>'
+      + '<span class="delta-pill">' + deltaLabel + '</span></div>'
+      + '<div class="card-body">'
+      + blk(sw, 'give', fmtDate)
+      + '<div class="arrow">&#8594;</div>'
+      + blk(sw, 'recv', fmtDate)
+      + '</div></div>';
+  }).join('');
+}
+
+function blk(sw, side, fmtDate) {
+  const p = side === 'give' ? 'give' : 'recv';
+  const label = side === 'give' ? 'Giving Away' : 'Receiving';
+  const loc = sw[p + 'Loc'];
+  const type = sw[p + 'Type'];
+  const lcls = loc === 'MGH' ? 'lt-mgh' : loc === 'BWH' ? 'lt-bwh' : 'lt-none';
+  const lbl = loc || 'Jeopardy';
+  return '<div class="shift-blk ' + side + '">'
+    + '<div class="blk-lbl">' + label + '</div>'
+    + '<div class="blk-summary">' + sw[p + 'Summary'] + '</div>'
+    + '<div class="blk-meta">'
+    + fmtDate(sw[p + 'Date']) + '<br>'
+    + sw[p + 'Start'] + ' &ndash; ' + sw[p + 'End']
+    + '</div>'
+    + '<span class="loc-tag ' + lcls + '">' + lbl + (type ? ' &middot; ' + type : '') + '</span>'
+    + '</div>';
+}
+
+init();
+</script>
+</body>
+</html>
