@@ -1577,8 +1577,8 @@ function layoutHourlyEntries(entries) {
 
 /* ── Happiness Card ── */
 function renderHappiness() {
-  const swaps = DATA.swaps[cur] || [];
-  const total = swaps.reduce((s, sw) => s + sw.delta, 0);
+  const r = DATA.residents[cur];
+  const total = (r.happiness.opt - r.happiness.orig) / 100;
   const pct = (total * 100).toFixed(1);
   const el = document.getElementById('happiness-value');
   const card = document.getElementById('happiness-card');

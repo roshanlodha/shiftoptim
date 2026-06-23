@@ -237,16 +237,17 @@ def test_swap_limit_enforced_for_beneficiary():
     from collections import Counter
     sched = build_schedule(Path("data/ics"), Path("data/preferences.csv"))
     log = optimize(sched, max_swaps_per_person=1, n_max=2)
-    
-    # Count swaps where each resident is the beneficiary (gains most).
-    # Only beneficiary swaps count toward cap; passive swaps are uncapped.
-    beneficiary_counts = Counter()
+
+    # Under the new participation cap every resident (any role) may appear in
+    # at most max_swaps_per_person trades. A cap of 1 means no resident can
+    # appear in more than one trade, so the beneficiary count is also <= 1.
+    participation_counts: Counter = Counter()
     for res in log:
-        beneficiary = max(sorted(res.deltas.keys()), key=lambda n: res.deltas[n])
-        beneficiary_counts[beneficiary] += 1
-            
-    for name, count in beneficiary_counts.items():
-        assert count <= 1, f"Resident {name} is beneficiary in {count} swaps, exceeds cap of 1"
+        for name in res.deltas:
+            participation_counts[name] += 1
+
+    for name, count in participation_counts.items():
+        assert count <= 1, f"Resident {name} participates in {count} swaps, exceeds cap of 1"
 
 
 def test_swap_sorting_by_max_happiness():
@@ -263,6 +264,51 @@ def test_swap_sorting_by_max_happiness():
             max_deltas = [max(sw["delta"], sw["partnerDelta"]) for sw in swaps_list]
             # Ensure it is sorted descending
             assert max_deltas == sorted(max_deltas, reverse=True), f"Swaps for {name} not sorted descending by max happiness gained: {max_deltas}"
+
+
+def test_trades_are_independently_executable():
+    """Every subset of the recommended trades, applied in any order, must be
+    ACGME-legal and leave no participant's utility below their original value.
+    This is the core independence guarantee of the new optimizer."""
+    from itertools import combinations
+    from shiftmaxxer.feasibility import is_valid_swap
+    from shiftmaxxer.utility import utility
+
+    sched = build_schedule(Path("data/ics"), Path("data/preferences.csv"))
+    orig_uids = {n: set(uids) for n, uids in sched.assignment.items()}
+    orig_util = {
+        n: utility(sched.shifts_of(n), sched.residents[n])
+        for n in sched.assignment
+    }
+
+    log = optimize(sched, max_swaps_per_person=-1, n_max=2)
+
+    if not log:
+        return  # nothing to check
+
+    # For every non-empty subset of the recommended trades, verify that each
+    # affected resident's resulting shift set is legal and Pareto vs original.
+    for size in range(1, len(log) + 1):
+        for subset in combinations(log, size):
+            # Reconstruct each participant's shift set after this subset.
+            affected: dict[str, set[str]] = {}
+            for trade in subset:
+                for giver, u, v in trade.moves:
+                    if giver not in affected:
+                        affected[giver] = set(orig_uids[giver])
+                    affected[giver].discard(u)
+                    affected[giver].add(v)
+
+            for name, uid_set in affected.items():
+                r = sched.residents[name]
+                orig_shifts = [sched.shifts[uid] for uid in orig_uids[name]]
+                proposed = [sched.shifts[uid] for uid in uid_set]
+                assert is_valid_swap(proposed, orig_shifts, r.days_off), (
+                    f"Subset of size {size} makes {name}'s schedule illegal"
+                )
+                assert utility(proposed, r) >= orig_util[name] - 1e-9, (
+                    f"Subset of size {size} lowers {name}'s utility"
+                )
 
 
 

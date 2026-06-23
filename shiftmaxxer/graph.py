@@ -9,10 +9,11 @@ def build_trade_graph(sched: Schedule,
                       locked: set[str] | None = None) -> nx.DiGraph:
     """Build the directed trade graph.
 
-    ``locked`` is the set of shift uids that have already participated in an
-    applied trade. They are excluded from the graph entirely so that no shift
-    can be traded more than once. This guarantees recommendations never chain
-    (a shift received in one trade can never be given away in another).
+    ``locked`` is an optional set of shift uids to exclude from the graph.
+    Under the single-snapshot optimizer this is always empty; the parameter
+    is retained for compatibility. Independence between recommended trades is
+    now guaranteed by shift-disjoint selection combined with per-resident
+    all-subset feasibility and Pareto verification in the optimizer.
     """
     locked = locked or set()
     G = nx.DiGraph()
