@@ -513,12 +513,45 @@ body {
   border-left-color: var(--md-sys-color-tertiary);
 }
 .shift-card.sb-recv .sb-loc { color: var(--md-sys-color-tertiary); }
-.shift-card.sb-jeop {
+.allday-card {
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 6px 8px;
   background: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface-variant);
-  border-left-color: var(--md-sys-color-outline);
+  cursor: default;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  box-shadow: none;
+  margin-bottom: 2px;
 }
-.shift-card.sb-jeop .sb-loc { color: var(--md-sys-color-outline); }
+.allday-card:hover {
+  background: var(--md-sys-color-surface-container-high);
+  transform: translateY(-1px);
+}
+.allday-card.sb-give {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+.allday-card.sb-recv {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+.allday-card .sb-title {
+  text-align: center;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+}
 
 .shift-card.absolute-card {
   position: absolute;
@@ -1002,8 +1035,8 @@ const DATA = {
         "opt": 53
       },
       "streak": {
-        "orig": 1.5,
-        "opt": 1.5
+        "orig": 1.7,
+        "opt": 1.7
       },
       "happiness": {
         "orig": 39,
@@ -1025,8 +1058,8 @@ const DATA = {
         "opt": 73
       },
       "streak": {
-        "orig": 1.6,
-        "opt": 1.6
+        "orig": 1.9,
+        "opt": 1.9
       },
       "happiness": {
         "orig": 57,
@@ -1422,78 +1455,78 @@ const DATA = {
   },
   "originalAssignment": {
     "roshan": [
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
       "a6661004-baca-4ddd-99be-1065353d2543",
       "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "6d067d23-9ffc-44f6-812d-0987596827d1",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "65d51711-e06b-448a-b105-3ee41369dce2",
-      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
       "a7f08738-553b-41fd-85a6-49601899911d",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
       "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c"
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
     ],
     "justin": [
-      "b388829d-84a7-42cf-979e-3b8b15ee1570",
-      "dea2d46b-ea78-42d6-87fe-b1055860c891",
-      "4cf82896-f630-4307-b3d9-22ac90364435",
-      "91230273-7f6d-4178-be00-2c6dce01e401",
-      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
-      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
-      "80665341-85f1-4053-a47a-7a2c678ea196",
-      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
-      "eaa8834d-0544-4548-9f23-954a4d2a865f",
-      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
-      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
-      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
-      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
-      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
       "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
-      "e6f87fdf-64e1-417c-a61c-5327480517fb"
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "e6f87fdf-64e1-417c-a61c-5327480517fb",
+      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
+      "05dce116-ff14-4c4c-ad79-8b225e750f6c",
+      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
+      "91230273-7f6d-4178-be00-2c6dce01e401",
+      "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304"
     ]
   },
   "finalAssignment": {
     "roshan": [
-      "b388829d-84a7-42cf-979e-3b8b15ee1570",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "4cf82896-f630-4307-b3d9-22ac90364435",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
-      "91230273-7f6d-4178-be00-2c6dce01e401",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
-      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
       "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
       "a7f08738-553b-41fd-85a6-49601899911d",
+      "4cf82896-f630-4307-b3d9-22ac90364435",
       "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "a6661004-baca-4ddd-99be-1065353d2543",
       "6d067d23-9ffc-44f6-812d-0987596827d1",
-      "2583d041-c479-46b0-b1c3-e12f5e21e57d"
+      "b388829d-84a7-42cf-979e-3b8b15ee1570",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "bf70f21e-0036-490e-8dcb-64e2d0c36b51",
+      "91230273-7f6d-4178-be00-2c6dce01e401",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67"
     ],
     "justin": [
-      "dea2d46b-ea78-42d6-87fe-b1055860c891",
-      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
-      "eaa8834d-0544-4548-9f23-954a4d2a865f",
-      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
-      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
-      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed",
       "e6f87fdf-64e1-417c-a61c-5327480517fb",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "80665341-85f1-4053-a47a-7a2c678ea196",
-      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
-      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
       "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
       "05dce116-ff14-4c4c-ad79-8b225e750f6c",
+      "eaa8834d-0544-4548-9f23-954a4d2a865f",
+      "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788",
+      "77ce6f94-e12b-48f0-b61c-2ff783a123ae",
+      "93ab9022-07d7-46d9-b9f5-acc352dff8f0",
+      "80665341-85f1-4053-a47a-7a2c678ea196",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "820230d9-ea33-4e37-891b-0121f9cf0cf0",
       "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "4f0a7fda-68de-4b47-bbd0-14daa3ab65ed"
+      "a5dc4f92-d675-4a85-bb82-5bf7a806ac12",
+      "dea2d46b-ea78-42d6-87fe-b1055860c891",
+      "f23e2c4a-3459-4911-a8ab-93f5d25e5304",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
     ]
   },
   "swaps": {
@@ -1831,7 +1864,7 @@ function renderPrefs() {
       + '<span class="pref-lbl"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span>' + label + '</span>'
       + '<span class="pref-val">' + orig.toFixed(1) + ' &rarr; ' + opt.toFixed(1) + ' days</span>'
       + '</div>'
-      + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target: ' + target + ' days</div>'
+      + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target Work Streak: ' + target + ' days</div>'
       + '</div>';
   };
 
@@ -1850,7 +1883,7 @@ function renderPrefs() {
     + '<hr class="divider">'
     + row('schedule', 'Time Preference', r.typePref, r.typePref === 'ANY', r.type.orig, r.type.opt)
     + '<hr class="divider">'
-    + streakRow('repeat_on', 'Average Streak', r.streak.orig, r.streak.opt, r.daysPref)
+    + streakRow('repeat_on', 'Avg Days Off in a Row', r.streak.orig, r.streak.opt, r.daysPref)
     + '<hr class="divider">'
     + happinessRow(r.happiness.orig, r.happiness.opt);
 }
@@ -1941,16 +1974,17 @@ function renderWeek() {
     if (alldayEntries.length > 0) {
       alldayHtml = '<div class="allday-container">'
         + alldayEntries.map(({ s, st }) => {
-          let cls = 'sb-jeop';
+          let cls = '';
           let badge = '';
           if (st === 'give') {
+            cls = ' sb-give';
             badge = '<span class="sb-badge badge-give"><span class="material-symbols-outlined" style="font-size:10px">arrow_upward</span>Give</span>';
           } else if (st === 'recv') {
+            cls = ' sb-recv';
             badge = '<span class="sb-badge badge-recv"><span class="material-symbols-outlined" style="font-size:10px">arrow_downward</span>Recv</span>';
           }
-          return '<div class="shift-card ' + cls + '" style="margin-bottom: 2px;" title="' + s.summary + '">'
+          return '<div class="allday-card' + cls + '" title="' + s.summary + '">'
             + '<div class="sb-title">' + s.summary + '</div>'
-            + '<div class="sb-loc"><span class="material-symbols-outlined" style="font-size:12px">warning</span>Jeopardy</div>'
             + badge
             + '</div>';
         }).join('')

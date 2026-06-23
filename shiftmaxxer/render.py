@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+from datetime import date, timedelta
 from .models import Schedule, Resident, Shift
 from .optimizer import CycleResult
 from .utility import phi_loc, phi_type, utility
@@ -34,11 +35,43 @@ def _shift_dict(s: Shift) -> dict:
     }
 
 
-def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[Shift]) -> dict:
-    orig_runs = _streaks({s.work_date for s in orig_shifts})
-    orig_avg_streak = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
-    final_runs = _streaks({s.work_date for s in final_shifts})
-    final_avg_streak = sum(final_runs)/len(final_runs) if final_runs else 0.0
+def get_schedule_bounds(shifts: list[Shift]) -> tuple[date, date]:
+    if not shifts:
+        today = date.today()
+        # Fallback to current week
+        start = today - timedelta(days=today.weekday())
+        end = start + timedelta(days=6)
+        return start, end
+    
+    dates = [s.work_date for s in shifts]
+    min_date = min(dates)
+    max_date = max(dates)
+    
+    start = min_date - timedelta(days=min_date.weekday())
+    end = max_date + timedelta(days=6 - max_date.weekday())
+    return start, end
+
+
+def _off_streaks(timeline: list[date], worked_dates: set[date]) -> list[int]:
+    runs = []
+    current_run = 0
+    for d in timeline:
+        if d not in worked_dates:
+            current_run += 1
+        else:
+            if current_run > 0:
+                runs.append(current_run)
+                current_run = 0
+    if current_run > 0:
+        runs.append(current_run)
+    return runs
+
+
+def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[Shift], timeline: list[date]) -> dict:
+    orig_runs = _off_streaks(timeline, {s.work_date for s in orig_shifts})
+    orig_avg_off = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
+    final_runs = _off_streaks(timeline, {s.work_date for s in final_shifts})
+    final_avg_off = sum(final_runs)/len(final_runs) if final_runs else 0.0
 
     return {
         "name": r.name,
@@ -55,8 +88,8 @@ def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[
             "opt": round(phi_type(final_shifts, r) * 100),
         },
         "streak": {
-            "orig": round(orig_avg_streak, 1),
-            "opt": round(final_avg_streak, 1),
+            "orig": round(orig_avg_off, 1),
+            "opt": round(final_avg_off, 1),
         },
         "happiness": {
             "orig": round(utility(orig_shifts, r) * 100),
@@ -69,6 +102,15 @@ def build_payload(sched: Schedule, log: list[CycleResult],
                   original_assignment: dict) -> dict:
     orig_shifts_by_name = {n: [sched.shifts[uid] for uid in uids] for n, uids in original_assignment.items()}
     final_shifts_by_name = {n: [sched.shifts[uid] for uid in uids] for n, uids in sched.assignment.items()}
+
+    # Compute timeline for days-off streaks
+    all_shifts = list(sched.shifts.values())
+    start_date, end_date = get_schedule_bounds(all_shifts)
+    timeline = []
+    curr = start_date
+    while curr <= end_date:
+        timeline.append(curr)
+        curr += timedelta(days=1)
 
     swaps: dict = {n: [] for n in sched.residents}
     for res in log:
@@ -99,7 +141,7 @@ def build_payload(sched: Schedule, log: list[CycleResult],
 
     return {
         "residents": {
-            n: _resident_metrics(r, orig_shifts_by_name.get(n, []), final_shifts_by_name.get(n, []))
+            n: _resident_metrics(r, orig_shifts_by_name.get(n, []), final_shifts_by_name.get(n, []), timeline)
             for n, r in sched.residents.items()
         },
         "shifts": {uid: _shift_dict(s) for uid, s in sched.shifts.items()},
@@ -632,12 +674,45 @@ body {
   border-left-color: var(--md-sys-color-tertiary);
 }
 .shift-card.sb-recv .sb-loc { color: var(--md-sys-color-tertiary); }
-.shift-card.sb-jeop {
+.allday-card {
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 6px 8px;
   background: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface-variant);
-  border-left-color: var(--md-sys-color-outline);
+  cursor: default;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  box-shadow: none;
+  margin-bottom: 2px;
 }
-.shift-card.sb-jeop .sb-loc { color: var(--md-sys-color-outline); }
+.allday-card:hover {
+  background: var(--md-sys-color-surface-container-high);
+  transform: translateY(-1px);
+}
+.allday-card.sb-give {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+.allday-card.sb-recv {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+.allday-card .sb-title {
+  text-align: center;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+}
 
 .shift-card.absolute-card {
   position: absolute;
@@ -1289,7 +1364,7 @@ function renderPrefs() {
       + '<span class="pref-lbl"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span>' + label + '</span>'
       + '<span class="pref-val">' + orig.toFixed(1) + ' &rarr; ' + opt.toFixed(1) + ' days</span>'
       + '</div>'
-      + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target: ' + target + ' days</div>'
+      + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target Work Streak: ' + target + ' days</div>'
       + '</div>';
   };
 
@@ -1308,7 +1383,7 @@ function renderPrefs() {
     + '<hr class="divider">'
     + row('schedule', 'Time Preference', r.typePref, r.typePref === 'ANY', r.type.orig, r.type.opt)
     + '<hr class="divider">'
-    + streakRow('repeat_on', 'Average Streak', r.streak.orig, r.streak.opt, r.daysPref)
+    + streakRow('repeat_on', 'Avg Days Off in a Row', r.streak.orig, r.streak.opt, r.daysPref)
     + '<hr class="divider">'
     + happinessRow(r.happiness.orig, r.happiness.opt);
 }
@@ -1399,16 +1474,17 @@ function renderWeek() {
     if (alldayEntries.length > 0) {
       alldayHtml = '<div class="allday-container">'
         + alldayEntries.map(({ s, st }) => {
-          let cls = 'sb-jeop';
+          let cls = '';
           let badge = '';
           if (st === 'give') {
+            cls = ' sb-give';
             badge = '<span class="sb-badge badge-give"><span class="material-symbols-outlined" style="font-size:10px">arrow_upward</span>Give</span>';
           } else if (st === 'recv') {
+            cls = ' sb-recv';
             badge = '<span class="sb-badge badge-recv"><span class="material-symbols-outlined" style="font-size:10px">arrow_downward</span>Recv</span>';
           }
-          return '<div class="shift-card ' + cls + '" style="margin-bottom: 2px;" title="' + s.summary + '">'
+          return '<div class="allday-card' + cls + '" title="' + s.summary + '">'
             + '<div class="sb-title">' + s.summary + '</div>'
-            + '<div class="sb-loc"><span class="material-symbols-outlined" style="font-size:12px">warning</span>Jeopardy</div>'
             + badge
             + '</div>';
         }).join('')
