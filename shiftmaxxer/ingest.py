@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 import pandas as pd
 import re
+import urllib.request
+import urllib.error
 
 from .config import (LOC_PREFIX_LEN, VALID_LOCATIONS, JEOPARDY_KEYWORDS,
                      MORNING_START, SWING_START, OVERNIGHT_START, LOCAL_TZ, NO_PREF,
@@ -139,7 +141,55 @@ def load_preferences(csv_path) -> dict[str, Resident]:
     return residents
 
 
+def _extract_gdrive_id(url: str) -> str | None:
+    """Extract Google Drive file ID from various link formats."""
+    m = re.search(r'id=([a-zA-Z0-9_-]+)', str(url))
+    if m:
+        return m.group(1)
+    m = re.search(r'/d/([a-zA-Z0-9_-]+)', str(url))
+    if m:
+        return m.group(1)
+    return None
+
+
+def download_ics_from_csv(csv_path: Path, ics_dir: Path) -> None:
+    """Download ICS files from Google Drive links in preferences CSV."""
+    df = pd.read_csv(csv_path)
+    expected_cols = [
+        "timestamp", "resident", "location_pref", "time_pref",
+        "days_off", "location_weight", "time_weight",
+        "days_pref", "days_weight", "calendar_ics",
+    ]
+    if len(df.columns) == len(expected_cols):
+        df.columns = expected_cols
+    else:
+        return  # can't parse → skip download
+
+    ics_dir.mkdir(parents=True, exist_ok=True)
+    for _, row in df.iterrows():
+        name = str(row["resident"]).strip()
+        url = str(row.get("calendar_ics", "")).strip()
+        if not url or url == "nan":
+            continue
+        file_id = _extract_gdrive_id(url)
+        if not file_id:
+            print(f"  skip {name}: can't parse Drive link")
+            continue
+        dest = ics_dir / f"{name}.ics"
+        if dest.exists():
+            continue  # already have it
+        dl_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        print(f"  downloading {name}.ics ...")
+        try:
+            urllib.request.urlretrieve(dl_url, dest)
+        except urllib.error.URLError as e:
+            print(f"  FAILED {name}: {e}")
+
+
 def build_schedule(ics_dir, csv_path) -> Schedule:
+    # Auto-download ICS files from Drive links in CSV.
+    download_ics_from_csv(Path(csv_path), Path(ics_dir))
+
     shifts_list = load_all_ics(ics_dir)
     residents = load_preferences(csv_path)
     shifts = {s.uid: s for s in shifts_list}

@@ -88,8 +88,16 @@ def optimize(sched: Schedule, max_swaps_per_person: int, n_max: int) -> list[Cyc
             candidates.append(res)
         if not candidates:
             break
-        candidates.sort(key=lambda r: r.total_delta, reverse=True)
-        best = candidates[0]
+        # Fairness: prefer swaps involving residents with fewest swaps so far.
+        # This prevents one pair from monopolizing the swap budget and
+        # leaving others with no uncapped partners.
+        min_swaps = min(swap_count.get(n, 0) for n in sched.assignment)
+        priority = [r for r in candidates
+                    if any(swap_count.get(n, 0) == min_swaps
+                           for n in r.deltas)]
+        pool = priority if priority else candidates
+        pool.sort(key=lambda r: r.total_delta, reverse=True)
+        best = pool[0]
         apply_cycle(best, sched)
         for name in best.deltas:
             swap_count[name] += 1

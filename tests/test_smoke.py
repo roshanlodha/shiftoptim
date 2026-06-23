@@ -14,7 +14,7 @@ def test_load_preferences_normalization():
         # Roshan has MGH (weight 1), Morning (weight 0.5), days_weight 1.
         # Under IGNORE_WEIGHT = True, all three are overridden to 1.0.
         # Sum = 3.0. Normalized weights should be 1/3 each.
-        roshan = residents["roshan"]
+        roshan = residents["roshan lodha"]
         assert abs(roshan.loc_weight - 1/3) < 1e-6
         assert abs(roshan.type_weight - 1/3) < 1e-6
         assert abs(roshan.days_weight - 1/3) < 1e-6
@@ -46,7 +46,7 @@ def test_resident_metrics_payload():
     log = optimize(sched, max_swaps_per_person=-1, n_max=2)
     payload = build_payload(sched, log, original_assignment)
     
-    roshan = payload["residents"]["roshan"]
+    roshan = payload["residents"]["roshan lodha"]
     assert "loc" in roshan
     assert "orig" in roshan["loc"]
     assert "opt" in roshan["loc"]
@@ -65,10 +65,10 @@ def test_midnight_shift_end_hour():
     original_assignment = {n: set(uids) for n, uids in sched.assignment.items()}
     payload = build_payload(sched, [], original_assignment)
     
-    # Justin has 8eff5ce7-3e1d-47ea-89f2-fcb1b1432788 (BWH Jr. - Exe Jr 3p-12a)
-    # which starts at 3:00 PM on 2026-06-25 and ends at 12:00 AM on 2026-06-26.
+    # Brian has 73048cf3-ec0a-48cc-933b-598134e736cf (BWH Jr. - Exe Jr 3p-12a)
+    # which starts at 3:00 PM on 2026-07-03 and ends at 12:00 AM on 2026-07-04.
     # Its endHour should be overridden to 24.0.
-    target_uid = "8eff5ce7-3e1d-47ea-89f2-fcb1b1432788"
+    target_uid = "73048cf3-ec0a-48cc-933b-598134e736cf"
     assert target_uid in payload["shifts"]
     s = payload["shifts"][target_uid]
     assert s["startHour"] == 15.0
