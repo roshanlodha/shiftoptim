@@ -114,7 +114,7 @@ This construction is a bounded, preference-aware variant of the classic *Top Tra
 
 Three hyperparameters control the trade search:
 
-- $K_{\text{pp}}$, the **per-person swap cap**: the maximum number of swaps any single resident may participate in. Set to $-1$ for unlimited. Default is $3$. This limit ensures equity; no resident is churned through many trades while others remain unchanged.
+- $K_{\text{pp}}$, the **per-person swap cap**: the maximum number of swaps any single resident may be charged with as the primary beneficiary (the one who benefits the most from the swap). Set to $-1$ for unlimited. Default is $3$. This limit ensures equity; no resident is churned through many trades while others remain unchanged.
 - $n_{\max}$, the **maximum cycle length**: $2$ for 1-for-1 trades only, $3$ to also allow three-way rotations.
 - `ALLOW_JEOPARDY_SWAPS`: when `True`, jeopardy shifts participate in trading but are type-isolated (jeopardy trades only with jeopardy); when `False` (default), jeopardy shifts are pinned and excluded from all trading.
 
@@ -122,9 +122,9 @@ The mechanism iterates:
 
 1. **Build** the trade graph $G$ from the current schedule.
 2. **Enumerate** all simple cycles of length $\le n_{\max}$. For $n_{\max}=2$ this is a search for mutual edges; for $n_{\max}=3$ a depth-limited cycle search suffices.
-3. **Filter** to cycles that are strictly Pareto-improving: recompute each participant's post-trade utility and keep the cycle only if no participant is worse off and at least one is strictly better. We also reject any cycle where a participant would exceed $K_{\text{pp}}$ swaps (unless $K_{\text{pp}}=-1$). Score each surviving cycle by its total utility gain $\Delta U_{\text{total}}=\sum_{x}\Delta U_x$.
-4. **Apply greedily**: execute the highest-scoring cycle, increment each participant's swap counter, update the schedule, and return to step 1.
-5. **Terminate** when no per-person-budget-fitting, Pareto-improving cycle remains.
+3. **Filter** to cycles that are strictly Pareto-improving: recompute each participant's post-trade utility and keep the cycle only if no participant is worse off and at least one is strictly better. Identify the primary beneficiary (the resident with the maximum utility delta, breaking ties alphabetically). Reject the cycle if this beneficiary would exceed $K_{\text{pp}}$ swaps (unless $K_{\text{pp}}=-1$). Score each surviving cycle by its total utility gain $\Delta U_{\text{total}}=\sum_{x}\Delta U_x$.
+4. **Apply greedily**: execute the highest-scoring cycle, increment the swap counter only for the primary beneficiary, update the schedule, and return to step 1.
+5. **Terminate** when no primary-beneficiary-budget-fitting, Pareto-improving cycle remains.
 
 Rebuilding the graph after each executed trade is deliberate: it keeps every decision based on the true current state and sidesteps the bookkeeping of overlapping candidate cycles. For a program of this size the computational cost is negligible.
 

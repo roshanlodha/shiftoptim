@@ -137,6 +137,7 @@ def build_payload(sched: Schedule, log: list[CycleResult],
                 "recvEnd": _fmt_time(sv.t_end),
                 "delta": round(res.deltas.get(giver, 0), 4),
                 "swapWith": partner,
+                "partnerDelta": round(res.deltas.get(partner, 0), 4) if partner else 0.0,
             })
 
     return {
@@ -225,45 +226,47 @@ _TEMPLATE = """<!DOCTYPE html>
   --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
 }
 
-:root.light-theme {
-  /* LIGHT THEME */
-  --calendar-grid-line: rgba(0, 0, 0, 0.05);
-  --md-sys-color-primary: #4F46E5;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #E0E7FF;
-  --md-sys-color-on-primary-container: #1E1B4B;
-  
-  --md-sys-color-secondary: #475569;
-  --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #F1F5F9;
-  --md-sys-color-on-secondary-container: #0F172A;
-  
-  --md-sys-color-tertiary: #0D9488;
-  --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #CCFBF1;
-  --md-sys-color-on-tertiary-container: #115E59;
-  
-  --md-sys-color-error: #EF4444;
-  --md-sys-color-on-error: #FFFFFF;
-  --md-sys-color-error-container: #FEE2E2;
-  --md-sys-color-on-error-container: #991B1B;
-  
-  --md-sys-color-surface: #F8FAFC;
-  --md-sys-color-on-surface: #0F172A;
-  --md-sys-color-on-surface-variant: #475569;
-  
-  --md-sys-color-surface-container-lowest: #FFFFFF;
-  --md-sys-color-surface-container-low: #F1F5F9;
-  --md-sys-color-surface-container: #E2E8F0;
-  --md-sys-color-surface-container-high: #CBD5E1;
-  --md-sys-color-surface-container-highest: #94A3B8;
-  
-  --md-sys-color-outline: #94A3B8;
-  --md-sys-color-outline-variant: #E2E8F0;
-  
-  --md-sys-elevation-shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
-  --md-sys-elevation-shadow-2: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
-  --md-sys-elevation-shadow-3: 0 4px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
+@media (prefers-color-scheme: light) {
+  :root {
+    /* LIGHT THEME */
+    --calendar-grid-line: rgba(0, 0, 0, 0.05);
+    --md-sys-color-primary: #4F46E5;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #E0E7FF;
+    --md-sys-color-on-primary-container: #1E1B4B;
+    
+    --md-sys-color-secondary: #475569;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #F1F5F9;
+    --md-sys-color-on-secondary-container: #0F172A;
+    
+    --md-sys-color-tertiary: #0D9488;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #CCFBF1;
+    --md-sys-color-on-tertiary-container: #115E59;
+    
+    --md-sys-color-error: #EF4444;
+    --md-sys-color-on-error: #FFFFFF;
+    --md-sys-color-error-container: #FEE2E2;
+    --md-sys-color-on-error-container: #991B1B;
+    
+    --md-sys-color-surface: #F8FAFC;
+    --md-sys-color-on-surface: #0F172A;
+    --md-sys-color-on-surface-variant: #475569;
+    
+    --md-sys-color-surface-container-lowest: #FFFFFF;
+    --md-sys-color-surface-container-low: #F1F5F9;
+    --md-sys-color-surface-container: #E2E8F0;
+    --md-sys-color-surface-container-high: #CBD5E1;
+    --md-sys-color-surface-container-highest: #94A3B8;
+    
+    --md-sys-color-outline: #94A3B8;
+    --md-sys-color-outline-variant: #E2E8F0;
+    
+    --md-sys-elevation-shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+    --md-sys-elevation-shadow-2: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+    --md-sys-elevation-shadow-3: 0 4px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
+  }
 }
 
 *, *::before, *::after {
@@ -321,18 +324,18 @@ body {
   font-weight: 400;
 }
 
-/* Happiness Scorecard */
-.happiness-orb {
+/* Happiness Scorecard Card */
+.happiness-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--md-sys-color-tertiary-container);
+  gap: 16px;
+  background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-full);
-  padding: 6px 16px 6px 8px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 16px;
+  box-shadow: var(--md-sys-elevation-shadow-1);
   transition: all 0.3s;
-  margin-left: auto;
-  margin-right: 24px;
+  margin-bottom: 16px;
 }
 @keyframes happiness-pulse {
   0% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.4); }
@@ -340,8 +343,8 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
 }
 .orb-pulse {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--md-sys-color-tertiary);
   color: var(--md-sys-color-on-tertiary);
@@ -355,14 +358,14 @@ body {
   line-height: 1.2;
 }
 .orb-label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--md-sys-color-on-surface-variant);
   font-weight: 700;
 }
 .orb-value {
-  font-size: 0.95rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--md-sys-color-on-surface);
 }
@@ -815,8 +818,6 @@ body {
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium);
   padding: 16px;
-  position: sticky;
-  top: 96px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1129,16 +1130,6 @@ body {
       <div class="logo-sub">Swap Optimizer Report</div>
     </div>
   </div>
-  
-  <div class="happiness-orb" id="happiness-orb">
-    <div class="orb-pulse">
-      <span class="material-symbols-outlined" style="font-size: 18px;">celebration</span>
-    </div>
-    <div class="orb-text">
-      <div class="orb-label">Total Happiness Conserved</div>
-      <div class="orb-value" id="happiness-value">+0.0%</div>
-    </div>
-  </div>
 
   <div style="display: flex; align-items: center; gap: 12px;">
     <div class="md3-select-wrapper">
@@ -1175,18 +1166,27 @@ body {
       <div class="sec-header">
         <h2 class="section-title">Metrics</h2>
       </div>
+      
+      <!-- Standalone Happiness Conserved Card -->
+      <div class="happiness-card" id="happiness-card">
+        <div class="orb-pulse">
+          <span class="material-symbols-outlined" style="font-size: 22px;">celebration</span>
+        </div>
+        <div class="orb-text">
+          <div class="orb-label">Total Happiness Conserved</div>
+          <div class="orb-value" id="happiness-value">+0.0%</div>
+        </div>
+      </div>
+      
       <div class="prefs-card" id="prefs"></div>
 
-      <div class="sec-header" style="margin-top: 24px;">
-        <h2 class="section-title">View</h2>
+      <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+        <h2 class="section-title" style="margin: 0;">View</h2>
         <div style="display: flex; align-items: center; gap: 12px;">
           <div class="md3-segmented-button-container">
             <button class="md3-segmented-button" id="toggle-original">Original</button>
             <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
           </div>
-          <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-            <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
-          </button>
         </div>
       </div>
     </aside>
@@ -1196,7 +1196,29 @@ body {
     <div class="sec-header">
       <h2 class="section-title">Proposed Swaps <span class="count-badge" id="swap-count">0</span></h2>
     </div>
-    <div id="swaps-grid" class="swaps-grid"></div>
+    
+    <div class="swaps-rows-container" style="display: flex; flex-direction: column; gap: 24px;">
+      <div class="swaps-row">
+        <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+          <span class="material-symbols-outlined" style="color: var(--md-sys-color-tertiary); font-size: 20px;">volunteer_activism</span>
+          Swaps for You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(Your happiness gain is higher; you should propose these)</span>
+          <span class="count-badge" id="swaps-for-you-count">0</span>
+        </h3>
+        <div id="swaps-for-you-grid" class="swaps-grid"></div>
+      </div>
+
+      <div class="swaps-row">
+        <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+          <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 20px;">swap_horizontal_circle</span>
+          Swaps with You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(Another resident benefits more; they may propose these to you)</span>
+          <span class="count-badge" id="swaps-with-you-count">0</span>
+        </h3>
+        <div id="swaps-with-you-grid" class="swaps-grid"></div>
+      </div>
+    </div>
+
+    <!-- Unified empty state container -->
+    <div id="swaps-empty-state" style="display: none;"></div>
   </div>
 </main>
 
@@ -1212,30 +1234,6 @@ let cur = null;
 let weekOffset = 0; // weeks from the "anchor" week (first week with any shift)
 let anchorMonday = null; // Date object for Monday of anchor week
 let viewMode = 'optimal'; // 'optimal' or 'original'
-
-// Theme toggle logic
-const themeToggle = document.getElementById('theme-toggle');
-const themeIcon = themeToggle.querySelector('.material-symbols-outlined');
-
-function toggleTheme() {
-  const isLight = document.documentElement.classList.toggle('light-theme');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  updateThemeIcon(isLight);
-}
-
-function updateThemeIcon(isLight) {
-  themeIcon.textContent = isLight ? 'dark_mode' : 'light_mode';
-  themeToggle.title = isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode';
-}
-
-const savedTheme = localStorage.getItem('theme');
-const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-let startLight = savedTheme === 'light' || (!savedTheme && prefersLight);
-if (startLight) {
-  document.documentElement.classList.add('light-theme');
-}
-updateThemeIcon(startLight);
-themeToggle.addEventListener('click', toggleTheme);
 
 function isoToDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -1260,7 +1258,10 @@ function fmtShort(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return MONTHS[m-1].slice(0,3) + ' ' + d;
 }
-function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function cap(s) {
+  if (!s) return s;
+  return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 
 function init() {
   const names = Object.keys(DATA.residents).sort();
@@ -1311,40 +1312,40 @@ function render() {
   renderSwaps();
 }
 
-/* ── Happiness Orb ── */
+/* ── Happiness Card ── */
 function renderHappiness() {
   const swaps = DATA.swaps[cur] || [];
   const total = swaps.reduce((s, sw) => s + sw.delta, 0);
   const pct = (total * 100).toFixed(1);
   const el = document.getElementById('happiness-value');
-  const orb = document.getElementById('happiness-orb');
-  const pulse = orb.querySelector('.orb-pulse');
+  const card = document.getElementById('happiness-card');
+  const pulse = card.querySelector('.orb-pulse');
   el.textContent = (total >= 0 ? '+' : '') + pct + '%';
   
   if (total > 0.001) {
-    orb.style.background = 'var(--md-sys-color-tertiary-container)';
-    orb.style.color = 'var(--md-sys-color-on-tertiary-container)';
-    orb.style.borderColor = 'transparent';
+    card.style.background = 'var(--md-sys-color-tertiary-container)';
+    card.style.color = 'var(--md-sys-color-on-tertiary-container)';
+    card.style.borderColor = 'transparent';
     el.style.color = 'var(--md-sys-color-on-tertiary-container)';
     pulse.style.background = 'var(--md-sys-color-tertiary)';
     pulse.style.color = 'var(--md-sys-color-on-tertiary)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">celebration</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">celebration</span>';
   } else if (total < -0.001) {
-    orb.style.background = 'var(--md-sys-color-error-container)';
-    orb.style.color = 'var(--md-sys-color-on-error-container)';
-    orb.style.borderColor = 'transparent';
+    card.style.background = 'var(--md-sys-color-error-container)';
+    card.style.color = 'var(--md-sys-color-on-error-container)';
+    card.style.borderColor = 'transparent';
     el.style.color = 'var(--md-sys-color-on-error-container)';
     pulse.style.background = 'var(--md-sys-color-error)';
     pulse.style.color = 'var(--md-sys-color-on-error)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">trending_down</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">trending_down</span>';
   } else {
-    orb.style.background = 'var(--md-sys-color-surface-container-high)';
-    orb.style.color = 'var(--md-sys-color-on-surface)';
-    orb.style.borderColor = 'var(--md-sys-color-outline-variant)';
+    card.style.background = 'var(--md-sys-color-surface-container-low)';
+    card.style.color = 'var(--md-sys-color-on-surface)';
+    card.style.borderColor = 'var(--md-sys-color-outline-variant)';
     el.style.color = 'var(--md-sys-color-on-surface)';
     pulse.style.background = 'var(--md-sys-color-outline)';
     pulse.style.color = 'var(--md-sys-color-surface)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">sentiment_neutral</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">sentiment_neutral</span>';
   }
 }
 
@@ -1588,11 +1589,15 @@ function renderWeek() {
 /* ── Swap Cards ── */
 function renderSwaps() {
   const list = DATA.swaps[cur] || [];
-  const grid = document.getElementById('swaps-grid');
   document.getElementById('swap-count').textContent = list.length;
 
+  const rowsContainer = document.querySelector('.swaps-rows-container');
+  const emptyState = document.getElementById('swaps-empty-state');
+
   if (!list.length) {
-    grid.innerHTML = '<div class="no-swaps">'
+    rowsContainer.style.display = 'none';
+    emptyState.style.display = 'block';
+    emptyState.innerHTML = '<div class="no-swaps">'
       + '<span class="material-symbols-outlined no-swaps-icon">celebration</span>'
       + '<div class="no-swaps-msg">Already optimized!</div>'
       + '<div class="no-swaps-sub">No swaps proposed for ' + cap(cur) + ' — schedule is already great.</div>'
@@ -1600,32 +1605,65 @@ function renderSwaps() {
     return;
   }
 
-  grid.innerHTML = list.map((sw, i) => {
-    const pct = (sw.delta * 100).toFixed(1);
-    const isPos = sw.delta > 0.0001;
-    const isNeg = sw.delta < -0.0001;
-    const deltaLabel = isPos ? '+' + pct + '% Happiness' : isNeg ? pct + '% Happiness' : 'Neutral';
-    const dpClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
-    const cardClass = isPos ? 'pos-card' : isNeg ? 'neg-card' : 'neu-card';
-    const hdrClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
-    const partnerName = sw.swapWith ? cap(sw.swapWith) : 'Partner';
+  rowsContainer.style.display = 'flex';
+  emptyState.style.display = 'none';
 
-    return '<div class="swap-card ' + cardClass + '">'
-      + '<div class="swap-card-hdr ' + hdrClass + '">'
-      + '<div class="card-hdr-left" style="display:flex; flex-direction:column; gap:4px;">'
-      + '<div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--md-sys-color-on-surface-variant)">Swap ' + (i+1) + '</div>'
-      + '<div class="swap-with-badge"><span class="material-symbols-outlined" style="font-size:14px">swap_horiz</span>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
-      + '</div>'
-      + '<span class="delta-pill ' + dpClass + '">' 
-      + (isPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
-      + deltaLabel + '</span>'
-      + '</div>'
-      + '<div class="card-body">'
-      + blk(sw, 'give')
-      + '<div class="arrow-col"><div class="arrow-btn"><span class="material-symbols-outlined">arrow_forward</span></div></div>'
-      + blk(sw, 'recv')
-      + '</div></div>';
-  }).join('');
+  // Partition the list: swaps for you vs swaps with you
+  const swapsForYou = list.filter(sw => sw.delta >= sw.partnerDelta);
+  const swapsWithYou = list.filter(sw => sw.delta < sw.partnerDelta);
+
+  document.getElementById('swaps-for-you-count').textContent = swapsForYou.length;
+  document.getElementById('swaps-with-you-count').textContent = swapsWithYou.length;
+
+  const renderGrid = (gridEl, subList) => {
+    if (!subList.length) {
+      gridEl.innerHTML = '<div style="color: var(--md-sys-color-on-surface-variant); font-style: italic; padding: 16px; background: var(--md-sys-color-surface-container-low); border-radius: var(--md-sys-shape-corner-medium); border: 1px dashed var(--md-sys-color-outline-variant); grid-column: 1 / -1; text-align: center;">No swaps in this category.</div>';
+      return;
+    }
+
+    gridEl.innerHTML = subList.map((sw, i) => {
+      const pct = (sw.delta * 100).toFixed(1);
+      const partnerPct = (sw.partnerDelta * 100).toFixed(1);
+      
+      const isPos = sw.delta > 0.0001;
+      const isNeg = sw.delta < -0.0001;
+      const deltaLabel = isPos ? '+' + pct + '% (You)' : isNeg ? pct + '% (You)' : 'Neutral (You)';
+      const dpClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
+
+      const isPartnerPos = sw.partnerDelta > 0.0001;
+      const isPartnerNeg = sw.partnerDelta < -0.0001;
+      const partnerDeltaLabel = isPartnerPos ? '+' + partnerPct + '% (' + cap(sw.swapWith) + ')' : isPartnerNeg ? partnerPct + '% (' + cap(sw.swapWith) + ')' : 'Neutral (' + cap(sw.swapWith) + ')';
+      const partnerDpClass = isPartnerPos ? 'pos' : isPartnerNeg ? 'neg' : 'neu';
+
+      const cardClass = isPos ? 'pos-card' : isNeg ? 'neg-card' : 'neu-card';
+      const hdrClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
+      const partnerName = sw.swapWith ? cap(sw.swapWith) : 'Partner';
+
+      return '<div class="swap-card ' + cardClass + '">'
+        + '<div class="swap-card-hdr ' + hdrClass + '">'
+        + '<div class="card-hdr-left" style="display:flex; flex-direction:column; gap:4px;">'
+        + '<div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--md-sys-color-on-surface-variant)">Swap ' + (i+1) + '</div>'
+        + '<div class="swap-with-badge"><span class="material-symbols-outlined" style="font-size:14px">swap_horiz</span>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
+        + '</div>'
+        + '<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">'
+        + '<span class="delta-pill ' + dpClass + '">' 
+        + (isPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + deltaLabel + '</span>'
+        + '<span class="delta-pill ' + partnerDpClass + '">' 
+        + (isPartnerPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isPartnerNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + partnerDeltaLabel + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="card-body">'
+        + blk(sw, 'give')
+        + '<div class="arrow-col"><div class="arrow-btn"><span class="material-symbols-outlined">arrow_forward</span></div></div>'
+        + blk(sw, 'recv')
+        + '</div></div>';
+    }).join('');
+  };
+
+  renderGrid(document.getElementById('swaps-for-you-grid'), swapsForYou);
+  renderGrid(document.getElementById('swaps-with-you-grid'), swapsWithYou);
 }
 
 function blk(sw, side) {

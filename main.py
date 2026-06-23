@@ -19,8 +19,8 @@ def main():
                     default=3 if ALLOW_MULTI_SWAPS else 2)
     ap.add_argument("--allow-jeopardy-swaps", action="store_true",
                     help="allow jeopardy/backup shifts to participate in trading")
-    ap.add_argument("--html", default="report.html",
-                    help="output path for HTML report (default: report.html)")
+    ap.add_argument("--html", default="shiftswap.html",
+                    help="output path for HTML report (default: shiftswap.html)")
     args = ap.parse_args()
     assert args.max_cycle <= 3, "max cycle length capped at 3"
 

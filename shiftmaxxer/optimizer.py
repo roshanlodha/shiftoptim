@@ -81,9 +81,8 @@ def optimize(sched: Schedule, max_swaps_per_person: int, n_max: int) -> list[Cyc
                 continue
             # Per-person cap check (-1 = unlimited)
             if max_swaps_per_person != -1:
-                involved_names = set(res.deltas.keys())
-                if any(swap_count[n] + 1 > max_swaps_per_person
-                       for n in involved_names):
+                beneficiary = max(sorted(res.deltas.keys()), key=lambda n: res.deltas[n])
+                if swap_count[beneficiary] + 1 > max_swaps_per_person:
                     continue
             candidates.append(res)
         if not candidates:
@@ -99,7 +98,7 @@ def optimize(sched: Schedule, max_swaps_per_person: int, n_max: int) -> list[Cyc
         pool.sort(key=lambda r: r.total_delta, reverse=True)
         best = pool[0]
         apply_cycle(best, sched)
-        for name in best.deltas:
-            swap_count[name] += 1
+        beneficiary = max(sorted(best.deltas.keys()), key=lambda n: best.deltas[n])
+        swap_count[beneficiary] += 1
         log.append(best)
     return log

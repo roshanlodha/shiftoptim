@@ -64,45 +64,47 @@
   --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
 }
 
-:root.light-theme {
-  /* LIGHT THEME */
-  --calendar-grid-line: rgba(0, 0, 0, 0.05);
-  --md-sys-color-primary: #4F46E5;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #E0E7FF;
-  --md-sys-color-on-primary-container: #1E1B4B;
-  
-  --md-sys-color-secondary: #475569;
-  --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #F1F5F9;
-  --md-sys-color-on-secondary-container: #0F172A;
-  
-  --md-sys-color-tertiary: #0D9488;
-  --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #CCFBF1;
-  --md-sys-color-on-tertiary-container: #115E59;
-  
-  --md-sys-color-error: #EF4444;
-  --md-sys-color-on-error: #FFFFFF;
-  --md-sys-color-error-container: #FEE2E2;
-  --md-sys-color-on-error-container: #991B1B;
-  
-  --md-sys-color-surface: #F8FAFC;
-  --md-sys-color-on-surface: #0F172A;
-  --md-sys-color-on-surface-variant: #475569;
-  
-  --md-sys-color-surface-container-lowest: #FFFFFF;
-  --md-sys-color-surface-container-low: #F1F5F9;
-  --md-sys-color-surface-container: #E2E8F0;
-  --md-sys-color-surface-container-high: #CBD5E1;
-  --md-sys-color-surface-container-highest: #94A3B8;
-  
-  --md-sys-color-outline: #94A3B8;
-  --md-sys-color-outline-variant: #E2E8F0;
-  
-  --md-sys-elevation-shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
-  --md-sys-elevation-shadow-2: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
-  --md-sys-elevation-shadow-3: 0 4px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
+@media (prefers-color-scheme: light) {
+  :root {
+    /* LIGHT THEME */
+    --calendar-grid-line: rgba(0, 0, 0, 0.05);
+    --md-sys-color-primary: #4F46E5;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #E0E7FF;
+    --md-sys-color-on-primary-container: #1E1B4B;
+    
+    --md-sys-color-secondary: #475569;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #F1F5F9;
+    --md-sys-color-on-secondary-container: #0F172A;
+    
+    --md-sys-color-tertiary: #0D9488;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #CCFBF1;
+    --md-sys-color-on-tertiary-container: #115E59;
+    
+    --md-sys-color-error: #EF4444;
+    --md-sys-color-on-error: #FFFFFF;
+    --md-sys-color-error-container: #FEE2E2;
+    --md-sys-color-on-error-container: #991B1B;
+    
+    --md-sys-color-surface: #F8FAFC;
+    --md-sys-color-on-surface: #0F172A;
+    --md-sys-color-on-surface-variant: #475569;
+    
+    --md-sys-color-surface-container-lowest: #FFFFFF;
+    --md-sys-color-surface-container-low: #F1F5F9;
+    --md-sys-color-surface-container: #E2E8F0;
+    --md-sys-color-surface-container-high: #CBD5E1;
+    --md-sys-color-surface-container-highest: #94A3B8;
+    
+    --md-sys-color-outline: #94A3B8;
+    --md-sys-color-outline-variant: #E2E8F0;
+    
+    --md-sys-elevation-shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+    --md-sys-elevation-shadow-2: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+    --md-sys-elevation-shadow-3: 0 4px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
+  }
 }
 
 *, *::before, *::after {
@@ -160,18 +162,18 @@ body {
   font-weight: 400;
 }
 
-/* Happiness Scorecard */
-.happiness-orb {
+/* Happiness Scorecard Card */
+.happiness-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--md-sys-color-tertiary-container);
+  gap: 16px;
+  background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--md-sys-shape-corner-full);
-  padding: 6px 16px 6px 8px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 16px;
+  box-shadow: var(--md-sys-elevation-shadow-1);
   transition: all 0.3s;
-  margin-left: auto;
-  margin-right: 24px;
+  margin-bottom: 16px;
 }
 @keyframes happiness-pulse {
   0% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.4); }
@@ -179,8 +181,8 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
 }
 .orb-pulse {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--md-sys-color-tertiary);
   color: var(--md-sys-color-on-tertiary);
@@ -194,14 +196,14 @@ body {
   line-height: 1.2;
 }
 .orb-label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--md-sys-color-on-surface-variant);
   font-weight: 700;
 }
 .orb-value {
-  font-size: 0.95rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--md-sys-color-on-surface);
 }
@@ -654,8 +656,6 @@ body {
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium);
   padding: 16px;
-  position: sticky;
-  top: 96px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -968,16 +968,6 @@ body {
       <div class="logo-sub">Swap Optimizer Report</div>
     </div>
   </div>
-  
-  <div class="happiness-orb" id="happiness-orb">
-    <div class="orb-pulse">
-      <span class="material-symbols-outlined" style="font-size: 18px;">celebration</span>
-    </div>
-    <div class="orb-text">
-      <div class="orb-label">Total Happiness Conserved</div>
-      <div class="orb-value" id="happiness-value">+0.0%</div>
-    </div>
-  </div>
 
   <div style="display: flex; align-items: center; gap: 12px;">
     <div class="md3-select-wrapper">
@@ -1014,18 +1004,27 @@ body {
       <div class="sec-header">
         <h2 class="section-title">Metrics</h2>
       </div>
+      
+      <!-- Standalone Happiness Conserved Card -->
+      <div class="happiness-card" id="happiness-card">
+        <div class="orb-pulse">
+          <span class="material-symbols-outlined" style="font-size: 22px;">celebration</span>
+        </div>
+        <div class="orb-text">
+          <div class="orb-label">Total Happiness Conserved</div>
+          <div class="orb-value" id="happiness-value">+0.0%</div>
+        </div>
+      </div>
+      
       <div class="prefs-card" id="prefs"></div>
 
-      <div class="sec-header" style="margin-top: 24px;">
-        <h2 class="section-title">View</h2>
+      <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+        <h2 class="section-title" style="margin: 0;">View</h2>
         <div style="display: flex; align-items: center; gap: 12px;">
           <div class="md3-segmented-button-container">
             <button class="md3-segmented-button" id="toggle-original">Original</button>
             <button class="md3-segmented-button selected" id="toggle-optimal">Optimal</button>
           </div>
-          <button class="md3-btn-icon-outlined" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-            <span class="material-symbols-outlined" style="font-size: 22px;">light_mode</span>
-          </button>
         </div>
       </div>
     </aside>
@@ -1035,7 +1034,29 @@ body {
     <div class="sec-header">
       <h2 class="section-title">Proposed Swaps <span class="count-badge" id="swap-count">0</span></h2>
     </div>
-    <div id="swaps-grid" class="swaps-grid"></div>
+    
+    <div class="swaps-rows-container" style="display: flex; flex-direction: column; gap: 24px;">
+      <div class="swaps-row">
+        <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+          <span class="material-symbols-outlined" style="color: var(--md-sys-color-tertiary); font-size: 20px;">volunteer_activism</span>
+          Swaps for You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(Your happiness gain is higher; you should propose these)</span>
+          <span class="count-badge" id="swaps-for-you-count">0</span>
+        </h3>
+        <div id="swaps-for-you-grid" class="swaps-grid"></div>
+      </div>
+
+      <div class="swaps-row">
+        <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+          <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 20px;">swap_horizontal_circle</span>
+          Swaps with You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(Another resident benefits more; they may propose these to you)</span>
+          <span class="count-badge" id="swaps-with-you-count">0</span>
+        </h3>
+        <div id="swaps-with-you-grid" class="swaps-grid"></div>
+      </div>
+    </div>
+
+    <!-- Unified empty state container -->
+    <div id="swaps-empty-state" style="display: none;"></div>
   </div>
 </main>
 
@@ -1054,15 +1075,15 @@ const DATA = {
       },
       "type": {
         "orig": 33,
-        "opt": 33
+        "opt": 53
       },
       "streak": {
         "orig": 1.7,
-        "opt": 1.9
+        "opt": 2.0
       },
       "happiness": {
         "orig": 39,
-        "opt": 42
+        "opt": 48
       }
     },
     "wendy memishian": {
@@ -1077,19 +1098,19 @@ const DATA = {
       ],
       "loc": {
         "orig": 57,
-        "opt": 71
+        "opt": 79
       },
       "type": {
         "orig": 43,
-        "opt": 64
+        "opt": 86
       },
       "streak": {
         "orig": 1.8,
-        "opt": 1.8
+        "opt": 1.9
       },
       "happiness": {
         "orig": 43,
-        "opt": 55
+        "opt": 64
       }
     },
     "brian song": {
@@ -1100,7 +1121,7 @@ const DATA = {
       "daysOff": [],
       "loc": {
         "orig": 46,
-        "opt": 69
+        "opt": 77
       },
       "type": {
         "orig": 31,
@@ -1108,11 +1129,11 @@ const DATA = {
       },
       "streak": {
         "orig": 2.4,
-        "opt": 2.4
+        "opt": 2.2
       },
       "happiness": {
         "orig": 36,
-        "opt": 52
+        "opt": 53
       }
     }
   },
@@ -1648,106 +1669,106 @@ const DATA = {
   },
   "originalAssignment": {
     "roshan lodha": [
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
       "2583d041-c479-46b0-b1c3-e12f5e21e57d",
       "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "65d51711-e06b-448a-b105-3ee41369dce2",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "a6661004-baca-4ddd-99be-1065353d2543",
-      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "a7f08738-553b-41fd-85a6-49601899911d",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
-      "6d067d23-9ffc-44f6-812d-0987596827d1",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c"
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198"
     ],
     "wendy memishian": [
-      "966617ee-1e63-43b2-8873-5a15a054367e",
-      "02489bec-cd48-45e0-b570-6c21ca527864",
-      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
-      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
-      "687ce3f7-db29-4ec2-9687-a5452a7ff441",
-      "eee43676-e445-43d8-bcc7-47f3af582c43",
-      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
-      "ebb516bd-68a3-43d9-bca5-19ca069abf17",
-      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
-      "636e5e57-dbc5-452b-aad6-60649246cecf",
-      "aeb53546-a50f-405c-ae60-765d58500d6b",
       "164cf5c8-c51b-49b1-bc95-4a291e57a163",
-      "13d72997-d7fd-4877-b746-4dd195535f99",
+      "ee656061-4e54-4e32-999d-59a45be44cae",
+      "966617ee-1e63-43b2-8873-5a15a054367e",
+      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+      "aeb53546-a50f-405c-ae60-765d58500d6b",
+      "687ce3f7-db29-4ec2-9687-a5452a7ff441",
       "834ee2ad-24a4-45df-b988-23e0bcb3f293",
-      "ee656061-4e54-4e32-999d-59a45be44cae"
+      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
+      "02489bec-cd48-45e0-b570-6c21ca527864",
+      "13d72997-d7fd-4877-b746-4dd195535f99",
+      "ebb516bd-68a3-43d9-bca5-19ca069abf17",
+      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
+      "eee43676-e445-43d8-bcc7-47f3af582c43",
+      "636e5e57-dbc5-452b-aad6-60649246cecf",
+      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81"
     ],
     "brian song": [
-      "2668ae46-0bac-49b6-9891-3367dc1666bf",
-      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
-      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
-      "d55881dd-d265-4f45-a76d-898f860bc411",
-      "73048cf3-ec0a-48cc-933b-598134e736cf",
-      "de088fac-2659-4e3b-9c69-3b5b46618244",
-      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
       "a06a4d2e-c549-4416-8332-abd6ae839bbd",
+      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
+      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
       "737a8e0d-0a63-4984-be03-757de143b5f9",
       "84e99799-5c76-46fc-b159-41213dd39591",
-      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+      "73048cf3-ec0a-48cc-933b-598134e736cf",
+      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5",
       "bb239480-d6cf-4503-b96b-797cd73c5a8e",
-      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5"
+      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
+      "d55881dd-d265-4f45-a76d-898f860bc411",
+      "2668ae46-0bac-49b6-9891-3367dc1666bf",
+      "de088fac-2659-4e3b-9c69-3b5b46618244"
     ]
   },
   "finalAssignment": {
     "roshan lodha": [
-      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "65d51711-e06b-448a-b105-3ee41369dce2",
       "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "a6661004-baca-4ddd-99be-1065353d2543",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
       "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
+      "eee43676-e445-43d8-bcc7-47f3af582c43",
+      "65d51711-e06b-448a-b105-3ee41369dce2",
+      "a6661004-baca-4ddd-99be-1065353d2543",
       "164cf5c8-c51b-49b1-bc95-4a291e57a163",
-      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
-      "d5882e55-abd9-4148-a536-c0287b521cd6"
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "aeb53546-a50f-405c-ae60-765d58500d6b",
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d"
     ],
     "wendy memishian": [
-      "2668ae46-0bac-49b6-9891-3367dc1666bf",
       "966617ee-1e63-43b2-8873-5a15a054367e",
-      "02489bec-cd48-45e0-b570-6c21ca527864",
-      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
-      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
-      "a7f08738-553b-41fd-85a6-49601899911d",
       "687ce3f7-db29-4ec2-9687-a5452a7ff441",
-      "eee43676-e445-43d8-bcc7-47f3af582c43",
-      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
-      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
-      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
-      "636e5e57-dbc5-452b-aad6-60649246cecf",
-      "aeb53546-a50f-405c-ae60-765d58500d6b",
       "13d72997-d7fd-4877-b746-4dd195535f99",
-      "834ee2ad-24a4-45df-b988-23e0bcb3f293"
+      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "d55881dd-d265-4f45-a76d-898f860bc411",
+      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+      "834ee2ad-24a4-45df-b988-23e0bcb3f293",
+      "02489bec-cd48-45e0-b570-6c21ca527864",
+      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
+      "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+      "636e5e57-dbc5-452b-aad6-60649246cecf",
+      "2668ae46-0bac-49b6-9891-3367dc1666bf"
     ],
     "brian song": [
-      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
-      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
       "ee656061-4e54-4e32-999d-59a45be44cae",
-      "d55881dd-d265-4f45-a76d-898f860bc411",
-      "73048cf3-ec0a-48cc-933b-598134e736cf",
-      "ebb516bd-68a3-43d9-bca5-19ca069abf17",
-      "de088fac-2659-4e3b-9c69-3b5b46618244",
+      "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
       "a06a4d2e-c549-4416-8332-abd6ae839bbd",
+      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
+      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
       "737a8e0d-0a63-4984-be03-757de143b5f9",
       "84e99799-5c76-46fc-b159-41213dd39591",
-      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+      "ebb516bd-68a3-43d9-bca5-19ca069abf17",
+      "73048cf3-ec0a-48cc-933b-598134e736cf",
+      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5",
       "bb239480-d6cf-4503-b96b-797cd73c5a8e",
-      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5"
+      "de088fac-2659-4e3b-9c69-3b5b46618244"
     ]
   },
   "swaps": {
@@ -1768,25 +1789,84 @@ const DATA = {
         "recvStart": "10:00 AM",
         "recvEnd": "8:00 PM",
         "delta": 0.0319,
-        "swapWith": "wendy memishian"
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0238
       },
       {
-        "giveUid": "6d067d23-9ffc-44f6-812d-0987596827d1",
-        "giveSummary": "BWH Jr.  - FF Jr 8a-4p",
-        "giveDate": "2026-06-30",
+        "giveUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-23",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "eee43676-e445-43d8-bcc7-47f3af582c43",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-24",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0341,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0162
+      },
+      {
+        "giveUid": "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-06-27",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+        "recvSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "recvDate": "2026-07-04",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0037,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0123
+      },
+      {
+        "giveUid": "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+        "giveSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "giveDate": "2026-06-28",
         "giveLoc": "BWH",
         "giveType": "Morning",
-        "giveStart": "8:00 AM",
+        "giveStart": "7:00 AM",
         "giveEnd": "4:00 PM",
-        "recvUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "recvDate": "2026-07-14",
+        "recvUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-02",
         "recvLoc": "MGH",
-        "recvType": "Swing",
-        "recvStart": "1:00 PM",
-        "recvEnd": "11:00 PM",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0222,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0136
+      },
+      {
+        "giveUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-02",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "aeb53546-a50f-405c-ae60-765d58500d6b",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-21",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
         "delta": 0.0,
-        "swapWith": "brian song"
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0085
       }
     ],
     "wendy memishian": [
@@ -1806,7 +1886,46 @@ const DATA = {
         "recvStart": "11:00 AM",
         "recvEnd": "8:00 PM",
         "delta": 0.0476,
-        "swapWith": "brian song"
+        "swapWith": "brian song",
+        "partnerDelta": 0.0513
+      },
+      {
+        "giveUid": "ebb516bd-68a3-43d9-bca5-19ca069abf17",
+        "giveSummary": "BWH Jr.  - Exe Jr 8a-4p",
+        "giveDate": "2026-06-25",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "8:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "2668ae46-0bac-49b6-9891-3367dc1666bf",
+        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "recvDate": "2026-06-30",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "1:00 PM",
+        "recvEnd": "11:00 PM",
+        "delta": 0.0385,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0513
+      },
+      {
+        "giveUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-02",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "recvDate": "2026-07-14",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "1:00 PM",
+        "recvEnd": "11:00 PM",
+        "delta": 0.0238,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0411
       },
       {
         "giveUid": "164cf5c8-c51b-49b1-bc95-4a291e57a163",
@@ -1824,25 +1943,84 @@ const DATA = {
         "recvStart": "11:00 AM",
         "recvEnd": "8:00 PM",
         "delta": 0.0238,
-        "swapWith": "roshan lodha"
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0319
       },
       {
-        "giveUid": "ebb516bd-68a3-43d9-bca5-19ca069abf17",
-        "giveSummary": "BWH Jr.  - Exe Jr 8a-4p",
-        "giveDate": "2026-06-25",
-        "giveLoc": "BWH",
+        "giveUid": "eee43676-e445-43d8-bcc7-47f3af582c43",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-24",
+        "giveLoc": "MGH",
         "giveType": "Morning",
-        "giveStart": "8:00 AM",
-        "giveEnd": "4:00 PM",
-        "recvUid": "2668ae46-0bac-49b6-9891-3367dc1666bf",
-        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "recvDate": "2026-06-30",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-23",
         "recvLoc": "MGH",
         "recvType": "Swing",
-        "recvStart": "1:00 PM",
-        "recvEnd": "11:00 PM",
-        "delta": 0.0476,
-        "swapWith": "brian song"
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0162,
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0341
+      },
+      {
+        "giveUid": "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+        "giveSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "giveDate": "2026-07-04",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "6fcae363-b5fb-4fdd-8c2d-eff45bb69198",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-06-27",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0123,
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0037
+      },
+      {
+        "giveUid": "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
+        "giveSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "giveDate": "2026-07-09",
+        "giveLoc": "BWH",
+        "giveType": "Swing",
+        "giveStart": "12:00 PM",
+        "giveEnd": "12:00 AM",
+        "recvUid": "d55881dd-d265-4f45-a76d-898f860bc411",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-04",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0369,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0102
+      },
+      {
+        "giveUid": "aeb53546-a50f-405c-ae60-765d58500d6b",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-21",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-02",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0085,
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0
       }
     ],
     "brian song": [
@@ -1862,7 +2040,8 @@ const DATA = {
         "recvStart": "7:00 AM",
         "recvEnd": "4:00 PM",
         "delta": 0.0513,
-        "swapWith": "wendy memishian"
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0476
       },
       {
         "giveUid": "2668ae46-0bac-49b6-9891-3367dc1666bf",
@@ -1880,7 +2059,8 @@ const DATA = {
         "recvStart": "8:00 AM",
         "recvEnd": "4:00 PM",
         "delta": 0.0513,
-        "swapWith": "wendy memishian"
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0385
       },
       {
         "giveUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
@@ -1890,15 +2070,54 @@ const DATA = {
         "giveType": "Swing",
         "giveStart": "1:00 PM",
         "giveEnd": "11:00 PM",
-        "recvUid": "6d067d23-9ffc-44f6-812d-0987596827d1",
-        "recvSummary": "BWH Jr.  - FF Jr 8a-4p",
-        "recvDate": "2026-06-30",
+        "recvUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-02",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0411,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0238
+      },
+      {
+        "giveUid": "d55881dd-d265-4f45-a76d-898f860bc411",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-04",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
+        "recvSummary": "BWH Jr.  - Exe Jr 12p-12a",
+        "recvDate": "2026-07-09",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "12:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0102,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0369
+      },
+      {
+        "giveUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-02",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "6952a8f7-56f9-44a7-a23b-9e1192dfb08b",
+        "recvSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "recvDate": "2026-06-28",
         "recvLoc": "BWH",
         "recvType": "Morning",
-        "recvStart": "8:00 AM",
+        "recvStart": "7:00 AM",
         "recvEnd": "4:00 PM",
-        "delta": 0.0513,
-        "swapWith": "roshan lodha"
+        "delta": 0.0136,
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0222
       }
     ]
   }
@@ -1913,30 +2132,6 @@ let cur = null;
 let weekOffset = 0; // weeks from the "anchor" week (first week with any shift)
 let anchorMonday = null; // Date object for Monday of anchor week
 let viewMode = 'optimal'; // 'optimal' or 'original'
-
-// Theme toggle logic
-const themeToggle = document.getElementById('theme-toggle');
-const themeIcon = themeToggle.querySelector('.material-symbols-outlined');
-
-function toggleTheme() {
-  const isLight = document.documentElement.classList.toggle('light-theme');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  updateThemeIcon(isLight);
-}
-
-function updateThemeIcon(isLight) {
-  themeIcon.textContent = isLight ? 'dark_mode' : 'light_mode';
-  themeToggle.title = isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode';
-}
-
-const savedTheme = localStorage.getItem('theme');
-const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-let startLight = savedTheme === 'light' || (!savedTheme && prefersLight);
-if (startLight) {
-  document.documentElement.classList.add('light-theme');
-}
-updateThemeIcon(startLight);
-themeToggle.addEventListener('click', toggleTheme);
 
 function isoToDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -1961,7 +2156,10 @@ function fmtShort(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return MONTHS[m-1].slice(0,3) + ' ' + d;
 }
-function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function cap(s) {
+  if (!s) return s;
+  return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 
 function init() {
   const names = Object.keys(DATA.residents).sort();
@@ -2012,40 +2210,40 @@ function render() {
   renderSwaps();
 }
 
-/* ── Happiness Orb ── */
+/* ── Happiness Card ── */
 function renderHappiness() {
   const swaps = DATA.swaps[cur] || [];
   const total = swaps.reduce((s, sw) => s + sw.delta, 0);
   const pct = (total * 100).toFixed(1);
   const el = document.getElementById('happiness-value');
-  const orb = document.getElementById('happiness-orb');
-  const pulse = orb.querySelector('.orb-pulse');
+  const card = document.getElementById('happiness-card');
+  const pulse = card.querySelector('.orb-pulse');
   el.textContent = (total >= 0 ? '+' : '') + pct + '%';
   
   if (total > 0.001) {
-    orb.style.background = 'var(--md-sys-color-tertiary-container)';
-    orb.style.color = 'var(--md-sys-color-on-tertiary-container)';
-    orb.style.borderColor = 'transparent';
+    card.style.background = 'var(--md-sys-color-tertiary-container)';
+    card.style.color = 'var(--md-sys-color-on-tertiary-container)';
+    card.style.borderColor = 'transparent';
     el.style.color = 'var(--md-sys-color-on-tertiary-container)';
     pulse.style.background = 'var(--md-sys-color-tertiary)';
     pulse.style.color = 'var(--md-sys-color-on-tertiary)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">celebration</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">celebration</span>';
   } else if (total < -0.001) {
-    orb.style.background = 'var(--md-sys-color-error-container)';
-    orb.style.color = 'var(--md-sys-color-on-error-container)';
-    orb.style.borderColor = 'transparent';
+    card.style.background = 'var(--md-sys-color-error-container)';
+    card.style.color = 'var(--md-sys-color-on-error-container)';
+    card.style.borderColor = 'transparent';
     el.style.color = 'var(--md-sys-color-on-error-container)';
     pulse.style.background = 'var(--md-sys-color-error)';
     pulse.style.color = 'var(--md-sys-color-on-error)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">trending_down</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">trending_down</span>';
   } else {
-    orb.style.background = 'var(--md-sys-color-surface-container-high)';
-    orb.style.color = 'var(--md-sys-color-on-surface)';
-    orb.style.borderColor = 'var(--md-sys-color-outline-variant)';
+    card.style.background = 'var(--md-sys-color-surface-container-low)';
+    card.style.color = 'var(--md-sys-color-on-surface)';
+    card.style.borderColor = 'var(--md-sys-color-outline-variant)';
     el.style.color = 'var(--md-sys-color-on-surface)';
     pulse.style.background = 'var(--md-sys-color-outline)';
     pulse.style.color = 'var(--md-sys-color-surface)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">sentiment_neutral</span>';
+    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">sentiment_neutral</span>';
   }
 }
 
@@ -2289,11 +2487,15 @@ function renderWeek() {
 /* ── Swap Cards ── */
 function renderSwaps() {
   const list = DATA.swaps[cur] || [];
-  const grid = document.getElementById('swaps-grid');
   document.getElementById('swap-count').textContent = list.length;
 
+  const rowsContainer = document.querySelector('.swaps-rows-container');
+  const emptyState = document.getElementById('swaps-empty-state');
+
   if (!list.length) {
-    grid.innerHTML = '<div class="no-swaps">'
+    rowsContainer.style.display = 'none';
+    emptyState.style.display = 'block';
+    emptyState.innerHTML = '<div class="no-swaps">'
       + '<span class="material-symbols-outlined no-swaps-icon">celebration</span>'
       + '<div class="no-swaps-msg">Already optimized!</div>'
       + '<div class="no-swaps-sub">No swaps proposed for ' + cap(cur) + ' — schedule is already great.</div>'
@@ -2301,32 +2503,65 @@ function renderSwaps() {
     return;
   }
 
-  grid.innerHTML = list.map((sw, i) => {
-    const pct = (sw.delta * 100).toFixed(1);
-    const isPos = sw.delta > 0.0001;
-    const isNeg = sw.delta < -0.0001;
-    const deltaLabel = isPos ? '+' + pct + '% Happiness' : isNeg ? pct + '% Happiness' : 'Neutral';
-    const dpClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
-    const cardClass = isPos ? 'pos-card' : isNeg ? 'neg-card' : 'neu-card';
-    const hdrClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
-    const partnerName = sw.swapWith ? cap(sw.swapWith) : 'Partner';
+  rowsContainer.style.display = 'flex';
+  emptyState.style.display = 'none';
 
-    return '<div class="swap-card ' + cardClass + '">'
-      + '<div class="swap-card-hdr ' + hdrClass + '">'
-      + '<div class="card-hdr-left" style="display:flex; flex-direction:column; gap:4px;">'
-      + '<div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--md-sys-color-on-surface-variant)">Swap ' + (i+1) + '</div>'
-      + '<div class="swap-with-badge"><span class="material-symbols-outlined" style="font-size:14px">swap_horiz</span>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
-      + '</div>'
-      + '<span class="delta-pill ' + dpClass + '">' 
-      + (isPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
-      + deltaLabel + '</span>'
-      + '</div>'
-      + '<div class="card-body">'
-      + blk(sw, 'give')
-      + '<div class="arrow-col"><div class="arrow-btn"><span class="material-symbols-outlined">arrow_forward</span></div></div>'
-      + blk(sw, 'recv')
-      + '</div></div>';
-  }).join('');
+  // Partition the list: swaps for you vs swaps with you
+  const swapsForYou = list.filter(sw => sw.delta >= sw.partnerDelta);
+  const swapsWithYou = list.filter(sw => sw.delta < sw.partnerDelta);
+
+  document.getElementById('swaps-for-you-count').textContent = swapsForYou.length;
+  document.getElementById('swaps-with-you-count').textContent = swapsWithYou.length;
+
+  const renderGrid = (gridEl, subList) => {
+    if (!subList.length) {
+      gridEl.innerHTML = '<div style="color: var(--md-sys-color-on-surface-variant); font-style: italic; padding: 16px; background: var(--md-sys-color-surface-container-low); border-radius: var(--md-sys-shape-corner-medium); border: 1px dashed var(--md-sys-color-outline-variant); grid-column: 1 / -1; text-align: center;">No swaps in this category.</div>';
+      return;
+    }
+
+    gridEl.innerHTML = subList.map((sw, i) => {
+      const pct = (sw.delta * 100).toFixed(1);
+      const partnerPct = (sw.partnerDelta * 100).toFixed(1);
+      
+      const isPos = sw.delta > 0.0001;
+      const isNeg = sw.delta < -0.0001;
+      const deltaLabel = isPos ? '+' + pct + '% (You)' : isNeg ? pct + '% (You)' : 'Neutral (You)';
+      const dpClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
+
+      const isPartnerPos = sw.partnerDelta > 0.0001;
+      const isPartnerNeg = sw.partnerDelta < -0.0001;
+      const partnerDeltaLabel = isPartnerPos ? '+' + partnerPct + '% (' + cap(sw.swapWith) + ')' : isPartnerNeg ? partnerPct + '% (' + cap(sw.swapWith) + ')' : 'Neutral (' + cap(sw.swapWith) + ')';
+      const partnerDpClass = isPartnerPos ? 'pos' : isPartnerNeg ? 'neg' : 'neu';
+
+      const cardClass = isPos ? 'pos-card' : isNeg ? 'neg-card' : 'neu-card';
+      const hdrClass = isPos ? 'pos' : isNeg ? 'neg' : 'neu';
+      const partnerName = sw.swapWith ? cap(sw.swapWith) : 'Partner';
+
+      return '<div class="swap-card ' + cardClass + '">'
+        + '<div class="swap-card-hdr ' + hdrClass + '">'
+        + '<div class="card-hdr-left" style="display:flex; flex-direction:column; gap:4px;">'
+        + '<div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--md-sys-color-on-surface-variant)">Swap ' + (i+1) + '</div>'
+        + '<div class="swap-with-badge"><span class="material-symbols-outlined" style="font-size:14px">swap_horiz</span>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
+        + '</div>'
+        + '<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">'
+        + '<span class="delta-pill ' + dpClass + '">' 
+        + (isPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + deltaLabel + '</span>'
+        + '<span class="delta-pill ' + partnerDpClass + '">' 
+        + (isPartnerPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isPartnerNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + partnerDeltaLabel + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="card-body">'
+        + blk(sw, 'give')
+        + '<div class="arrow-col"><div class="arrow-btn"><span class="material-symbols-outlined">arrow_forward</span></div></div>'
+        + blk(sw, 'recv')
+        + '</div></div>';
+    }).join('');
+  };
+
+  renderGrid(document.getElementById('swaps-for-you-grid'), swapsForYou);
+  renderGrid(document.getElementById('swaps-with-you-grid'), swapsWithYou);
 }
 
 function blk(sw, side) {

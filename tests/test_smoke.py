@@ -59,6 +59,11 @@ def test_resident_metrics_payload():
         assert "startHour" in s
         assert "endHour" in s
 
+    # Check partnerDelta is in swaps
+    for name, swaps in payload["swaps"].items():
+        for sw in swaps:
+            assert "partnerDelta" in sw
+
 def test_midnight_shift_end_hour():
     from shiftmaxxer.render import build_payload
     sched = build_schedule(Path("data/ics"), Path("data/preferences.csv"))
