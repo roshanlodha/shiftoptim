@@ -124,10 +124,12 @@ The mechanism iterates:
 1. **Build** the trade graph $G$ from the current schedule.
 2. **Enumerate** all simple cycles of length $\le n_{\max}$. For $n_{\max}=2$ this is a search for mutual edges; for $n_{\max}=3$ a depth-limited cycle search suffices.
 3. **Filter** to cycles that are strictly Pareto-improving: recompute each participant's post-trade utility and keep the cycle only if no participant is worse off and at least one is strictly better. Identify the primary beneficiary (the resident with the maximum utility delta, breaking ties alphabetically). Reject the cycle if this primary beneficiary would exceed $K_{\text{pp}}$ swaps (unless $K_{\text{pp}}=-1$). Score each surviving cycle by its total utility gain $\Delta U_{\text{total}}=\sum_{x}\Delta U_x$.
-4. **Apply greedily**: execute the highest-scoring cycle, increment the swap counter only for the primary beneficiary, update the schedule, and return to step 1.
+4. **Apply greedily**: execute the highest-scoring cycle, increment the swap counter only for the primary beneficiary, **lock every shift the cycle touched** (both given and received), update the schedule, and return to step 1.
 5. **Terminate** when no primary-beneficiary-budget-fitting, Pareto-improving cycle remains.
 
 Rebuilding the graph after each executed trade is deliberate: it keeps every decision based on the true current state and sidesteps the bookkeeping of overlapping candidate cycles. For a program of this size the computational cost is negligible.
+
+**Shift locking and trade independence.** A naive rebuild creates a hazard: a shift a resident *receives* in one trade becomes a shift they *own* in the next rebuild, so it can be traded away again. This produces chained, higher-order trades, e.g. a resident gives away a July 4 morning shift, receives a swing shift, then immediately trades that swing away for another July 4 morning. To forbid this, every shift that participates in an executed cycle (given or received) is added to a **locked** set and excluded from all subsequent graph rebuilds. Consequently each shift changes hands at most once, and no recommended trade can depend on a shift produced by a prior trade.
 
 The output is an ordered list of concrete, explainable recommendations, sorted by the maximum happiness gained by the resident who benefits the most from the swap. For example, a recommendation might state that Resident A gives their July 9 MGH swing shift and receives Resident B's July 11 MGH morning shift to make both happier, which a chief resident can review and approve individually.
 
@@ -153,6 +155,10 @@ We state the properties the mechanism provides and argue each informally.
 
 *Argument.* In a simple cycle of length 2 or 3, every pair of nodes is adjacent, and adjacency forbids shared ownership (edges require $i\ne j$). Hence all participants in such a cycle are distinct, and each gives up exactly one shift and receives exactly one. The single-swap set $A_i'$ used to define each edge is therefore precisely that resident's true post-trade schedule, so the edge-level $V$ and $U$ tests are exact. (For cycles of length $\ge 4$ a resident may appear twice, giving up or receiving two shifts; the single-swap edge test no longer captures their combined post-trade state. This is the formal reason the mechanism caps $n_{\max}$ at 3 unless full per-cycle recomputation is added.) $\square$
 
+**Proposition 5 (No shift chaining).** *No shift participates in more than one executed trade; therefore no recommended trade depends on a shift produced by a prior trade.*
+
+*Argument.* When a cycle is applied, every shift it touches is added to the locked set, and locked shifts are excluded from all subsequent graph rebuilds (they appear on neither side of any edge). Thus once a shift has been given or received, it can never reappear in a later cycle. Each shift changes hands at most once, so the set of shifts moved by any two executed trades is disjoint and no later trade can give away a shift an earlier trade delivered. $\square$
+
 ---
 
 ## 7. Discussion and Limitations
@@ -164,6 +170,10 @@ We state the properties the mechanism provides and argue each informally.
 **Strict Pareto can be conservative.** Because no resident may lose utility, some globally beneficial reshuffles, where one person sacrifices slightly so several others gain a lot, are excluded by design. This is the cost of guaranteeing voluntary, no-regret participation.
 
 **Cycle length.** Restricting to 2- and 3-cycles keeps the search fast and the recommendations human-comprehensible. Longer rotations are mechanically possible but are harder to coordinate in practice and require the stronger per-cycle recomputation noted in Proposition 4.
+
+**Partial independence; a path to fully order-free recommendations.** Shift locking (Proposition 5) guarantees no *shift* is reused across trades, which eliminates the visible churn of a resident re-trading a shift they just acquired. It does not, however, make the recommended set fully *order-independent*. Because the graph is still rebuilt against the evolving schedule, a resident may appear in two distinct trades on two distinct shifts, and the feasibility of the second (its rest and streak checks) is evaluated against the schedule *after* the first has been applied. A chief who approves the second trade but rejects the first could therefore, in rare cases, act on a duty-hour check that no longer holds. For most deployments this is acceptable: each recommendation is still individually legal and Pareto-improving at the moment it is proposed, and the dominant churn pathway is closed.
+
+A stronger, fully independent variant is possible and is left as future work. We call it **single-snapshot disjoint selection**. Instead of rebuilding after each trade, build the trade graph *once* against the original schedule, enumerate *all* Pareto-improving cycles, and then greedily select a subset of cycles that are mutually **resident-disjoint** (no resident appears in two selected cycles), taking the highest-$\Delta U_{\text{total}}$ cycle first. Because every selected trade is evaluated entirely against the original, untouched schedule and shares no resident with any other selected trade, the resulting recommendations are completely independent: a chief may approve any subset, in any order, and every approved trade remains exactly as legal and as beneficial as when it was proposed. The cost is reduced flexibility: resident-disjointness caps each resident at a single trade per run, which makes a per-person swap budget greater than one moot, and the search must rank and pack disjoint cycles rather than simply rebuild. This is the recommended upgrade path if order-free, subset-approvable recommendations become a requirement. A middle ground, **shift-disjoint** selection from a single snapshot, would permit a resident multiple trades while still avoiding shift reuse, but reintroduces the same evolving-feasibility caveat described above and so offers no formal independence advantage over the current locking scheme.
 
 ---
 

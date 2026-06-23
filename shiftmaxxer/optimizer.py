@@ -70,10 +70,11 @@ def optimize(sched: Schedule, max_swaps_per_person: int, n_max: int) -> list[Cyc
     """
     from collections import Counter
     swap_count: Counter = Counter()   # resident name -> swaps used
+    locked: set[str] = set()          # shift uids already traded once
     log: list[CycleResult] = []
 
     while True:
-        G = build_trade_graph(sched)
+        G = build_trade_graph(sched, locked)
         candidates = []
         for cyc in find_cycles(G, n_max):
             res = evaluate_cycle(cyc, sched)
@@ -100,6 +101,10 @@ def optimize(sched: Schedule, max_swaps_per_person: int, n_max: int) -> list[Cyc
         pool.sort(key=lambda r: r.total_delta, reverse=True)
         best = pool[0]
         apply_cycle(best, sched)
+        # Lock every shift this cycle touched (given and received) so it can
+        # never be traded again -> recommendations stay independent / unchained.
+        for _, u, v in best.moves:
+            locked.add(u); locked.add(v)
         beneficiary = max(sorted(best.deltas.keys()), key=lambda n: best.deltas[n])
         swap_count[beneficiary] += 1
         log.append(best)

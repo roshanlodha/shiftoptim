@@ -5,7 +5,16 @@ from .models import Schedule
 from . import config
 
 
-def build_trade_graph(sched: Schedule) -> nx.DiGraph:
+def build_trade_graph(sched: Schedule,
+                      locked: set[str] | None = None) -> nx.DiGraph:
+    """Build the directed trade graph.
+
+    ``locked`` is the set of shift uids that have already participated in an
+    applied trade. They are excluded from the graph entirely so that no shift
+    can be traded more than once. This guarantees recommendations never chain
+    (a shift received in one trade can never be given away in another).
+    """
+    locked = locked or set()
     G = nx.DiGraph()
     G.add_nodes_from(sched.shifts.keys())
 
@@ -16,11 +25,16 @@ def build_trade_graph(sched: Schedule) -> nx.DiGraph:
 
     shifts = sched.shifts
     for u, su in shifts.items():
+        # Already traded once -> pinned, cannot chain into another trade.
+        if u in locked:
+            continue
         # If jeopardy swaps are disabled, pin jeopardy shifts entirely.
         if su.is_jeopardy and not config.ALLOW_JEOPARDY_SWAPS:
             continue
         i = su.owner; ri = sched.residents[i]
         for v, sv in shifts.items():
+            if v in locked:                        # partner already traded once
+                continue
             if sv.owner == i:                      # can't trade with yourself
                 continue
             # Jeopardy ↔ regular cross-trading is never allowed.
