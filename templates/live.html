@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShiftMaxxer &mdash; Live Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+  --calendar-grid-line: rgba(255,255,255,0.05);
+  --md-sys-color-primary: #A5B4FC;
+  --md-sys-color-on-primary: #1E1B4B;
+  --md-sys-color-primary-container: #312E81;
+  --md-sys-color-on-primary-container: #E0E7FF;
+  --md-sys-color-secondary: #94A3B8;
+  --md-sys-color-on-secondary: #0F172A;
+  --md-sys-color-secondary-container: #1E293B;
+  --md-sys-color-on-secondary-container: #F1F5F9;
+  --md-sys-color-tertiary: #2DD4BF;
+  --md-sys-color-on-tertiary: #00332C;
+  --md-sys-color-tertiary-container: #115E59;
+  --md-sys-color-on-tertiary-container: #CCFBF1;
+  --md-sys-color-error: #FCA5A5;
+  --md-sys-color-on-error: #7F1D1D;
+  --md-sys-color-error-container: #991B1B;
+  --md-sys-color-on-error-container: #FEE2E2;
+  --md-sys-color-surface: #090D16;
+  --md-sys-color-on-surface: #F8FAFC;
+  --md-sys-color-on-surface-variant: #94A3B8;
+  --md-sys-color-surface-container-lowest: #05070B;
+  --md-sys-color-surface-container-low: #0E1424;
+  --md-sys-color-surface-container: #151E33;
+  --md-sys-color-surface-container-high: #212C47;
+  --md-sys-color-surface-container-highest: #2D3B5C;
+  --md-sys-color-outline: #475569;
+  --md-sys-color-outline-variant: #1E293B;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+  --md-sys-elevation-shadow-1: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --md-sys-elevation-shadow-2: 0 3px 6px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+  --md-sys-elevation-shadow-3: 0 10px 20px rgba(0,0,0,0.5), 0 6px 6px rgba(0,0,0,0.4);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2,0,0,1);
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --calendar-grid-line: rgba(0,0,0,0.05);
+    --md-sys-color-primary: #4F46E5;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #E0E7FF;
+    --md-sys-color-on-primary-container: #1E1B4B;
+    --md-sys-color-secondary: #475569;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #F1F5F9;
+    --md-sys-color-on-secondary-container: #0F172A;
+    --md-sys-color-tertiary: #0D9488;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #CCFBF1;
+    --md-sys-color-on-tertiary-container: #115E59;
+    --md-sys-color-error: #EF4444;
+    --md-sys-color-on-error: #FFFFFF;
+    --md-sys-color-error-container: #FEE2E2;
+    --md-sys-color-on-error-container: #991B1B;
+    --md-sys-color-surface: #F8FAFC;
+    --md-sys-color-on-surface: #0F172A;
+    --md-sys-color-on-surface-variant: #475569;
+    --md-sys-color-surface-container-lowest: #FFFFFF;
+    --md-sys-color-surface-container-low: #F1F5F9;
+    --md-sys-color-surface-container: #E2E8F0;
+    --md-sys-color-surface-container-high: #CBD5E1;
+    --md-sys-color-surface-container-highest: #94A3B8;
+    --md-sys-color-outline: #94A3B8;
+    --md-sys-color-outline-variant: #E2E8F0;
+    --md-sys-elevation-shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+    --md-sys-elevation-shadow-2: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08);
+    --md-sys-elevation-shadow-3: 0 4px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15);
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Roboto Flex', system-ui, -apple-system, sans-serif;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.5;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* Header */
+.hdr {
+  background: var(--md-sys-color-surface-container-low);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  height: 64px;
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--md-sys-color-on-primary);
+  flex-shrink: 0;
+}
+.logo { font-size: 1.1rem; font-weight: 700; }
+.logo-sub { font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant); }
+.live-badge {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 5px;
+}
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--md-sys-color-error);
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; align-items: center; gap: 16px;
+  font-size: 0.8rem;
+}
+.stat-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 4px 12px;
+  font-weight: 700;
+}
+.stat-chip.accept { color: var(--md-sys-color-tertiary); }
+.stat-chip.reject { color: var(--md-sys-color-error); }
+
+/* Page layout */
+.page { display: none; }
+.page.active { display: flex; flex-direction: column; align-items: center; padding: 48px 16px 80px; gap: 24px; }
+
+/* Center card */
+.center-card {
+  width: 100%; max-width: 520px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  padding: 32px;
+  box-shadow: var(--md-sys-elevation-shadow-2);
+}
+.card-title {
+  font-size: 1.25rem; font-weight: 800;
+  margin-bottom: 4px;
+}
+.card-sub {
+  font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 28px;
+}
+
+/* Form elements */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.form-label {
+  font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex; align-items: center; gap: 6px;
+}
+.form-hint { font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant); font-style: italic; }
+.md3-input {
+  height: 48px; padding: 0 16px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.95rem; font-family: inherit; font-weight: 500;
+  outline: none; width: 100%;
+  transition: border-color 0.2s;
+}
+.md3-input:focus { border-color: var(--md-sys-color-primary); border-width: 2px; }
+.toggle-row {
+  display: flex; gap: 8px;
+}
+.toggle-btn {
+  flex: 1; height: 44px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.toggle-btn.selected {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: transparent;
+}
+.checkbox-row {
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; padding: 12px 0;
+}
+.md3-checkbox {
+  width: 20px; height: 20px;
+  border: 2px solid var(--md-sys-color-outline);
+  border-radius: 4px;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s;
+}
+.md3-checkbox.checked {
+  background: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.checkbox-label { font-size: 0.9rem; font-weight: 500; user-select: none; }
+.checkbox-sub { font-size: 0.75rem; color: var(--md-sys-color-on-surface-variant); }
+
+/* Primary button */
+.btn-primary {
+  width: 100%; height: 52px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none; border-radius: var(--md-sys-shape-corner-full);
+  font-size: 0.95rem; font-weight: 800;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.15s, transform 0.15s;
+  margin-top: 8px;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.98); }
+
+/* Loading screen */
+.load-header {
+  text-align: center; margin-bottom: 8px;
+}
+.load-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+.load-sub { font-size: 0.82rem; color: var(--md-sys-color-on-surface-variant); }
+.overall-bar-wrap {
+  width: 100%; max-width: 520px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-full);
+  height: 6px; overflow: hidden; margin-bottom: 4px;
+}
+.overall-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+  border-radius: var(--md-sys-shape-corner-full);
+  transition: width 0.4s var(--md-sys-motion-easing-emphasized);
+  width: 0%;
+}
+.overall-bar-label {
+  font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600; text-align: center; margin-bottom: 24px;
+}
+.resident-list { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
+.resident-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 12px 16px;
+  transition: border-color 0.3s;
+}
+.resident-row.done { border-color: var(--md-sys-color-tertiary); }
+.resident-row.error { border-color: var(--md-sys-color-error); }
+.resident-row.downloading { border-color: var(--md-sys-color-primary); }
+.resident-icon {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--md-sys-color-surface-container-high);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem; font-weight: 800;
+}
+.resident-icon.done { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+.resident-icon.error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+.resident-icon.downloading { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.resident-name { font-size: 0.88rem; font-weight: 700; flex: 1; }
+.resident-status {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex; align-items: center; gap: 4px;
+}
+.resident-status.done { color: var(--md-sys-color-tertiary); }
+.resident-status.error { color: var(--md-sys-color-error); }
+.resident-status.downloading { color: var(--md-sys-color-primary); }
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.build-row {
+  width: 100%; max-width: 520px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  font-size: 0.88rem; font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.build-row.active { color: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+
+/* Review screen */
+.review-wrap { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 20px; }
+.swap-number-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.swap-number {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--md-sys-color-on-surface-variant);
+}
+.total-delta-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 4px 12px;
+  font-size: 0.75rem; font-weight: 800;
+}
+.moves-stack { display: flex; flex-direction: column; gap: 16px; }
+.move-card {
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  overflow: hidden;
+  box-shadow: var(--md-sys-elevation-shadow-1);
+}
+.move-card-hdr {
+  padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+}
+.giver-name {
+  font-size: 0.82rem; font-weight: 800;
+  display: flex; align-items: center; gap: 6px;
+}
+.move-delta {
+  font-size: 0.72rem; font-weight: 700;
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 3px 9px;
+}
+.move-delta.pos { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+.move-delta.zero { background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+.move-body {
+  display: grid; grid-template-columns: 1fr 40px 1fr;
+  align-items: center; gap: 8px; padding: 16px;
+}
+.shift-blk {
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.shift-blk.give { border-left: 4px solid var(--md-sys-color-error); }
+.shift-blk.recv { border-left: 4px solid var(--md-sys-color-tertiary); }
+.blk-label {
+  font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.07em; display: flex; align-items: center; gap: 4px;
+}
+.shift-blk.give .blk-label { color: var(--md-sys-color-error); }
+.shift-blk.recv .blk-label { color: var(--md-sys-color-tertiary); }
+.blk-summary { font-size: 0.85rem; font-weight: 700; line-height: 1.3; }
+.blk-meta {
+  font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.loc-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 2px 7px; font-size: 0.62rem; font-weight: 700;
+  margin-top: 4px; width: fit-content;
+}
+.lt-mgh { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.lt-bwh { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.lt-none { background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+.arrow-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--md-sys-color-primary); margin: 0 auto;
+}
+
+/* Decision buttons */
+.decision-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.btn-reject, .btn-accept {
+  height: 56px;
+  border: none; border-radius: var(--md-sys-shape-corner-full);
+  font-size: 1rem; font-weight: 800; font-family: inherit;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.12s, opacity 0.12s;
+}
+.btn-reject:active, .btn-accept:active { transform: scale(0.97); }
+.btn-reject {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+.btn-reject:hover { opacity: 0.85; }
+.btn-accept {
+  background: var(--md-sys-color-tertiary);
+  color: var(--md-sys-color-on-tertiary);
+}
+.btn-accept:hover { opacity: 0.88; }
+.btn-reject:disabled, .btn-accept:disabled { opacity: 0.4; cursor: not-allowed; }
+.kbd-hint {
+  text-align: center; font-size: 0.72rem; color: var(--md-sys-color-on-surface-variant);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.kbd { 
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 0.7rem; font-weight: 700; font-family: monospace;
+}
+
+/* Done screen */
+.done-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.done-title { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 6px; }
+.done-sub { font-size: 0.9rem; color: var(--md-sys-color-on-surface-variant); text-align: center; margin-bottom: 24px; }
+.done-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;
+}
+.done-stat {
+  padding: 16px; border-radius: var(--md-sys-shape-corner-medium);
+  text-align: center;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.done-stat.accepted { border-color: var(--md-sys-color-tertiary); background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+.done-stat.rejected { border-color: var(--md-sys-color-error); background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+.done-stat-num { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.done-stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.btn-report {
+  width: 100%; height: 52px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none; border-radius: var(--md-sys-shape-corner-full);
+  font-size: 0.95rem; font-weight: 800; font-family: inherit;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.15s;
+}
+.btn-report:hover { opacity: 0.88; }
+.btn-restart {
+  width: 100%; height: 44px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-full);
+  font-size: 0.85rem; font-weight: 700; font-family: inherit;
+  cursor: pointer; margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.15s;
+}
+.btn-restart:hover { border-color: var(--md-sys-color-primary); color: var(--md-sys-color-primary); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: 10px 20px;
+  font-size: 0.85rem; font-weight: 600;
+  box-shadow: var(--md-sys-elevation-shadow-3);
+  transition: transform 0.3s var(--md-sys-motion-easing-emphasized), opacity 0.3s;
+  opacity: 0; z-index: 200;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+svg.lucide { stroke-width: 2px; stroke: currentColor; fill: none; display: inline-flex !important; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="logo-mark">
+      <i data-lucide="calendar-range" style="width:20px;height:20px;"></i>
+    </div>
+    <div>
+      <div class="logo">ShiftMaxxer</div>
+      <div class="logo-sub">Live Session</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="stats-bar" class="stats-bar" style="display:none;">
+      <div class="stat-chip accept">
+        <i data-lucide="check-circle-2" style="width:14px;height:14px;"></i>
+        <span id="stat-accepted">0</span> accepted
+      </div>
+      <div class="stat-chip reject">
+        <i data-lucide="x-circle" style="width:14px;height:14px;"></i>
+        <span id="stat-rejected">0</span> rejected
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live
+    </div>
+  </div>
+</header>
+
+<!-- CONFIG SCREEN -->
+<div id="page-config" class="page active">
+  <div class="center-card">
+    <div class="card-title">Configure Session</div>
+    <div class="card-sub">Set up your Live swap review session. Each proposed swap will pause for your approval before being applied.</div>
+
+    <div class="form-group">
+      <label class="form-label">
+        <i data-lucide="users" style="width:14px;height:14px;"></i>
+        Max Swaps per Person
+      </label>
+      <input id="cfg-max-swaps" class="md3-input" type="number" value="-1" min="-1">
+      <span class="form-hint">-1 = unlimited. Caps how many trades any one resident is the primary beneficiary of.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        <i data-lucide="git-branch" style="width:14px;height:14px;"></i>
+        Max Cycle Length
+      </label>
+      <div class="toggle-row">
+        <button class="toggle-btn selected" id="cycle-2" onclick="setCycle(2)">2-way (1:1 swaps)</button>
+        <button class="toggle-btn" id="cycle-3" onclick="setCycle(3)">3-way (rotations)</button>
+      </div>
+    </div>
+
+    <div class="checkbox-row" id="jeopardy-toggle" onclick="toggleJeopardy()">
+      <div class="md3-checkbox" id="jeopardy-box">
+        <i data-lucide="check" style="width:13px;height:13px;display:none;" id="jeopardy-check"></i>
+      </div>
+      <div>
+        <div class="checkbox-label">Allow jeopardy/backup shift swaps</div>
+        <div class="checkbox-sub">When enabled, backup shifts participate in trading (jeopardy-only)</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startSession()">
+      <i data-lucide="play-circle" style="width:20px;height:20px;"></i>
+      Start Live Session
+    </button>
+  </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="page-loading" class="page">
+  <div class="load-header">
+    <div class="load-title">Setting up your session…</div>
+    <div class="load-sub" id="load-sub-text">Downloading calendar files</div>
+  </div>
+  <div class="overall-bar-wrap">
+    <div class="overall-bar-fill" id="overall-bar"></div>
+  </div>
+  <div class="overall-bar-label" id="overall-bar-label">0 of 0 ready</div>
+  <div class="resident-list" id="resident-list"></div>
+  <div class="build-row" id="build-row">
+    <i data-lucide="cpu" style="width:18px;height:18px;flex-shrink:0;"></i>
+    <span id="build-msg">Waiting…</span>
+  </div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div id="page-review" class="page">
+  <div class="review-wrap">
+    <div class="swap-number-row">
+      <div class="swap-number" id="review-swap-num">Swap Proposal</div>
+      <div class="total-delta-pill" id="review-delta">
+        <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
+        +0.0%
+      </div>
+    </div>
+
+    <div class="moves-stack" id="moves-stack"></div>
+
+    <div class="decision-row">
+      <button class="btn-reject" id="btn-reject" onclick="decide('reject')">
+        <i data-lucide="x" style="width:20px;height:20px;"></i>
+        Reject
+      </button>
+      <button class="btn-accept" id="btn-accept" onclick="decide('accept')">
+        <i data-lucide="check" style="width:20px;height:20px;"></i>
+        Accept
+      </button>
+    </div>
+
+    <div class="kbd-hint">
+      Press <span class="kbd">Y</span> or <span class="kbd">Enter</span> to accept &nbsp;·&nbsp; <span class="kbd">N</span>, <span class="kbd">Esc</span>, or <span class="kbd">Del</span> to reject
+    </div>
+  </div>
+</div>
+
+<!-- DONE SCREEN -->
+<div id="page-done" class="page">
+  <div class="center-card" style="text-align:center;">
+    <div class="done-icon">
+      <i data-lucide="party-popper" style="width:36px;height:36px;"></i>
+    </div>
+    <div class="done-title">Session Complete</div>
+    <div class="done-sub">All available swap candidates have been reviewed.</div>
+    <div class="done-stats">
+      <div class="done-stat accepted">
+        <div class="done-stat-num" id="done-accepted">0</div>
+        <div class="done-stat-lbl">Accepted</div>
+      </div>
+      <div class="done-stat rejected">
+        <div class="done-stat-num" id="done-rejected">0</div>
+        <div class="done-stat-lbl">Rejected</div>
+      </div>
+    </div>
+    <button class="btn-report" id="btn-view-report">
+      <i data-lucide="bar-chart-2" style="width:20px;height:20px;"></i>
+      View Full Report
+    </button>
+    <button class="btn-restart" onclick="restart()">
+      <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+      New Session
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let sessionId = null;
+let cycleLen = 2;
+let jeopardyEnabled = false;
+let statsAccepted = 0;
+let statsRejected = 0;
+let deciding = false;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  lucide.createIcons();
+}
+
+function setCycle(n) {
+  cycleLen = n;
+  document.getElementById('cycle-2').classList.toggle('selected', n === 2);
+  document.getElementById('cycle-3').classList.toggle('selected', n === 3);
+}
+
+function toggleJeopardy() {
+  jeopardyEnabled = !jeopardyEnabled;
+  const box = document.getElementById('jeopardy-box');
+  const chk = document.getElementById('jeopardy-check');
+  box.classList.toggle('checked', jeopardyEnabled);
+  chk.style.display = jeopardyEnabled ? '' : 'none';
+}
+
+function showToast(msg, icon = 'info') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<i data-lucide="${icon}" style="width:16px;height:16px;flex-shrink:0;"></i>${msg}`;
+  t.classList.add('show');
+  lucide.createIcons();
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ---------- Config → Loading ----------
+
+async function startSession() {
+  const maxSwaps = parseInt(document.getElementById('cfg-max-swaps').value) || -1;
+  showPage('loading');
+  document.getElementById('stats-bar').style.display = 'none';
+
+  const resp = await fetch('/api/init', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ maxSwaps, nMax: cycleLen, allowJeopardy: jeopardyEnabled }),
+  });
+  const data = await resp.json();
+  sessionId = data.sessionId;
+
+  listenProgress(sessionId);
+}
+
+// ---------- Progress SSE ----------
+
+const residentStates = {};
+
+function listenProgress(sid) {
+  const es = new EventSource(`/api/progress/${sid}`);
+  es.onmessage = (e) => {
+    const evt = JSON.parse(e.data);
+    handleProgress(evt);
+    if (evt.type === 'ready' || evt.type === 'error') {
+      es.close();
+      if (evt.type === 'ready') {
+        setTimeout(() => transitionToReview(), 600);
+      } else {
+        showToast('Setup failed: ' + evt.message, 'alert-triangle');
+      }
+    }
+  };
+  es.onerror = () => {
+    showToast('Connection lost — retrying…', 'wifi-off');
+  };
+}
+
+function cap(s) {
+  if (!s) return s;
+  return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+function initials(name) {
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function handleProgress(evt) {
+  if (evt.type === 'download') {
+    const { name, status, done, total } = evt;
+
+    // Ensure row exists
+    if (!residentStates[name]) {
+      residentStates[name] = 'pending';
+      const list = document.getElementById('resident-list');
+      const row = document.createElement('div');
+      row.id = `res-row-${name}`;
+      row.className = 'resident-row';
+      row.innerHTML = `
+        <div class="resident-icon" id="res-icon-${name}">${initials(name)}</div>
+        <div class="resident-name">${cap(name)}</div>
+        <div class="resident-status" id="res-status-${name}">Waiting…</div>
+      `;
+      list.appendChild(row);
+      lucide.createIcons();
+    }
+
+    const row = document.getElementById(`res-row-${name}`);
+    const icon = document.getElementById(`res-icon-${name}`);
+    const stat = document.getElementById(`res-status-${name}`);
+
+    if (status === 'downloading') {
+      row.className = 'resident-row downloading';
+      icon.className = 'resident-icon downloading';
+      stat.className = 'resident-status downloading';
+      stat.innerHTML = `<span class="spin"><i data-lucide="loader-2" style="width:13px;height:13px;"></i></span> Downloading…`;
+    } else if (status === 'done') {
+      row.className = 'resident-row done';
+      icon.className = 'resident-icon done';
+      stat.className = 'resident-status done';
+      stat.innerHTML = `<i data-lucide="check-circle-2" style="width:13px;height:13px;"></i> Ready`;
+    } else if (status === 'cached') {
+      row.className = 'resident-row done';
+      icon.className = 'resident-icon done';
+      stat.className = 'resident-status done';
+      stat.innerHTML = `<i data-lucide="hard-drive" style="width:13px;height:13px;"></i> Cached`;
+    } else if (status === 'skipped') {
+      row.className = 'resident-row done';
+      icon.className = 'resident-icon';
+      stat.className = 'resident-status';
+      stat.innerHTML = `<i data-lucide="minus-circle" style="width:13px;height:13px;"></i> No URL`;
+    } else if (status === 'error') {
+      row.className = 'resident-row error';
+      icon.className = 'resident-icon error';
+      stat.className = 'resident-status error';
+      stat.innerHTML = `<i data-lucide="alert-circle" style="width:13px;height:13px;"></i> Failed`;
+    }
+
+    // Update overall bar
+    const pct = total > 0 ? Math.round((done / total) * 80) : 0; // cap at 80% for build phase
+    document.getElementById('overall-bar').style.width = pct + '%';
+    document.getElementById('overall-bar-label').textContent = `${done} of ${total} ready`;
+    lucide.createIcons();
+  }
+
+  if (evt.type === 'build') {
+    const buildRow = document.getElementById('build-row');
+    buildRow.className = 'build-row active';
+    document.getElementById('build-msg').textContent = evt.message;
+    document.getElementById('load-sub-text').textContent = evt.message;
+    document.getElementById('overall-bar').style.width = '90%';
+    lucide.createIcons();
+  }
+
+  if (evt.type === 'ready') {
+    document.getElementById('overall-bar').style.width = '100%';
+    document.getElementById('overall-bar-label').textContent = `${evt.candidates} swap candidates found`;
+    document.getElementById('load-sub-text').textContent = `Found ${evt.candidates} swap candidates`;
+    const buildRow = document.getElementById('build-row');
+    buildRow.className = 'build-row done';
+    document.getElementById('build-msg').textContent = `Ready — ${evt.candidates} candidates`;
+    lucide.createIcons();
+  }
+}
+
+// ---------- Review ----------
+
+async function transitionToReview() {
+  showPage('review');
+  document.getElementById('stats-bar').style.display = 'flex';
+  await loadNextSwap();
+}
+
+async function loadNextSwap() {
+  const resp = await fetch(`/api/next/${sessionId}`);
+  const data = await resp.json();
+
+  if (data.type === 'done') {
+    statsAccepted = data.accepted;
+    statsRejected = data.rejected;
+    transitionToDone();
+    return;
+  }
+
+  renderSwap(data.swap);
+  setDecideEnabled(true);
+}
+
+function fmtDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return MONTHS[m-1] + ' ' + d + ', ' + y;
+}
+
+function renderSwap(swap) {
+  const pct = (swap.totalDelta * 100).toFixed(1);
+  document.getElementById('review-delta').innerHTML =
+    `<i data-lucide="${swap.totalDelta > 0 ? 'trending-up' : 'minus'}" style="width:14px;height:14px;"></i> +${pct}%`;
+  document.getElementById('review-swap-num').textContent =
+    `Swap Proposal · ${swap.moves.length === 2 ? '2-way' : '3-way'} trade`;
+
+  const stack = document.getElementById('moves-stack');
+  stack.innerHTML = swap.moves.map(m => {
+    const dPct = (m.delta * 100).toFixed(1);
+    const dClass = m.delta > 0.0001 ? 'pos' : 'zero';
+    const dLabel = m.delta > 0.0001 ? `+${dPct}% happiness` : 'neutral';
+
+    const gLoc = m.giveLoc || 'Jeopardy';
+    const rLoc = m.recvLoc || 'Jeopardy';
+    const gLcls = m.giveLoc === 'MGH' ? 'lt-mgh' : m.giveLoc === 'BWH' ? 'lt-bwh' : 'lt-none';
+    const rLcls = m.recvLoc === 'MGH' ? 'lt-mgh' : m.recvLoc === 'BWH' ? 'lt-bwh' : 'lt-none';
+
+    return `
+      <div class="move-card">
+        <div class="move-card-hdr">
+          <div class="giver-name">
+            <i data-lucide="user" style="width:15px;height:15px;"></i>
+            ${cap(m.giver)}
+          </div>
+          <div class="move-delta ${dClass}">${dLabel}</div>
+        </div>
+        <div class="move-body">
+          <div class="shift-blk give">
+            <div class="blk-label">
+              <i data-lucide="arrow-up" style="width:11px;height:11px;"></i> Giving Away
+            </div>
+            <div class="blk-summary">${m.giveSummary}</div>
+            <div class="blk-meta">
+              <div><i data-lucide="calendar" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"></i>${fmtDate(m.giveDate)}</div>
+              <div><i data-lucide="clock" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"></i>${m.giveStart} – ${m.giveEnd}</div>
+            </div>
+            <span class="loc-tag ${gLcls}">${gLoc}${m.giveType ? ' · ' + m.giveType : ''}</span>
+          </div>
+          <div class="arrow-circle">
+            <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+          </div>
+          <div class="shift-blk recv">
+            <div class="blk-label">
+              <i data-lucide="arrow-down" style="width:11px;height:11px;"></i> Receiving
+            </div>
+            <div class="blk-summary">${m.recvSummary}</div>
+            <div class="blk-meta">
+              <div><i data-lucide="calendar" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"></i>${fmtDate(m.recvDate)}</div>
+              <div><i data-lucide="clock" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"></i>${m.recvStart} – ${m.recvEnd}</div>
+            </div>
+            <span class="loc-tag ${rLcls}">${rLoc}${m.recvType ? ' · ' + m.recvType : ''}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  lucide.createIcons();
+}
+
+function setDecideEnabled(on) {
+  deciding = !on;
+  document.getElementById('btn-accept').disabled = !on;
+  document.getElementById('btn-reject').disabled = !on;
+}
+
+async function decide(decision) {
+  if (deciding) return;
+  setDecideEnabled(false);
+
+  if (decision === 'accept') {
+    statsAccepted++;
+    showToast('Swap accepted', 'check-circle-2');
+  } else {
+    statsRejected++;
+    showToast('Swap rejected — won\'t be proposed again', 'x-circle');
+  }
+  document.getElementById('stat-accepted').textContent = statsAccepted;
+  document.getElementById('stat-rejected').textContent = statsRejected;
+
+  await fetch(`/api/decide/${sessionId}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ decision }),
+  });
+
+  // Small delay so the toast is visible
+  setTimeout(async () => {
+    await loadNextSwap();
+  }, 350);
+}
+
+// ---------- Done ----------
+
+function transitionToDone() {
+  document.getElementById('done-accepted').textContent = statsAccepted;
+  document.getElementById('done-rejected').textContent = statsRejected;
+  document.getElementById('btn-view-report').onclick = () => {
+    window.open(`/api/report/${sessionId}`, '_blank');
+  };
+  showPage('done');
+}
+
+function restart() {
+  sessionId = null;
+  statsAccepted = 0;
+  statsRejected = 0;
+  Object.keys(residentStates).forEach(k => delete residentStates[k]);
+  document.getElementById('resident-list').innerHTML = '';
+  document.getElementById('overall-bar').style.width = '0%';
+  document.getElementById('overall-bar-label').textContent = '0 of 0 ready';
+  document.getElementById('build-row').className = 'build-row';
+  document.getElementById('stats-bar').style.display = 'none';
+  document.getElementById('stat-accepted').textContent = '0';
+  document.getElementById('stat-rejected').textContent = '0';
+  showPage('config');
+}
+
+// ---------- Keyboard shortcuts ----------
+
+document.addEventListener('keydown', (e) => {
+  const page = document.querySelector('.page.active');
+  if (!page || page.id !== 'page-review') return;
+  if (e.target.tagName === 'INPUT') return;
+
+  if (e.key === 'y' || e.key === 'Y' || e.key === 'Enter') {
+    e.preventDefault();
+    decide('accept');
+  } else if (e.key === 'n' || e.key === 'N' || e.key === 'Escape' || e.key === 'Delete') {
+    e.preventDefault();
+    decide('reject');
+  }
+});
+
+// Init icons
+lucide.createIcons();
+</script>
+</body>
+</html>
