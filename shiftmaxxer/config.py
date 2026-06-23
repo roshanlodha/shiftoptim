@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # --- ACGME hard constraints ---
 MIN_REST = timedelta(hours=12)      # min gap between consecutive shifts
@@ -45,3 +45,8 @@ LOCAL_TZ = "America/New_York"
 
 # Ignore user weights in CSV preference (True = ignore weights and normalize them to 1.0)
 IGNORE_WEIGHT = True
+
+# --- Start Date Filter ---
+# Empty string corresponds to allowing all dates, otherwise should be a datetime object.
+# Before this date, all scheduled shifts should be tossed out.
+START_DATE = datetime(2026, 6, 29)

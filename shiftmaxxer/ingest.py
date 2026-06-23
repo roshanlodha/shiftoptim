@@ -7,9 +7,9 @@ import re
 import urllib.request
 import urllib.error
 
+from . import config
 from .config import (LOC_PREFIX_LEN, VALID_LOCATIONS, JEOPARDY_KEYWORDS,
-                     MORNING_START, SWING_START, OVERNIGHT_START, LOCAL_TZ, NO_PREF,
-                     IGNORE_WEIGHT)
+                     MORNING_START, SWING_START, OVERNIGHT_START, LOCAL_TZ, NO_PREF)
 from .models import Shift, Resident, Schedule
 
 LOCAL = tz.gettz(LOCAL_TZ)
@@ -45,6 +45,13 @@ def parse_ics_file(path: Path, owner: str) -> list[Shift]:
         # Ensure tz-aware in LOCAL; ICS uses fixed -0400 (EDT).
         start = start.astimezone(LOCAL) if start.tzinfo else start.replace(tzinfo=LOCAL)
         end = end.astimezone(LOCAL) if end.tzinfo else end.replace(tzinfo=LOCAL)
+        if config.START_DATE != "":
+            if isinstance(config.START_DATE, datetime):
+                start_filter = config.START_DATE if config.START_DATE.tzinfo else config.START_DATE.replace(tzinfo=LOCAL)
+            else:
+                start_filter = datetime.combine(config.START_DATE, datetime.min.time()).replace(tzinfo=LOCAL)
+            if start < start_filter:
+                continue
         summary = str(comp.get("SUMMARY", ""))
         jeop = is_jeopardy(summary)
         shifts.append(Shift(
@@ -114,7 +121,7 @@ def load_preferences(csv_path) -> dict[str, Resident]:
         w_typ = 0.0 if type_pref == NO_PREF else float(row["time_weight"])
         w_str = float(row["days_weight"])
 
-        if IGNORE_WEIGHT:
+        if config.IGNORE_WEIGHT:
             w_loc = 1.0 if w_loc > 0 else 0.0
             w_typ = 1.0 if w_typ > 0 else 0.0
             w_str = 1.0 if w_str > 0 else 0.0

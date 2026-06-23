@@ -219,3 +219,26 @@ def test_jeopardy_swaps_disabled_pins_shifts():
     finally:
         config.ALLOW_JEOPARDY_SWAPS = orig_allow
 
+
+def test_start_date_filtering():
+    from datetime import datetime
+    orig_start_date = config.START_DATE
+    try:
+        # 1. Test when START_DATE is set to 2026-06-29.
+        # Shift starting before June 29, 2026 should be filtered out.
+        # Shift starting on or after June 29, 2026 should be kept.
+        config.START_DATE = datetime(2026, 6, 29)
+        sched = build_schedule(Path("data/ics"), Path("data/preferences.csv"))
+        for s in sched.shifts.values():
+            assert s.t_start >= datetime(2026, 6, 29, tzinfo=s.t_start.tzinfo)
+
+        # 2. Test when START_DATE is set to empty string (allow all dates)
+        config.START_DATE = ""
+        sched_all = build_schedule(Path("data/ics"), Path("data/preferences.csv"))
+        # Verify that shifts before June 29 are now included
+        has_earlier = any(s.t_start < datetime(2026, 6, 29, tzinfo=s.t_start.tzinfo) for s in sched_all.shifts.values())
+        assert has_earlier, "Should have shifts before June 29 when START_DATE is empty"
+    finally:
+        config.START_DATE = orig_start_date
+
+
