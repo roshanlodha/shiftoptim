@@ -1246,30 +1246,6 @@ svg.lucide {
 <script>
 const DATA = {
   "residents": {
-    "roshan": {
-      "name": "roshan",
-      "locPref": "MGH",
-      "typePref": "Morning",
-      "daysPref": 5,
-      "daysWeight": 0.625,
-      "daysOff": [],
-      "loc": {
-        "orig": 54,
-        "opt": 54
-      },
-      "type": {
-        "orig": 31,
-        "opt": 46
-      },
-      "streak": {
-        "orig": 1.7,
-        "opt": 3.0
-      },
-      "happiness": {
-        "orig": 35,
-        "opt": 52
-      }
-    },
     "wendy memishian": {
       "name": "wendy memishian",
       "locPref": "MGH",
@@ -1287,15 +1263,15 @@ const DATA = {
       },
       "type": {
         "orig": 50,
-        "opt": 83
+        "opt": 75
       },
       "streak": {
         "orig": 1.6,
-        "opt": 1.5
+        "opt": 1.6
       },
       "happiness": {
         "orig": 54,
-        "opt": 74
+        "opt": 71
       }
     },
     "brian song": {
@@ -1307,19 +1283,19 @@ const DATA = {
       "daysOff": [],
       "loc": {
         "orig": 46,
-        "opt": 69
+        "opt": 77
       },
       "type": {
         "orig": 31,
-        "opt": 62
+        "opt": 69
       },
       "streak": {
         "orig": 1.7,
-        "opt": 1.9
+        "opt": 1.7
       },
       "happiness": {
         "orig": 38,
-        "opt": 65
+        "opt": 73
       }
     },
     "cliff danza": {
@@ -1331,19 +1307,43 @@ const DATA = {
       "daysOff": [],
       "loc": {
         "orig": 54,
-        "opt": 69
+        "opt": 77
       },
       "type": {
         "orig": 54,
-        "opt": 69
+        "opt": 62
       },
       "streak": {
         "orig": 2.1,
-        "opt": 2.0
+        "opt": 2.3
       },
       "happiness": {
         "orig": 50,
-        "opt": 61
+        "opt": 63
+      }
+    },
+    "roshan lodha": {
+      "name": "roshan lodha",
+      "locPref": "MGH",
+      "typePref": "ANY",
+      "daysPref": 5,
+      "daysWeight": 0.7692307692307693,
+      "daysOff": [],
+      "loc": {
+        "orig": 54,
+        "opt": 54
+      },
+      "type": {
+        "orig": 100,
+        "opt": 100
+      },
+      "streak": {
+        "orig": 1.7,
+        "opt": 2.5
+      },
+      "happiness": {
+        "orig": 35,
+        "opt": 46
       }
     }
   },
@@ -1962,225 +1962,128 @@ const DATA = {
     }
   },
   "originalAssignment": {
-    "roshan": [
-      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "a7f08738-553b-41fd-85a6-49601899911d",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
-      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "a6661004-baca-4ddd-99be-1065353d2543",
-      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
-      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
-      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
-      "6d067d23-9ffc-44f6-812d-0987596827d1"
-    ],
     "wendy memishian": [
-      "eee43676-e445-43d8-bcc7-47f3af582c43",
-      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
-      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
       "966617ee-1e63-43b2-8873-5a15a054367e",
-      "aeb53546-a50f-405c-ae60-765d58500d6b",
       "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
-      "834ee2ad-24a4-45df-b988-23e0bcb3f293",
-      "02489bec-cd48-45e0-b570-6c21ca527864",
-      "13d72997-d7fd-4877-b746-4dd195535f99",
       "ee656061-4e54-4e32-999d-59a45be44cae",
+      "636e5e57-dbc5-452b-aad6-60649246cecf",
+      "eee43676-e445-43d8-bcc7-47f3af582c43",
+      "aeb53546-a50f-405c-ae60-765d58500d6b",
+      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
+      "13d72997-d7fd-4877-b746-4dd195535f99",
+      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+      "834ee2ad-24a4-45df-b988-23e0bcb3f293",
       "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
-      "636e5e57-dbc5-452b-aad6-60649246cecf"
+      "02489bec-cd48-45e0-b570-6c21ca527864"
     ],
     "brian song": [
-      "73048cf3-ec0a-48cc-933b-598134e736cf",
+      "d55881dd-d265-4f45-a76d-898f860bc411",
       "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-      "bb239480-d6cf-4503-b96b-797cd73c5a8e",
-      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+      "737a8e0d-0a63-4984-be03-757de143b5f9",
       "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5",
       "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
-      "d55881dd-d265-4f45-a76d-898f860bc411",
-      "2668ae46-0bac-49b6-9891-3367dc1666bf",
       "a06a4d2e-c549-4416-8332-abd6ae839bbd",
-      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
-      "737a8e0d-0a63-4984-be03-757de143b5f9",
       "de088fac-2659-4e3b-9c69-3b5b46618244",
-      "84e99799-5c76-46fc-b159-41213dd39591"
+      "84e99799-5c76-46fc-b159-41213dd39591",
+      "bb239480-d6cf-4503-b96b-797cd73c5a8e",
+      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
+      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+      "73048cf3-ec0a-48cc-933b-598134e736cf",
+      "2668ae46-0bac-49b6-9891-3367dc1666bf"
     ],
     "cliff danza": [
-      "b2fb5026-fc51-4f85-a88e-40d6baf8df01",
-      "8a7e679c-9dff-4bfb-a087-2f93597063ee",
-      "34ecd5e1-5e38-4264-a0e7-12823370947d",
-      "c4a775f8-33cd-4dc0-a184-75cb3f0f02a2",
-      "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
-      "a1a3266a-445c-407a-9a55-4bf62601f7f9",
-      "dc140904-559e-4297-a814-af554593b132",
-      "065b0412-2719-426b-8df7-ed27b625a604",
-      "7c91f296-d43d-4f07-9721-a203d9816c52",
-      "badcd664-0f20-43c8-989a-8acf9e61c8ed",
       "d6e41086-0042-4ab7-9bd4-58b90a10fb85",
+      "dc140904-559e-4297-a814-af554593b132",
+      "c4a775f8-33cd-4dc0-a184-75cb3f0f02a2",
+      "147ffb19-4c9f-478b-a749-bbf710740112",
+      "065b0412-2719-426b-8df7-ed27b625a604",
+      "badcd664-0f20-43c8-989a-8acf9e61c8ed",
+      "34ecd5e1-5e38-4264-a0e7-12823370947d",
+      "a1a3266a-445c-407a-9a55-4bf62601f7f9",
+      "b2fb5026-fc51-4f85-a88e-40d6baf8df01",
+      "7c91f296-d43d-4f07-9721-a203d9816c52",
+      "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
       "70007c4e-f27a-444b-865b-dd345489375a",
-      "147ffb19-4c9f-478b-a749-bbf710740112"
+      "8a7e679c-9dff-4bfb-a087-2f93597063ee"
+    ],
+    "roshan lodha": [
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "a6661004-baca-4ddd-99be-1065353d2543",
+      "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
+      "b1b0203e-a974-4cc1-aee5-102d35d09f67",
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
     ]
   },
   "finalAssignment": {
-    "roshan": [
-      "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+    "wendy memishian": [
+      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+      "d55881dd-d265-4f45-a76d-898f860bc411",
+      "966617ee-1e63-43b2-8873-5a15a054367e",
+      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
+      "636e5e57-dbc5-452b-aad6-60649246cecf",
       "eee43676-e445-43d8-bcc7-47f3af582c43",
-      "243551b6-9359-4185-9aa8-6f8a42d4c63e",
-      "a7f08738-553b-41fd-85a6-49601899911d",
+      "aeb53546-a50f-405c-ae60-765d58500d6b",
+      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
+      "13d72997-d7fd-4877-b746-4dd195535f99",
+      "834ee2ad-24a4-45df-b988-23e0bcb3f293",
+      "2668ae46-0bac-49b6-9891-3367dc1666bf",
+      "02489bec-cd48-45e0-b570-6c21ca527864"
+    ],
+    "brian song": [
+      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+      "ee656061-4e54-4e32-999d-59a45be44cae",
       "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
-      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
-      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5",
+      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
+      "a06a4d2e-c549-4416-8332-abd6ae839bbd",
+      "6d067d23-9ffc-44f6-812d-0987596827d1",
+      "de088fac-2659-4e3b-9c69-3b5b46618244",
+      "84e99799-5c76-46fc-b159-41213dd39591",
+      "bb239480-d6cf-4503-b96b-797cd73c5a8e",
+      "73048cf3-ec0a-48cc-933b-598134e736cf",
+      "a1a3266a-445c-407a-9a55-4bf62601f7f9",
+      "2583d041-c479-46b0-b1c3-e12f5e21e57d"
+    ],
+    "cliff danza": [
+      "d6e41086-0042-4ab7-9bd4-58b90a10fb85",
+      "737a8e0d-0a63-4984-be03-757de143b5f9",
+      "c4a775f8-33cd-4dc0-a184-75cb3f0f02a2",
+      "147ffb19-4c9f-478b-a749-bbf710740112",
+      "065b0412-2719-426b-8df7-ed27b625a604",
+      "badcd664-0f20-43c8-989a-8acf9e61c8ed",
+      "34ecd5e1-5e38-4264-a0e7-12823370947d",
+      "b2fb5026-fc51-4f85-a88e-40d6baf8df01",
+      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
+      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+      "7c91f296-d43d-4f07-9721-a203d9816c52",
+      "70007c4e-f27a-444b-865b-dd345489375a",
+      "8a7e679c-9dff-4bfb-a087-2f93597063ee"
+    ],
+    "roshan lodha": [
+      "d5882e55-abd9-4148-a536-c0287b521cd6",
       "dc140904-559e-4297-a814-af554593b132",
       "a6661004-baca-4ddd-99be-1065353d2543",
       "9e8f53c6-1ed7-40ed-92cf-3c23682f963c",
-      "812ea479-1d9d-4b91-b27c-394f49831b5e",
       "b1b0203e-a974-4cc1-aee5-102d35d09f67",
-      "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c"
-    ],
-    "wendy memishian": [
-      "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-      "6b856c0c-67e7-453c-a350-1beb3d3ab13b",
-      "d55881dd-d265-4f45-a76d-898f860bc411",
-      "966617ee-1e63-43b2-8873-5a15a054367e",
-      "aeb53546-a50f-405c-ae60-765d58500d6b",
-      "245cdee2-ea04-4b57-85ad-3ab6b4a82e88",
-      "834ee2ad-24a4-45df-b988-23e0bcb3f293",
-      "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-      "2668ae46-0bac-49b6-9891-3367dc1666bf",
-      "02489bec-cd48-45e0-b570-6c21ca527864",
-      "13d72997-d7fd-4877-b746-4dd195535f99",
-      "636e5e57-dbc5-452b-aad6-60649246cecf"
-    ],
-    "brian song": [
-      "73048cf3-ec0a-48cc-933b-598134e736cf",
-      "bb239480-d6cf-4503-b96b-797cd73c5a8e",
-      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
-      "296e81c9-c9e4-4d4a-9bdd-6e8c0a59e6a5",
-      "a62e273a-e91d-4fbe-bd0f-2b60a30938ff",
-      "a1a3266a-445c-407a-9a55-4bf62601f7f9",
-      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
-      "a06a4d2e-c549-4416-8332-abd6ae839bbd",
-      "737a8e0d-0a63-4984-be03-757de143b5f9",
-      "de088fac-2659-4e3b-9c69-3b5b46618244",
-      "84e99799-5c76-46fc-b159-41213dd39591",
-      "ee656061-4e54-4e32-999d-59a45be44cae",
-      "6d067d23-9ffc-44f6-812d-0987596827d1"
-    ],
-    "cliff danza": [
-      "b2fb5026-fc51-4f85-a88e-40d6baf8df01",
-      "8a7e679c-9dff-4bfb-a087-2f93597063ee",
-      "34ecd5e1-5e38-4264-a0e7-12823370947d",
-      "c4a775f8-33cd-4dc0-a184-75cb3f0f02a2",
-      "d5882e55-abd9-4148-a536-c0287b521cd6",
-      "065b0412-2719-426b-8df7-ed27b625a604",
-      "ee96ec6d-e5e9-4041-80b2-469be910dffb",
-      "7c91f296-d43d-4f07-9721-a203d9816c52",
-      "badcd664-0f20-43c8-989a-8acf9e61c8ed",
+      "a7f08738-553b-41fd-85a6-49601899911d",
+      "812ea479-1d9d-4b91-b27c-394f49831b5e",
       "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-      "d6e41086-0042-4ab7-9bd4-58b90a10fb85",
-      "70007c4e-f27a-444b-865b-dd345489375a",
-      "147ffb19-4c9f-478b-a749-bbf710740112"
+      "c9ad842c-dad0-4c64-b5e6-19f8a36fe9b0",
+      "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+      "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+      "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+      "243551b6-9359-4185-9aa8-6f8a42d4c63e"
     ]
   },
   "swaps": {
-    "roshan": [
-      {
-        "giveUid": "6d067d23-9ffc-44f6-812d-0987596827d1",
-        "giveSummary": "BWH Jr.  - FF Jr 8a-4p",
-        "giveDate": "2026-06-30",
-        "giveLoc": "BWH",
-        "giveType": "Morning",
-        "giveStart": "8:00 AM",
-        "giveEnd": "4:00 PM",
-        "recvUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "recvDate": "2026-07-14",
-        "recvLoc": "MGH",
-        "recvType": "Swing",
-        "recvStart": "1:00 PM",
-        "recvEnd": "11:00 PM",
-        "delta": 0.0096,
-        "swapWith": "brian song",
-        "partnerDelta": 0.0769
-      },
-      {
-        "giveUid": "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-        "giveSummary": "BWH Jr.  - Exe Jr 12p-12a",
-        "giveDate": "2026-07-07",
-        "giveLoc": "BWH",
-        "giveType": "Swing",
-        "giveStart": "12:00 PM",
-        "giveEnd": "12:00 AM",
-        "recvUid": "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
-        "recvSummary": "BWH Jr.  - Exe Jr 8a-4p",
-        "recvDate": "2026-07-16",
-        "recvLoc": "BWH",
-        "recvType": "Morning",
-        "recvStart": "8:00 AM",
-        "recvEnd": "4:00 PM",
-        "delta": 0.0638,
-        "swapWith": "cliff danza",
-        "partnerDelta": 0.0256
-      },
-      {
-        "giveUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
-        "giveSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "giveDate": "2026-07-14",
-        "giveLoc": "MGH",
-        "giveType": "Swing",
-        "giveStart": "1:00 PM",
-        "giveEnd": "11:00 PM",
-        "recvUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
-        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
-        "recvDate": "2026-07-02",
-        "recvLoc": "MGH",
-        "recvType": "Morning",
-        "recvStart": "7:00 AM",
-        "recvEnd": "5:00 PM",
-        "delta": 0.0322,
-        "swapWith": "wendy memishian",
-        "partnerDelta": 0.0389
-      },
-      {
-        "giveUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-        "giveSummary": "MGH Jr. - FT 11a-8p",
-        "giveDate": "2026-07-23",
-        "giveLoc": "MGH",
-        "giveType": "Swing",
-        "giveStart": "11:00 AM",
-        "giveEnd": "8:00 PM",
-        "recvUid": "eee43676-e445-43d8-bcc7-47f3af582c43",
-        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
-        "recvDate": "2026-07-24",
-        "recvLoc": "MGH",
-        "recvType": "Morning",
-        "recvStart": "7:00 AM",
-        "recvEnd": "5:00 PM",
-        "delta": 0.0386,
-        "swapWith": "wendy memishian",
-        "partnerDelta": 0.0389
-      },
-      {
-        "giveUid": "d5882e55-abd9-4148-a536-c0287b521cd6",
-        "giveSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "giveDate": "2026-07-16",
-        "giveLoc": "MGH",
-        "giveType": "Swing",
-        "giveStart": "1:00 PM",
-        "giveEnd": "11:00 PM",
-        "recvUid": "dc140904-559e-4297-a814-af554593b132",
-        "recvSummary": "BWH Jr.  - FF Jr 3p-12a",
-        "recvDate": "2026-07-17",
-        "recvLoc": "BWH",
-        "recvType": "Swing",
-        "recvStart": "3:00 PM",
-        "recvEnd": "12:00 AM",
-        "delta": 0.0195,
-        "swapWith": "cliff danza",
-        "partnerDelta": 0.016
-      }
-    ],
     "wendy memishian": [
       {
         "giveUid": "ee656061-4e54-4e32-999d-59a45be44cae",
@@ -2217,27 +2120,8 @@ const DATA = {
         "recvStart": "1:00 PM",
         "recvEnd": "11:00 PM",
         "delta": 0.0389,
-        "swapWith": "roshan",
-        "partnerDelta": 0.0322
-      },
-      {
-        "giveUid": "eee43676-e445-43d8-bcc7-47f3af582c43",
-        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
-        "giveDate": "2026-07-24",
-        "giveLoc": "MGH",
-        "giveType": "Morning",
-        "giveStart": "7:00 AM",
-        "giveEnd": "5:00 PM",
-        "recvUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
-        "recvSummary": "MGH Jr. - FT 11a-8p",
-        "recvDate": "2026-07-23",
-        "recvLoc": "MGH",
-        "recvType": "Swing",
-        "recvStart": "11:00 AM",
-        "recvEnd": "8:00 PM",
-        "delta": 0.0389,
-        "swapWith": "roshan",
-        "partnerDelta": 0.0386
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0278
       },
       {
         "giveUid": "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
@@ -2255,8 +2139,8 @@ const DATA = {
         "recvStart": "11:00 AM",
         "recvEnd": "8:00 PM",
         "delta": 0.0389,
-        "swapWith": "brian song",
-        "partnerDelta": 0.0385
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0
       },
       {
         "giveUid": "ee96ec6d-e5e9-4041-80b2-469be910dffb",
@@ -2275,7 +2159,7 @@ const DATA = {
         "recvEnd": "11:00 PM",
         "delta": 0.0,
         "swapWith": "cliff danza",
-        "partnerDelta": 0.0102
+        "partnerDelta": 0.0136
       }
     ],
     "brian song": [
@@ -2333,8 +2217,27 @@ const DATA = {
         "recvStart": "8:00 AM",
         "recvEnd": "4:00 PM",
         "delta": 0.0769,
-        "swapWith": "roshan",
-        "partnerDelta": 0.0096
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0178
+      },
+      {
+        "giveUid": "737a8e0d-0a63-4984-be03-757de143b5f9",
+        "giveSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "giveDate": "2026-07-17",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "5:00 PM",
+        "recvUid": "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
+        "recvSummary": "BWH Jr.  - Exe Jr 8a-4p",
+        "recvDate": "2026-07-16",
+        "recvLoc": "BWH",
+        "recvType": "Morning",
+        "recvStart": "8:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0385,
+        "swapWith": "cliff danza",
+        "partnerDelta": 0.0432
       },
       {
         "giveUid": "d55881dd-d265-4f45-a76d-898f860bc411",
@@ -2344,7 +2247,7 @@ const DATA = {
         "giveType": "Swing",
         "giveStart": "11:00 AM",
         "giveEnd": "8:00 PM",
-        "recvUid": "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+        "recvUid": "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
         "recvSummary": "MGH Jr. - AC PGY2 7a-4p",
         "recvDate": "2026-07-04",
         "recvLoc": "MGH",
@@ -2352,8 +2255,27 @@ const DATA = {
         "recvStart": "7:00 AM",
         "recvEnd": "4:00 PM",
         "delta": 0.0385,
-        "swapWith": "wendy memishian",
-        "partnerDelta": 0.0389
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0
+      },
+      {
+        "giveUid": "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+        "giveSummary": "BWH Jr.  - Exe Jr 3p-12a",
+        "giveDate": "2026-07-05",
+        "giveLoc": "BWH",
+        "giveType": "Swing",
+        "giveStart": "3:00 PM",
+        "giveEnd": "12:00 AM",
+        "recvUid": "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+        "recvSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "recvDate": "2026-07-05",
+        "recvLoc": "BWH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0385,
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0
       }
     ],
     "cliff danza": [
@@ -2377,25 +2299,6 @@ const DATA = {
         "partnerDelta": 0.0769
       },
       {
-        "giveUid": "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
-        "giveSummary": "BWH Jr.  - Exe Jr 8a-4p",
-        "giveDate": "2026-07-16",
-        "giveLoc": "BWH",
-        "giveType": "Morning",
-        "giveStart": "8:00 AM",
-        "giveEnd": "4:00 PM",
-        "recvUid": "76e63094-d2e5-4db1-bafb-265ca4f7e85e",
-        "recvSummary": "BWH Jr.  - Exe Jr 12p-12a",
-        "recvDate": "2026-07-07",
-        "recvLoc": "BWH",
-        "recvType": "Swing",
-        "recvStart": "12:00 PM",
-        "recvEnd": "12:00 AM",
-        "delta": 0.0256,
-        "swapWith": "roshan",
-        "partnerDelta": 0.0638
-      },
-      {
         "giveUid": "dc140904-559e-4297-a814-af554593b132",
         "giveSummary": "BWH Jr.  - FF Jr 3p-12a",
         "giveDate": "2026-07-17",
@@ -2403,16 +2306,35 @@ const DATA = {
         "giveType": "Swing",
         "giveStart": "3:00 PM",
         "giveEnd": "12:00 AM",
-        "recvUid": "d5882e55-abd9-4148-a536-c0287b521cd6",
-        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
-        "recvDate": "2026-07-16",
+        "recvUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-23",
         "recvLoc": "MGH",
         "recvType": "Swing",
-        "recvStart": "1:00 PM",
-        "recvEnd": "11:00 PM",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
         "delta": 0.016,
-        "swapWith": "roshan",
-        "partnerDelta": 0.0195
+        "swapWith": "roshan lodha",
+        "partnerDelta": 0.0656
+      },
+      {
+        "giveUid": "7a0b7f4e-3da9-4f4b-a894-0482e81d536b",
+        "giveSummary": "BWH Jr.  - Exe Jr 8a-4p",
+        "giveDate": "2026-07-16",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "8:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "737a8e0d-0a63-4984-be03-757de143b5f9",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-17",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0432,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0385
       },
       {
         "giveUid": "2668ae46-0bac-49b6-9891-3367dc1666bf",
@@ -2429,9 +2351,125 @@ const DATA = {
         "recvType": "Swing",
         "recvStart": "11:00 AM",
         "recvEnd": "8:00 PM",
-        "delta": 0.0102,
+        "delta": 0.0136,
         "swapWith": "wendy memishian",
         "partnerDelta": 0.0
+      }
+    ],
+    "roshan lodha": [
+      {
+        "giveUid": "6d067d23-9ffc-44f6-812d-0987596827d1",
+        "giveSummary": "BWH Jr.  - FF Jr 8a-4p",
+        "giveDate": "2026-06-30",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "8:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+        "recvSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "recvDate": "2026-07-14",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "1:00 PM",
+        "recvEnd": "11:00 PM",
+        "delta": 0.0178,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0769
+      },
+      {
+        "giveUid": "adbe7f96-80fb-401f-bf31-a0411ceb12c8",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-23",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "dc140904-559e-4297-a814-af554593b132",
+        "recvSummary": "BWH Jr.  - FF Jr 3p-12a",
+        "recvDate": "2026-07-17",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "3:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0656,
+        "swapWith": "cliff danza",
+        "partnerDelta": 0.016
+      },
+      {
+        "giveUid": "9a5c6df8-c4c9-4d19-b053-628c642b8c12",
+        "giveSummary": "MGH Jr. - AC PGY1 1p-11p",
+        "giveDate": "2026-07-14",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "1:00 PM",
+        "giveEnd": "11:00 PM",
+        "recvUid": "0c1bbee2-3829-447d-9ec2-0fb0f12a6f81",
+        "recvSummary": "MGH Jr. - AC PGY1 7a-5p",
+        "recvDate": "2026-07-02",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "5:00 PM",
+        "delta": 0.0278,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0389
+      },
+      {
+        "giveUid": "d55881dd-d265-4f45-a76d-898f860bc411",
+        "giveSummary": "MGH Jr. - FT 11a-8p",
+        "giveDate": "2026-07-04",
+        "giveLoc": "MGH",
+        "giveType": "Swing",
+        "giveStart": "11:00 AM",
+        "giveEnd": "8:00 PM",
+        "recvUid": "e84b98e1-d18b-44e7-ae34-ad43519e72ab",
+        "recvSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "recvDate": "2026-07-04",
+        "recvLoc": "MGH",
+        "recvType": "Morning",
+        "recvStart": "7:00 AM",
+        "recvEnd": "4:00 PM",
+        "delta": 0.0,
+        "swapWith": "wendy memishian",
+        "partnerDelta": 0.0389
+      },
+      {
+        "giveUid": "b04090a2-6ba3-4b02-8571-c9f8d9d6cd0c",
+        "giveSummary": "MGH Jr. - AC PGY2 7a-4p",
+        "giveDate": "2026-07-04",
+        "giveLoc": "MGH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "d55881dd-d265-4f45-a76d-898f860bc411",
+        "recvSummary": "MGH Jr. - FT 11a-8p",
+        "recvDate": "2026-07-04",
+        "recvLoc": "MGH",
+        "recvType": "Swing",
+        "recvStart": "11:00 AM",
+        "recvEnd": "8:00 PM",
+        "delta": 0.0,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0385
+      },
+      {
+        "giveUid": "2583d041-c479-46b0-b1c3-e12f5e21e57d",
+        "giveSummary": "BWH Jr.  - FF Jr 7a-4p",
+        "giveDate": "2026-07-05",
+        "giveLoc": "BWH",
+        "giveType": "Morning",
+        "giveStart": "7:00 AM",
+        "giveEnd": "4:00 PM",
+        "recvUid": "cde6dbc2-2d7f-481b-a572-fe817c00c122",
+        "recvSummary": "BWH Jr.  - Exe Jr 3p-12a",
+        "recvDate": "2026-07-05",
+        "recvLoc": "BWH",
+        "recvType": "Swing",
+        "recvStart": "3:00 PM",
+        "recvEnd": "12:00 AM",
+        "delta": 0.0,
+        "swapWith": "brian song",
+        "partnerDelta": 0.0385
       }
     ]
   }
