@@ -80,35 +80,26 @@ def test_midnight_shift_end_hour():
     assert s["endHour"] == 24.0
 
 
-def test_days_off_streak_calculation():
+def test_work_streak_calculation():
     from datetime import date, timedelta
-    from shiftmaxxer.render import _off_streaks
+    from shiftmaxxer.feasibility import _streaks
     
-    timeline = [
-        date(2026, 6, 22), # Mon
-        date(2026, 6, 23), # Tue
-        date(2026, 6, 24), # Wed
-        date(2026, 6, 25), # Thu
-        date(2026, 6, 26), # Fri
-        date(2026, 6, 27), # Sat
-        date(2026, 6, 28), # Sun
-    ]
     worked = {
         date(2026, 6, 22),
         date(2026, 6, 23),
         date(2026, 6, 24),
         date(2026, 6, 26),
     }
-    runs = _off_streaks(timeline, worked)
-    assert runs == [1, 2]
+    runs = _streaks(worked)
+    assert runs == [3, 1]
 
     # User's example: 5 worked, 3 off, 3 worked, 2 off.
     timeline_user = [date(2026, 6, 22) + timedelta(days=i) for i in range(13)]
     worked_user = {timeline_user[i] for i in [0, 1, 2, 3, 4, 8, 9, 10]}
-    runs_user = _off_streaks(timeline_user, worked_user)
-    assert runs_user == [3, 2]
+    runs_user = _streaks(worked_user)
+    assert runs_user == [5, 3]
     avg = sum(runs_user) / len(runs_user)
-    assert avg == 2.5
+    assert avg == 4.0
 
 
 def _make_shift(uid, owner, work_date, is_jeopardy=False, loc="MGH", stype="Morning"):

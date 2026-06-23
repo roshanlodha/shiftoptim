@@ -68,10 +68,10 @@ def _off_streaks(timeline: list[date], worked_dates: set[date]) -> list[int]:
 
 
 def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[Shift], timeline: list[date]) -> dict:
-    orig_runs = _off_streaks(timeline, {s.work_date for s in orig_shifts})
-    orig_avg_off = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
-    final_runs = _off_streaks(timeline, {s.work_date for s in final_shifts})
-    final_avg_off = sum(final_runs)/len(final_runs) if final_runs else 0.0
+    orig_runs = _streaks({s.work_date for s in orig_shifts})
+    orig_avg_work = sum(orig_runs)/len(orig_runs) if orig_runs else 0.0
+    final_runs = _streaks({s.work_date for s in final_shifts})
+    final_avg_work = sum(final_runs)/len(final_runs) if final_runs else 0.0
 
     return {
         "name": r.name,
@@ -88,8 +88,8 @@ def _resident_metrics(r: Resident, orig_shifts: list[Shift], final_shifts: list[
             "opt": round(phi_type(final_shifts, r) * 100),
         },
         "streak": {
-            "orig": round(orig_avg_off, 1),
-            "opt": round(final_avg_off, 1),
+            "orig": round(orig_avg_work, 1),
+            "opt": round(final_avg_work, 1),
         },
         "happiness": {
             "orig": round(utility(orig_shifts, r) * 100),
@@ -172,7 +172,7 @@ _TEMPLATE = """<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root {
   /* DARK THEME (Default) */
@@ -412,15 +412,15 @@ body {
   border-width: 2px;
 }
 .md3-select-wrapper::after {
-  content: 'arrow_drop_down';
-  font-family: 'Material Symbols Outlined';
+  content: '▼';
+  font-family: inherit;
   position: absolute;
-  right: 12px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--md-sys-color-on-surface-variant);
   pointer-events: none;
-  font-size: 24px;
+  font-size: 10px;
 }
 
 /* MD3 Icon Buttons */
@@ -1102,7 +1102,8 @@ body {
   grid-column: 1 / -1;
 }
 .no-swaps-icon {
-  font-size: 3rem;
+  width: 48px;
+  height: 48px;
   color: var(--md-sys-color-tertiary);
   animation: bounce 2s infinite;
 }
@@ -1122,8 +1123,10 @@ body {
 }
 
 /* Standardize Material Symbols for symmetric, uniform design */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24 !important;
+svg.lucide {
+  stroke-width: 2px;
+  stroke: currentColor;
+  fill: none;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -1183,6 +1186,114 @@ body {
   .swaps-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Hide schedule calendar section on mobile completely */
+  .top-grid section {
+    display: none !important;
+  }
+
+  /* Calendar mobile vertical view override */
+  .week-view-container {
+    border: none !important;
+    background: transparent !important;
+  }
+  .week-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+  .time-labels-col, 
+  .week-col-hdr-spacer, 
+  .time-labels-allday-spacer {
+    display: none !important;
+  }
+  .week-col-hdr {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 16px !important;
+    margin-top: 16px !important;
+    margin-bottom: 4px !important;
+    border-radius: var(--md-sys-shape-corner-medium) !important;
+    background: var(--md-sys-color-surface-container-high) !important;
+  }
+  .week-col-hdr.today {
+    background: var(--md-sys-color-primary-container) !important;
+  }
+  .week-col-hdr:first-of-type {
+    margin-top: 0 !important;
+  }
+  .wch-dow {
+    font-size: 0.85rem !important;
+  }
+  .wch-date {
+    font-size: 1.1rem !important;
+    margin-top: 0 !important;
+  }
+
+  /* Card and container layout overrides */
+  .allday-container {
+    border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+    border-radius: var(--md-sys-shape-corner-small) !important;
+    margin-bottom: 8px !important;
+  }
+  .hourly-container {
+    position: static !important;
+    height: auto !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .allday-container:empty,
+  .hourly-container:empty {
+    display: none !important;
+  }
+  .shift-card.absolute-card {
+    position: static !important;
+    height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+    padding: 12px 16px !important;
+    border-radius: var(--md-sys-shape-corner-medium) !important;
+    box-shadow: var(--md-sys-elevation-1) !important;
+  }
+  .shift-card.absolute-card:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Overnights (P1) on mobile should be fully legible */
+  .shift-card.part-1 {
+    height: auto !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+  }
+  .shift-card.part-1 * {
+    display: block !important;
+  }
+
+  .sb-title {
+    font-size: 0.9rem !important;
+  }
+  .sb-loc, .sb-time {
+    font-size: 0.8rem !important;
+  }
+
+  /* Swap Cards mobile override */
+  .card-body {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  .arrow-col {
+    transform: rotate(90deg) !important;
+    margin: 8px 0 !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1203,7 +1314,7 @@ body {
 <header class="hdr">
   <div style="display: flex; align-items: center; gap: 16px;">
     <div class="logo-mark">
-      <span class="material-symbols-outlined" style="font-size: 24px;">schedule_send</span>
+      <i data-lucide="calendar-range" style="width: 24px; height: 24px;"></i>
     </div>
     <div>
       <div class="logo">ShiftMaxxer</div>
@@ -1231,11 +1342,11 @@ body {
           </div>
           <div class="week-nav">
             <button class="md3-btn-icon-outlined" id="prev-week" title="Previous week">
-              <span class="material-symbols-outlined" style="font-size: 20px;">chevron_left</span>
+              <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
             </button>
             <div class="week-label" id="week-label"></div>
             <button class="md3-btn-icon-outlined" id="next-week" title="Next week">
-              <span class="material-symbols-outlined" style="font-size: 20px;">chevron_right</span>
+              <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
             </button>
           </div>
         </div>
@@ -1254,7 +1365,7 @@ body {
       <!-- Standalone Happiness Conserved Card -->
       <div class="happiness-card" id="happiness-card">
         <div class="orb-pulse">
-          <span class="material-symbols-outlined" style="font-size: 22px;">celebration</span>
+          <i data-lucide="party-popper" style="width: 22px; height: 22px;"></i>
         </div>
         <div class="orb-text">
           <div class="orb-label">Total Happiness Conserved</div>
@@ -1274,7 +1385,7 @@ body {
     <div class="swaps-rows-container" style="display: flex; flex-direction: column; gap: 24px;">
       <div class="swaps-row">
         <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-          <span class="material-symbols-outlined" style="color: var(--md-sys-color-tertiary); font-size: 20px;">volunteer_activism</span>
+          <i data-lucide="heart-handshake" style="color: var(--md-sys-color-tertiary); width: 20px; height: 20px;"></i>
           Swaps for You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(you should propose these)</span>
           <span class="count-badge" id="swaps-for-you-count">0</span>
         </h3>
@@ -1283,7 +1394,7 @@ body {
 
       <div class="swaps-row">
         <h3 class="swaps-row-title" style="margin-bottom: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-          <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 20px;">swap_horizontal_circle</span>
+          <i data-lucide="arrow-left-right" style="color: var(--md-sys-color-primary); width: 20px; height: 20px;"></i>
           Swaps with You <span style="font-weight: normal; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant)">(others may propose these to you)</span>
           <span class="count-badge" id="swaps-with-you-count">0</span>
         </h3>
@@ -1386,6 +1497,12 @@ function render() {
   renderSwaps();
 }
 
+function updateLucide() {
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
 /* ── Happiness Card ── */
 function renderHappiness() {
   const swaps = DATA.swaps[cur] || [];
@@ -1403,7 +1520,7 @@ function renderHappiness() {
     el.style.color = 'var(--md-sys-color-on-tertiary-container)';
     pulse.style.background = 'var(--md-sys-color-tertiary)';
     pulse.style.color = 'var(--md-sys-color-on-tertiary)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">celebration</span>';
+    pulse.innerHTML = '<i data-lucide="party-popper" style="width:22px; height:22px;"></i>';
   } else if (total < -0.001) {
     card.style.background = 'var(--md-sys-color-error-container)';
     card.style.color = 'var(--md-sys-color-on-error-container)';
@@ -1411,7 +1528,7 @@ function renderHappiness() {
     el.style.color = 'var(--md-sys-color-on-error-container)';
     pulse.style.background = 'var(--md-sys-color-error)';
     pulse.style.color = 'var(--md-sys-color-on-error)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">trending_down</span>';
+    pulse.innerHTML = '<i data-lucide="trending-down" style="width:22px; height:22px;"></i>';
   } else {
     card.style.background = 'var(--md-sys-color-surface-container-low)';
     card.style.color = 'var(--md-sys-color-on-surface)';
@@ -1419,8 +1536,9 @@ function renderHappiness() {
     el.style.color = 'var(--md-sys-color-on-surface)';
     pulse.style.background = 'var(--md-sys-color-outline)';
     pulse.style.color = 'var(--md-sys-color-surface)';
-    pulse.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;">sentiment_neutral</span>';
+    pulse.innerHTML = '<i data-lucide="meh" style="width:22px; height:22px;"></i>';
   }
+  updateLucide();
 }
 
 /* ── Metrics ── */
@@ -1449,7 +1567,7 @@ function renderPrefs() {
     
     return '<div class="pref-row">'
       + '<div class="pref-lbl-row">'
-      + '<span class="pref-lbl"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span>' + label + '</span>'
+      + '<span class="pref-lbl"><i data-lucide="' + icon + '" style="width:16px; height:16px;"></i>' + label + '</span>'
       + '<span class="pref-val' + (isAny ? ' any' : '') + '">' + displayVal + '</span>'
       + '</div>'
       + barHtml + '</div>';
@@ -1458,7 +1576,7 @@ function renderPrefs() {
   const streakRow = (icon, label, orig, opt, target) => {
     return '<div class="pref-row">'
       + '<div class="pref-lbl-row">'
-      + '<span class="pref-lbl"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span>' + label + '</span>'
+      + '<span class="pref-lbl"><i data-lucide="' + icon + '" style="width:16px; height:16px;"></i>' + label + '</span>'
       + '<span class="pref-val">' + orig.toFixed(1) + ' &rarr; ' + opt.toFixed(1) + ' days</span>'
       + '</div>'
       + '<div style="font-size:0.75rem; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">Target Work Streak: ' + target + ' days</div>'
@@ -1468,7 +1586,7 @@ function renderPrefs() {
   const happinessRow = (origVal, optVal) => {
     return '<div class="pref-row">'
       + '<div class="pref-lbl-row">'
-      + '<span class="pref-lbl" style="color:var(--md-sys-color-tertiary)"><span class="material-symbols-outlined" style="font-size:16px;">celebration</span>Total Happiness</span>'
+      + '<span class="pref-lbl" style="color:var(--md-sys-color-tertiary)"><i data-lucide="party-popper" style="width:16px; height:16px;"></i>Total Happiness</span>'
       + '<span class="pref-val" style="color:var(--md-sys-color-tertiary)">' + origVal + '% &rarr; ' + optVal + '%</span>'
       + '</div>'
       + bar(origVal, optVal)
@@ -1476,13 +1594,14 @@ function renderPrefs() {
   };
   
   document.getElementById('prefs').innerHTML =
-    row('location_on', 'Location Preference', r.locPref, r.locPref === 'ANY', r.loc.orig, r.loc.opt)
+    row('map-pin', 'Location Preference', r.locPref, r.locPref === 'ANY', r.loc.orig, r.loc.opt)
     + '<hr class="divider">'
-    + row('schedule', 'Time Preference', r.typePref, r.typePref === 'ANY', r.type.orig, r.type.opt)
+    + row('clock', 'Time Preference', r.typePref, r.typePref === 'ANY', r.type.orig, r.type.opt)
     + '<hr class="divider">'
-    + streakRow('repeat_on', 'Avg Days Off in a Row', r.streak.orig, r.streak.opt, r.daysPref)
+    + streakRow('repeat', 'Avg Work Streak', r.streak.orig, r.streak.opt, r.daysPref)
     + '<hr class="divider">'
     + happinessRow(r.happiness.orig, r.happiness.opt);
+  updateLucide();
 }
 
 /* ── Week View ── */
@@ -1597,10 +1716,10 @@ function renderWeek() {
         let badge = '';
         if (st === 'give') {
           cls = ' sb-give';
-          badge = '<span class="sb-badge badge-give"><span class="material-symbols-outlined" style="font-size:10px">arrow_upward</span>Give</span>';
+          badge = '<span class="sb-badge badge-give"><i data-lucide="arrow-up" style="width:10px; height:10px; stroke-width:3;"></i>Give</span>';
         } else if (st === 'recv') {
           cls = ' sb-recv';
-          badge = '<span class="sb-badge badge-recv"><span class="material-symbols-outlined" style="font-size:10px">arrow_downward</span>Recv</span>';
+          badge = '<span class="sb-badge badge-recv"><i data-lucide="arrow-down" style="width:10px; height:10px; stroke-width:3;"></i>Recv</span>';
         }
         return '<div class="allday-card' + cls + '" title="' + s.summary + '">'
           + '<div class="sb-title">' + s.summary + '</div>'
@@ -1621,9 +1740,9 @@ function renderWeek() {
       
       let badge = '';
       if (st === 'give') {
-        badge = '<span class="sb-badge badge-give"><span class="material-symbols-outlined" style="font-size:10px">arrow_upward</span>Give</span>';
+        badge = '<span class="sb-badge badge-give"><i data-lucide="arrow-up" style="width:10px; height:10px; stroke-width:3;"></i>Give</span>';
       } else if (st === 'recv') {
-        badge = '<span class="sb-badge badge-recv"><span class="material-symbols-outlined" style="font-size:10px">arrow_downward</span>Recv</span>';
+        badge = '<span class="sb-badge badge-recv"><i data-lucide="arrow-down" style="width:10px; height:10px; stroke-width:3;"></i>Recv</span>';
       }
 
       if (part === 1) {
@@ -1634,8 +1753,8 @@ function renderWeek() {
         const height = s.endHour * 15;
         cards += '<div class="shift-card absolute-card ' + cls + '" style="top: 0px; height: ' + height + 'px;" title="' + s.summary + '">'
           + '<div class="sb-title">' + s.summary + ' (P2)</div>'
-          + '<div class="sb-loc"><span class="material-symbols-outlined" style="font-size:12px">home_work</span>' + locLabel + (s.type ? ' · ' + s.type : '') + '</div>'
-          + '<div class="sb-time"><span class="material-symbols-outlined" style="font-size:12px">schedule</span>' + s.startFmt + ' - ' + s.endFmt + '</div>'
+          + '<div class="sb-loc"><i data-lucide="building" style="width:12px; height:12px;"></i>' + locLabel + (s.type ? ' · ' + s.type : '') + '</div>'
+          + '<div class="sb-time"><i data-lucide="clock" style="width:12px; height:12px;"></i>' + s.startFmt + ' - ' + s.endFmt + '</div>'
           + badge
           + '</div>';
       } else {
@@ -1643,8 +1762,8 @@ function renderWeek() {
         const height = (s.endHour - s.startHour) * 15;
         cards += '<div class="shift-card absolute-card ' + cls + '" style="top: ' + top + 'px; height: ' + height + 'px;" title="' + s.summary + '">'
           + '<div class="sb-title">' + s.summary + '</div>'
-          + '<div class="sb-loc"><span class="material-symbols-outlined" style="font-size:12px">home_work</span>' + locLabel + (s.type ? ' · ' + s.type : '') + '</div>'
-          + '<div class="sb-time"><span class="material-symbols-outlined" style="font-size:12px">schedule</span>' + s.startFmt + ' - ' + s.endFmt + '</div>'
+          + '<div class="sb-loc"><i data-lucide="building" style="width:12px; height:12px;"></i>' + locLabel + (s.type ? ' · ' + s.type : '') + '</div>'
+          + '<div class="sb-time"><i data-lucide="clock" style="width:12px; height:12px;"></i>' + s.startFmt + ' - ' + s.endFmt + '</div>'
           + badge
           + '</div>';
       }
@@ -1658,6 +1777,7 @@ function renderWeek() {
 
   document.getElementById('week-view').innerHTML =
     '<div class="week-grid' + (weekHasAllday ? ' has-allday' : '') + '">' + gridHtml + '</div>';
+  updateLucide();
 }
 
 /* ── Swap Cards ── */
@@ -1672,10 +1792,11 @@ function renderSwaps() {
     rowsContainer.style.display = 'none';
     emptyState.style.display = 'block';
     emptyState.innerHTML = '<div class="no-swaps">'
-      + '<span class="material-symbols-outlined no-swaps-icon">celebration</span>'
+      + '<i data-lucide="party-popper" class="no-swaps-icon"></i>'
       + '<div class="no-swaps-msg">Already optimized!</div>'
       + '<div class="no-swaps-sub">No swaps proposed for ' + cap(cur) + ' — schedule is already great.</div>'
       + '</div>';
+    updateLucide();
     return;
   }
 
@@ -1717,20 +1838,20 @@ function renderSwaps() {
         + '<div class="swap-card-hdr ' + hdrClass + '">'
         + '<div class="card-hdr-left" style="display:flex; flex-direction:column; gap:4px;">'
         + '<div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--md-sys-color-on-surface-variant)">Swap ' + (i+1) + '</div>'
-        + '<div class="swap-with-badge"><span class="material-symbols-outlined" style="font-size:14px">swap_horiz</span>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
+        + '<div class="swap-with-badge"><i data-lucide="arrow-left-right" style="width:14px; height:14px;"></i>with <span class="partner-name partner-chip">' + partnerName + '</span></div>'
         + '</div>'
         + '<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">'
         + '<span class="delta-pill ' + dpClass + '">' 
-        + (isPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + (isPos ? '<i data-lucide="trending-up" style="width:14px; height:14px;"></i>' : isNeg ? '<i data-lucide="trending-down" style="width:14px; height:14px;"></i>' : '')
         + deltaLabel + '</span>'
         + '<span class="delta-pill ' + partnerDpClass + '">' 
-        + (isPartnerPos ? '<span class="material-symbols-outlined" style="font-size:14px">trending_up</span>' : isPartnerNeg ? '<span class="material-symbols-outlined" style="font-size:14px">trending_down</span>' : '')
+        + (isPartnerPos ? '<i data-lucide="trending-up" style="width:14px; height:14px;"></i>' : isPartnerNeg ? '<i data-lucide="trending-down" style="width:14px; height:14px;"></i>' : '')
         + partnerDeltaLabel + '</span>'
         + '</div>'
         + '</div>'
         + '<div class="card-body">'
         + blk(sw, 'give')
-        + '<div class="arrow-col"><div class="arrow-btn"><span class="material-symbols-outlined">arrow_forward</span></div></div>'
+        + '<div class="arrow-col"><div class="arrow-btn"><i data-lucide="arrow-right" style="width:20px; height:20px;"></i></div></div>'
         + blk(sw, 'recv')
         + '</div></div>';
     }).join('');
@@ -1738,12 +1859,13 @@ function renderSwaps() {
 
   renderGrid(document.getElementById('swaps-for-you-grid'), swapsForYou);
   renderGrid(document.getElementById('swaps-with-you-grid'), swapsWithYou);
+  updateLucide();
 }
 
 function blk(sw, side) {
   const p = side === 'give' ? 'give' : 'recv';
   const label = side === 'give' ? 'Giving Away' : 'Receiving';
-  const icon = side === 'give' ? 'arrow_upward' : 'arrow_downward';
+  const icon = side === 'give' ? 'arrow-up' : 'arrow-down';
   const loc = sw[p + 'Loc'];
   const type = sw[p + 'Type'];
   
@@ -1753,11 +1875,11 @@ function blk(sw, side) {
   const lbl = loc || 'Jeopardy';
   
   return '<div class="shift-blk ' + side + '">'
-    + '<div class="blk-lbl"><span class="material-symbols-outlined" style="font-size:12px">' + icon + '</span>' + label + '</div>'
+    + '<div class="blk-lbl"><i data-lucide="' + icon + '" style="width:12px; height:12px;"></i>' + label + '</div>'
     + '<div class="blk-summary">' + sw[p + 'Summary'] + '</div>'
     + '<div class="blk-meta">'
-    + '<div><span class="material-symbols-outlined" style="font-size:12px; vertical-align:middle; margin-right:4px;">calendar_today</span>' + fmtShort(sw[p + 'Date']) + '</div>'
-    + '<div><span class="material-symbols-outlined" style="font-size:12px; vertical-align:middle; margin-right:4px;">schedule</span>' + sw[p + 'Start'] + ' &ndash; ' + sw[p + 'End'] + '</div>'
+    + '<div><i data-lucide="calendar" style="width:12px; height:12px; vertical-align:middle; margin-right:4px;"></i>' + fmtShort(sw[p + 'Date']) + '</div>'
+    + '<div><i data-lucide="clock" style="width:12px; height:12px; vertical-align:middle; margin-right:4px;"></i>' + sw[p + 'Start'] + ' &ndash; ' + sw[p + 'End'] + '</div>'
     + '</div>'
     + '<span class="loc-tag ' + lcls + '">' + lbl + (type ? ' &middot; ' + type : '') + '</span>'
     + '</div>';
