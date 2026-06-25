@@ -186,7 +186,7 @@ _TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shift Optimizer &mdash; Swap Report</title>
+<title>Shift Swap Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1377,12 +1377,8 @@ svg.lucide {
 <body>
 <header class="hdr">
   <div style="display: flex; align-items: center; gap: 16px;">
-    <div class="logo-mark">
-      <i data-lucide="calendar-range" style="width: 24px; height: 24px;"></i>
-    </div>
     <div>
       <div class="logo">Shift Optimizer</div>
-      <div class="logo-sub">Swap Optimizer Report</div>
     </div>
   </div>
 
