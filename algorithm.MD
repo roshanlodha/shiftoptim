@@ -68,15 +68,11 @@ U_i(A_i)=w_{\text{loc},i}\,\phi_{\text{loc}}(A_i)
         +w_{\text{str},i}\,\phi_{\text{str}}(A_i)\;\in[0,1].
 $$
 
-### 2.3 Hours-difference penalty (implemented)
+### 2.3 Hours-difference penalty
 
 A 1-for-1 swap conserves shift *count* but not necessarily shift *hours*: trading an 8-hour morning shift for a 10-hour swing shift hands the receiving resident two additional hours of work without surfacing in any of the three preference scores above. To discourage such asymmetric exchanges, a configurable linear penalty is subtracted from the base utility:
 
-$$
-U_i^{\text{adj}}(A_i)
-  = U_i(A_i)
-  - w_{\Delta h}\,\bigl(H(A_i)-H_i^{\text{orig}}\bigr),
-$$
+$$ U_i^{\text{adj}}(A_i) = U_i(A_i) - w_{\Delta h}\,\bigl(H(A_i)-H_i^{\text{orig}}\bigr), $$
 
 where $H(A_i)=\sum_{s\in A_i}(t_{\text{end}}(s)-t_{\text{start}}(s))$ in hours, $H_i^{\text{orig}}$ is the resident's total hours in the original schedule, and $w_{\Delta h}$ is the tunable scalar `TIME_DIFF_WEIGHT` (default `0.02`; set to `0.0` to restore the unpenalized behavior). A positive penalty shrinks utility when a resident ends up with more hours than they started with, and symmetrically rewards shedding hours. Because the penalty is applied identically to the pre-trade and post-trade evaluations used in the per-edge and per-cycle Pareto tests, the mechanism will not accept a trade that hands a resident significantly more hours unless the gain in location, time, or streak preference is large enough to compensate.
 
@@ -161,7 +157,7 @@ We state the properties the Complete Mode mechanism provides and argue each.
 
 *Argument.* The number of shifts and residents is finite. At each step, a cycle is applied and its shifts are locked, reducing the pool of available shifts. Since locked shifts are never unlocked, the algorithm must terminate. $\square$
 
-**Proposition 4 (Soundness of the short-cycle edge model).** *For $n_{\max}\le 3$, the per-edge feasibility and utility checks fully characterize each participant's post-trade state.*
+**Proposition 4 (Soundness of the short-cycle edge model).** For $n_{\max}\le 3$, *the per-edge feasibility and utility checks fully characterize each participant's post-trade state.*
 
 *Argument.* In a simple cycle of length 2 or 3, every pair of nodes is adjacent, and adjacency forbids shared ownership. Hence all participants in such a cycle are distinct, and each gives up exactly one shift and receives exactly one. The single-swap set $A_i'$ used to define each edge is therefore precisely that resident's true post-trade schedule, so the edge-level $V$ and $U$ tests are exact. $\square$
 
@@ -206,12 +202,6 @@ While location, time of day, and shift type are naturally folded into per-shift 
 To maintain streak preferences and other structural constraints, V2 will handle them in one of two ways:
 1. **Hard Constraints:** Keep streak lengths as hard constraints in the feasibility check $V(A_i) = 1$.
 2. **Hybrid Utility:** Keep a small, optional soft penalty term for streak deviations in the utility function, combined with the primary shift-rating score.
-
-### 8.4 Rollout Plan and Elicitation
-
-1. **User Interface:** The resident survey will present the schedule calendar. Residents can click shifts to assign ratings.
-2. **Default Ratings:** Pre-populate default ratings based on shift attributes.
-3. **Core Guarantees:** Because the utility remains a real-valued function evaluated on the shift set, all core guarantees (Legality, Pareto improvement, and Termination) are preserved by construction.
 
 ---
 
