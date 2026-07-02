@@ -11,29 +11,15 @@ The exchange mechanism operates through a directed trade graph where each shift 
 3. **Greedy Execution.** The algorithm identifies all valid cycles that are strictly Pareto-improving, meaning at least one resident is happier and no resident is worse off. It executes the trade with the highest utility gain first, updates the schedule, and rebuilds the trade graph.
 4. **Termination.** This process repeats until no further Pareto-improving trades can be found, or until participants reach their individual swap budgets.
 
-Shift Optimizer supports two execution modes that differ in how trades are selected and applied:
+Shift Optimizer supports two execution modes:
 
-### Batch Mode (default)
+### Limited Mode (default)
 
-The optimizer builds the trade graph once against a fixed snapshot of the original schedule, enumerates all valid Pareto-improving cycles, and selects a shift-disjoint set using a greedy pass with an all-subset independence check. Any subset of the selected trades can be applied in any order and is guaranteed to be ACGME-legal and utility-non-worsening for all participants. All selected trades are applied automatically without user intervention.
+Production mode. Builds trade graph once against original schedule snapshot. Greedily selects shift-disjoint independent cycles using all-subsets checks. Keeps recommendations fully independent so chief resident can approve any subset in any order.
 
-### Live Mode (`--live`)
+### Complete Mode (`--complete`)
 
-The optimizer runs iteratively: it rebuilds the trade graph from the current schedule at each step, picks the single highest-gain Pareto-improving cycle, and pauses to display it on the command line and ask for confirmation before applying it. This allows a chief resident or coordinator to review each proposed swap individually and approve or reject it in real time.
-
-- **Rejection memory.** Any swap that is denied is recorded by its exact move set and is never proposed again in the same session, so the next-best candidate surfaces on the following iteration.
-- **Termination.** The session ends when all remaining candidates have been either blacklisted through rejection or exhausted by per-person participation caps.
-- **Output.** After the interactive session concludes, the accepted-swap log is printed to the terminal and the HTML report is written, reflecting only the approved trades.
-
-### Web Live-Voting Mode (`app.py`)
-
-A browser-based alternative to CLI live mode. The Flask app (`app.py`) serves a dashboard where each resident logs in and votes to accept or reject proposed swaps. An admin initializes the session, sets optimizer parameters, and monitors progress. The app persists schedule state and votes in a local SQLite database via `shiftoptim/database.py`, so the session survives server restarts.
-
-```bash
-python app.py
-```
-
-Open `http://localhost:5000` in a browser. Residents cast votes; the optimizer advances to the next iteration once all participants in a trade have voted.
+Iterative mode. Rebuilds trade graph from mutated schedule at each step. Greedily applies best Pareto-improving cycle, locks shifts, and repeats until no cycles remain. Trades are sequentially dependent but can explore broader swap chains.
 
 ## Guarantees
 
@@ -47,21 +33,18 @@ The mechanism provides three core guarantees:
 
 The project is structured as follows:
 
-- [main.py](file:///Users/roshanlodha/Documents/shiftmaxxer/main.py): Command-line entrypoint for the batch and CLI live-mode optimizer.
-- [app.py](file:///Users/roshanlodha/Documents/shiftmaxxer/app.py): Flask web application for browser-based live voting mode.
-- [requirements.txt](file:///Users/roshanlodha/Documents/shiftmaxxer/requirements.txt): Python dependencies.
-- [shiftoptim/](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim): The core Python package containing scheduling logic.
-  - [config.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/config.py): Configuration settings and defaults (including `START_DATE` and `TIME_DIFF_WEIGHT`).
-  - [models.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/models.py): Data structures for shifts, schedules, and residents.
-  - [ingest.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/ingest.py): Logic to parse ICS calendar files and preference CSVs.
-  - [feasibility.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/feasibility.py): Verification of ACGME duty-hour compliance.
-  - [utility.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/utility.py): Satisfaction score and adjusted utility calculation (including the hours-difference penalty).
-  - [graph.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/graph.py): Construction of the directed trade graph.
-  - [optimizer.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/optimizer.py): Cycle detection and trade execution — both the batch single-snapshot optimizer and the iterative Live mode solver.
-  - [database.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/database.py): SQLite persistence layer for the web live-voting mode (schedule state, votes, trade history).
-  - [report.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/report.py): Plain text formatting for execution logs and the CLI confirmation prompt used in Live mode.
-  - [render.py](file:///Users/roshanlodha/Documents/shiftmaxxer/shiftoptim/render.py): HTML report generator.
-- [templates/](file:///Users/roshanlodha/Documents/shiftmaxxer/templates): Jinja2 HTML templates served by the Flask app.
+- [main.py](file:///Users/roshanlodha/Documents/shiftoptim/main.py): Command-line entrypoint.
+- [requirements.txt](file:///Users/roshanlodha/Documents/shiftoptim/requirements.txt): Python dependencies.
+- [shiftoptim/](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim): Core Python package.
+  - [config.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/config.py): Configuration settings and defaults.
+  - [models.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/models.py): Data structures for shifts, schedules, and residents.
+  - [ingest.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/ingest.py): Logic to parse ICS files and preference CSVs.
+  - [feasibility.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/feasibility.py): Verification of ACGME duty-hour compliance.
+  - [utility.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/utility.py): Satisfaction score and adjusted utility calculation.
+  - [graph.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/graph.py): Construction of the directed trade graph.
+  - [optimizer.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/optimizer.py): Cycle detection and trade execution (both limited and complete modes).
+  - [report.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/report.py): Plain text formatting for execution logs.
+  - [render.py](file:///Users/roshanlodha/Documents/shiftoptim/shiftoptim/render.py): HTML report generator.
 - [data/](file:///Users/roshanlodha/Documents/shiftmaxxer/data): Input schedules and preferences.
   - `ics/`: Input calendar files in iCalendar format.
   - `preferences.csv`: Resident preferences (location, time, streak length, weights, and days off).
@@ -86,17 +69,17 @@ To set up the environment and run the optimizer:
    python main.py -K 2 -n 2 --html customized_report.html
    ```
 
-4. Run in Live mode to review and confirm each proposed swap interactively:
+4. Run in Complete mode to iteratively rebuild the trade graph:
    ```bash
-   python main.py --live
+   python main.py --complete
    ```
 
     Key arguments:
-    - `-K`, `--max-swaps-per-person`: The maximum number of swaps any single resident can be charged with as the primary beneficiary (default: unlimited). Use -1 for unlimited.
+    - `-K`, `--max-swaps-per-person`: The maximum number of swaps any single resident can be charged with as the primary beneficiary. Use -1 for unlimited.
     - `-n`, `--max-cycle`: The maximum cycle length to search for (2 for 1-for-1 swaps, 3 to include three-way rotations).
     - `--allow-jeopardy-swaps`: Allow jeopardy or backup shifts to participate in trading.
-    - `--live`: Enable Live mode. Each proposed swap is displayed on the command line and must be confirmed (`y`) or rejected (`N`) before the algorithm proceeds. Rejected swaps are permanently blacklisted for the session.
-    - `--ics`: Input calendar path. Static mode defaults to the combined calendar file `data/07_27_2026.ics`; a directory of per-resident `.ics` files is still supported.
+    - `--complete`: Enable Complete mode (iterative graph rebuilding).
+    - `--ics`: Input calendar path. Defaults to `data/07_27_2026.ics`.
     - `--html`: Output path for the HTML report (default: `shiftswap.html`).
 
     Additional settings:

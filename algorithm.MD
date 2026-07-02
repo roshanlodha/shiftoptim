@@ -124,71 +124,56 @@ This construction is a bounded, preference-aware variant of the classic *Top Tra
 
 ---
 
-## 5. The Algorithm
+### 5. The Algorithm (Complete Mode)
 
 Four hyperparameters control the trade search:
 
-- $K_{\text{pp}}$, the **per-person participation cap**: the maximum number of trades any single resident may appear in (any role). Set to $-1$ for unlimited. Default is $3$. This limit ensures equity; no resident is churned through many trades while others remain unchanged. It also bounds the all-subset verification cost at $2^{K_{\text{pp}}}$ subsets per resident per candidate.
+- $K_{\text{pp}}$, the **per-person participation cap**: the maximum number of trades any single resident may appear in (any role). Set to $-1$ for unlimited. Default is $3$.
 - $n_{\max}$, the **maximum cycle length**: $2$ for 1-for-1 trades only, $3$ to also allow three-way rotations.
-- `ALLOW_JEOPARDY_SWAPS`: when `True`, jeopardy shifts participate in trading but are type-isolated (jeopardy trades only with jeopardy); when `False` (default), jeopardy shifts are pinned and excluded from all trading.
-- `START_DATE`: a datetime threshold (or empty string `""` to allow all dates). Scheduled shifts before this date are discarded during ingestion and cannot be traded.
+- `ALLOW_JEOPARDY_SWAPS`: when `True`, jeopardy shifts participate in trading but are type-isolated; when `False` (default), jeopardy shifts are pinned and excluded.
+- `START_DATE`: a datetime threshold. Shifts before this date are discarded and cannot be traded.
 
-The mechanism runs in a single pass over a fixed snapshot of the original schedule:
+In Complete Mode, the algorithm iteratively rebuilds the trade graph after applying the best cycle:
 
-1. **Build** the trade graph $G$ once from the original schedule. The schedule is not modified during the selection phase.
-2. **Enumerate** all simple cycles of length $\le n_{\max}$ and evaluate each against the original snapshot: recompute each participant's post-trade utility and discard cycles where any participant is worse off or no participant is strictly better. Each surviving cycle's deltas are measured against the original, unmodified schedule.
-3. **Sort** surviving cycles by total utility gain $\Delta U_{\text{total}}=\sum_{x}\Delta U_x$, descending.
-4. **Select greedily**: iterate over sorted candidates and, for each, apply three acceptance tests in order:
-   - **Shift-disjointness.** If any shift uid in the candidate (given or received) appears in an already-selected trade, skip. This ensures no shift is traded twice.
-   - **Participation cap.** If any participant would exceed $K_{\text{pp}}$ total trades, skip (unless $K_{\text{pp}}=-1$).
-   - **All-subset independence check.** For every participant $i$, let $T_i$ be the set of already-selected trades in which $i$ appears. For every non-empty subset $S \subseteq T_i \cup \{\text{candidate}\}$ that includes the candidate, reconstruct $i$'s shift set from the original by applying every move in $S$. Require (a) $V(A_i') = 1$ (ACGME-legal, day-off-respecting, no overlap) and (b) $U_i(A_i') \ge U_i(A_i^{\text{orig}})$. Subsets that do not include the candidate were verified when each earlier trade was accepted, so only subsets containing the candidate need testing. If any subset fails, skip the candidate.
-
-   If all three tests pass, **accept** the candidate: record it, mark its shifts used, and update participant counts.
-5. **Apply** all selected trades to the schedule. Because selected trades are shift-disjoint, the final schedule is the same regardless of application order.
-
-The output is an unordered set of concrete, explainable recommendations. Because every accepted trade passed the all-subset check, a chief resident may approve any subset of recommendations, in any order, and each approved trade is guaranteed to be ACGME-legal and utility-improving for all participants involved.
+1. **Rebuild** the trade graph $G$ from the *current* mutated schedule state (reflecting all swaps accepted so far). Shifts involved in previously accepted swaps are locked and excluded from $G$.
+2. **Enumerate** all simple cycles of length $\le n_{\max}$ and evaluate each: recompute each participant's utility and discard cycles where any participant is worse off or no participant is strictly better. Apply the per-person participation cap.
+3. If no candidates remain, **terminate**.
+4. **Select** the single best candidate cycle:
+   - Prefer cycles involving residents with the fewest swaps accepted so far.
+   - Break ties by total utility gain $\Delta U_{\text{total}}$, descending.
+5. **Apply** the chosen cycle to the schedule, lock its shift uids, increment the beneficiary's participation count, record in the log, and return to Step 1.
 
 ---
 
 ## 6. Guarantees
 
-We state the properties the mechanism provides and argue each informally.
+We state the properties the Complete Mode mechanism provides and argue each.
 
 **Proposition 1 (Legality).** *Every schedule produced is ACGME-compliant and respects all day-off requests.*
 
-*Argument.* The initial schedule is assumed legal. Inductively, suppose the schedule before a trade is legal. A cycle is applied only after step 3 recomputes each participant's post-trade shift set and confirms $V=1$ for all of them. Non-participants are untouched. Hence the post-trade schedule is legal. By induction every intermediate and final schedule is legal. $\square$
+*Argument.* The initial schedule is assumed legal. Inductively, suppose the schedule before a trade is legal. A cycle is applied only after it is confirmed $V=1$ for all participants. Non-participants are untouched. Hence the post-trade schedule is legal. By induction every intermediate and final schedule is legal. $\square$
 
 **Proposition 2 (Pareto improvement).** *No resident's utility decreases, and each executed trade increases group satisfaction.*
 
-*Argument.* Step 3 admits a cycle only if $\Delta U_x\ge 0$ for every participant $x$ and $\Delta U_x>0$ for at least one; non-participants have $\Delta U_x=0$. Therefore each trade is a weak improvement for all residents and a strict improvement for the total $\Delta U_{\text{total}}>0$. Composing such steps preserves the property: no resident's utility ever decreases across the entire run. $\square$
+*Argument.* A cycle is admitted only if $\Delta U_x\ge 0$ for every participant $x$ and $\Delta U_x>0$ for at least one; non-participants have $\Delta U_x=0$. Therefore each trade is a weak improvement for all residents and a strict improvement for the total $\Delta U_{\text{total}}>0$. Composing such steps preserves the property: no resident's utility ever decreases across the entire run. $\square$
 
 **Proposition 3 (Termination).** *The algorithm halts.*
 
-*Argument.* The algorithm is a single greedy pass over a finite list of candidate cycles enumerated from a fixed graph. The number of simple cycles of length $\le 3$ in a finite graph is finite, so the candidate list is finite and the pass terminates. $\square$
+*Argument.* The number of shifts and residents is finite. At each step, a cycle is applied and its shifts are locked, reducing the pool of available shifts. Since locked shifts are never unlocked, the algorithm must terminate. $\square$
 
 **Proposition 4 (Soundness of the short-cycle edge model).** *For $n_{\max}\le 3$, the per-edge feasibility and utility checks fully characterize each participant's post-trade state.*
 
-*Argument.* In a simple cycle of length 2 or 3, every pair of nodes is adjacent, and adjacency forbids shared ownership (edges require $i\ne j$). Hence all participants in such a cycle are distinct, and each gives up exactly one shift and receives exactly one. The single-swap set $A_i'$ used to define each edge is therefore precisely that resident's true post-trade schedule, so the edge-level $V$ and $U$ tests are exact. (For cycles of length $\ge 4$ a resident may appear twice, giving up or receiving two shifts; the single-swap edge test no longer captures their combined post-trade state. This is the formal reason the mechanism caps $n_{\max}$ at 3 unless full per-cycle recomputation is added.) $\square$
-
-**Proposition 5 (Full independence).** *Any non-empty subset of the recommended trades, applied in any order, is ACGME-legal and leaves no participant's utility below their original value.*
-
-*Argument.* Fix any non-empty subset $\mathcal{S}$ of recommended trades and any participant $i$ who appears in at least one trade in $\mathcal{S}$. Let $\mathcal{S}_i \subseteq \mathcal{S}$ be the trades in $\mathcal{S}$ that involve $i$. By shift-disjointness (acceptance test 1), no shift uid appears in two selected trades, so the moves of the trades in $\mathcal{S}_i$ act on disjoint shifts; the order in which they are applied is therefore irrelevant and the resulting shift set $A_i'$ depends only on $\mathcal{S}_i$, not on any other trade in $\mathcal{S}$. The all-subset independence check (acceptance test 3) required, at the moment each trade in $\mathcal{S}_i$ was accepted, that for every subset of the then-selected trades for $i$ plus the candidate—including the subset $\mathcal{S}_i$ itself—the resulting $A_i'$ satisfies $V(A_i')=1$ and $U_i(A_i') \ge U_i(A_i^{\text{orig}})$. Non-participants have $A_i' = A_i^{\text{orig}}$ and are trivially unaffected. Hence the post-trade schedule for every subset $\mathcal{S}$ is legal and Pareto-non-worsening for all residents. $\square$
+*Argument.* In a simple cycle of length 2 or 3, every pair of nodes is adjacent, and adjacency forbids shared ownership. Hence all participants in such a cycle are distinct, and each gives up exactly one shift and receives exactly one. The single-swap set $A_i'$ used to define each edge is therefore precisely that resident's true post-trade schedule, so the edge-level $V$ and $U$ tests are exact. $\square$
 
 ---
 
 ## 7. Discussion and Limitations
 
-**Greedy, not globally optimal.** The mechanism increases satisfaction sequentially, one trade at a time. Locally best Pareto-improving trade sequences do not necessarily reach a globally optimal allocation; a different ordering could in principle yield a higher final total. This trade-off is acceptable because the greedy policy is transparent, fast, and each step is independently justifiable to the affected residents. We value these properties more than a marginal optimality gain that is difficult to explain.
+**Greedy, not globally optimal.** The mechanism increases satisfaction sequentially, one trade at a time. Locally best Pareto-improving trade sequences do not necessarily reach a globally optimal allocation; a different ordering could in principle yield a higher final total.
 
-**Preference modeling.** Satisfaction is linear in three normalized scores. This formulation is interpretable and easy to elicit but cannot express interactions (e.g. "I only mind overnights when they are at BWH"). Richer utility models slot directly into the same graph machinery.
+**Preference modeling.** Satisfaction is linear in three normalized scores. This formulation is interpretable and easy to elicit but cannot express interactions. Richer utility models slot directly into the same graph machinery.
 
-**Strict Pareto can be conservative.** Because no resident may lose utility, some globally beneficial reshuffles, where one person sacrifices slightly so several others gain a lot, are excluded by design. This is the cost of guaranteeing voluntary, no-regret participation.
-
-**Cycle length.** Restricting to 2- and 3-cycles keeps the search fast and the recommendations human-comprehensible. Longer rotations are mechanically possible but are harder to coordinate in practice and require the stronger per-cycle recomputation noted in Proposition 4.
-
-**Full independence via single-snapshot selection with all-subset verification.** The mechanism now builds the trade graph once against the original schedule and selects a shift-disjoint set of trades. Shift-disjointness alone prevents shift reuse but does not, by itself, guarantee subset independence: a resident who appears in two trades on two distinct shifts could still have a shift-set interaction (e.g. a streak violation) that only materializes when both trades are applied. The mechanism therefore adds an **all-subset feasibility and Pareto check** (acceptance test 3 in Section 5) at selection time. This check verifies, for every participant and every subset of their selected trades including the candidate, that the resulting schedule is ACGME-legal and utility-non-worsening relative to the original. Proposition 5 establishes that this is sufficient for full independence.
-
-The cost of the all-subset check is $O(2^{K_{\text{pp}}})$ subsets per participant per candidate. With the default cap $K_{\text{pp}} = 3$, this is at most 8 subsets; even at $K_{\text{pp}} = 6$ it is 64 subsets, each requiring one utility evaluation and one feasibility scan—negligible for programs of this size. A conservative special case is **resident-disjoint** selection, which caps each resident at a single trade and trivially satisfies independence (no resident has two trades to interact). Resident-disjointness is not required here; the all-subset check provides the same formal guarantee with greater flexibility.
+**Strict Pareto can be conservative.** Because no resident may lose utility, some globally beneficial reshuffles, where one person sacrifices slightly so several others gain a lot, are excluded by design.
 
 ---
 
@@ -201,12 +186,12 @@ To address this, the plan for **V2 of the algorithm** is to shift from multi-dim
 ### 8.1 Concept and Benefits
 
 1. **Algorithm Simplification:** The utility function $U_i(A_i)$ is simplified to a direct function of the ratings of the shifts in $A_i$ (e.g., the sum or average rating). We no longer need separate calculations or weights for location, time of day, shift length, overnight status, or holiday status.
-2. **Granular Control:** Residents can express highly specific preferences that are hard to capture with global weights. For example, a resident can rate a specific Friday swing shift low due to a personal conflict, or rate BWH overnights lower than MGH overnights, without requiring complex interaction terms in the utility model.
-3. **Implicit Attribute Capture:** Factors like shift length, overnight burden, and premium calendar days (weekends/holidays) are implicitly captured. A resident who dislikes weekends or long shifts will naturally rate those specific shifts lower.
+2. **Granular Control:** Residents can express highly specific preferences that are hard to capture with global weights.
+3. **Implicit Attribute Capture:** Factors like shift length, overnight burden, and premium calendar days (weekends/holidays) are implicitly captured.
 
 ### 8.2 Utility Formulation
 
-For a resident $i$, let $R_i(s) \in [1, 5]$ (or normalized to $[0, 1]$) be the resident's rating for shift $s$. The individual utility for shift set $A_i$ becomes:
+For a resident $i$, let $R_i(s) \in [1, 5]$ be the resident's rating for shift $s$. The individual utility for shift set $A_i$ becomes:
 
 $$
 U_i(A_i) = \frac{1}{|A_i|} \sum_{s \in A_i} R_i(s)
@@ -219,63 +204,51 @@ This linear average preserves the monotonicity required for the trade graph. The
 While location, time of day, and shift type are naturally folded into per-shift ratings, consecutive-day streak length is a structural property of the shift *set* $A_i$ rather than individual shifts. 
 
 To maintain streak preferences and other structural constraints, V2 will handle them in one of two ways:
-1. **Hard Constraints:** Keep streak lengths as hard constraints in the feasibility check $V(A_i) = 1$ (e.g., enforcing a maximum streak of 6 and minimum rest of 12 hours).
-2. **Hybrid Utility:** Keep a small, optional soft penalty term for streak deviations in the utility function, combined with the primary shift-rating score:
-   $$
-   U_i(A_i) = (1 - w_{\text{str}}) \left( \frac{1}{|A_i|} \sum_{s \in A_i} R_i(s) \right) + w_{\text{str}} \phi_{\text{str}}(A_i)
-   $$
+1. **Hard Constraints:** Keep streak lengths as hard constraints in the feasibility check $V(A_i) = 1$.
+2. **Hybrid Utility:** Keep a small, optional soft penalty term for streak deviations in the utility function, combined with the primary shift-rating score.
 
 ### 8.4 Rollout Plan and Elicitation
 
-1. **User Interface:** The resident survey will present the schedule calendar. Residents can click shifts to assign ratings (e.g., a 1-to-5 star scale or color-coded preferences like "Prefer," "Indifferent," "Avoid").
-2. **Default Ratings:** To reduce survey fatigue, the system will pre-populate default ratings based on shift attributes (e.g., lower defaults for overnights or weekends), which residents can then customize.
-3. **Core Guarantees:** Because the utility remains a real-valued function evaluated on the shift set, all core guarantees (Legality, Pareto improvement, Termination, and Full Independence) are preserved by construction.
-
-
+1. **User Interface:** The resident survey will present the schedule calendar. Residents can click shifts to assign ratings.
+2. **Default Ratings:** Pre-populate default ratings based on shift attributes.
+3. **Core Guarantees:** Because the utility remains a real-valued function evaluated on the shift set, all core guarantees (Legality, Pareto improvement, and Termination) are preserved by construction.
 
 ---
 
-## 9. Live Mode: Human-in-the-Loop Execution
+## 9. Limited Mode: Single-Snapshot Optimizer (Production Mode)
 
-The single-snapshot batch optimizer (Section 5) selects and applies all trades automatically. In practice a chief resident may want to review each proposed swap individually — for reasons outside the model, such as interpersonal dynamics, upcoming vacation plans, or upcoming conference coverage — before it is committed. **Live mode** provides this capability.
+Because Complete Mode rebuilds the trade graph from the mutated schedule after each accepted swap, the recommended trades are sequentially dependent: executing swap 2 may depend on having executed swap 1. In practice, chief residents need to review recommendations and may want to approve some while rejecting others. 
 
-### 9.1 Algorithm
+To ensure that shift swaps are **practically possible** to execute, the system provides **Limited Mode** (the production default). This mode freezes the trade graph against the original schedule snapshot and solves for a set of fully independent, shift-disjoint swaps.
 
-Live mode restores the iterative execution strategy from an earlier version of the mechanism and augments it with a human confirmation gate:
+### 9.1 Limited Mode Algorithm
 
-1. **Rebuild** the trade graph $G$ from the *current* schedule (reflecting all swaps accepted so far). Shifts involved in a previously accepted swap are locked and excluded from the graph.
-2. **Enumerate** all simple cycles of length $\le n_{\max}$, evaluate each against the current schedule (the same Pareto and feasibility checks as Section 5), and filter out any cycle whose exact swap signature appears in the **rejection blacklist** $\mathcal{R}$ (see Section 9.2). Apply the per-person participation cap.
-3. If no candidates remain, **terminate**.
-4. **Select** the best candidate using the same fairness-then-delta ordering as Section 5 (prefer cycles involving residents with fewest accepted swaps so far; break ties by total $\Delta U$).
-5. **Present** the candidate to the operator on the command line, showing each participant, the shift given, the shift received, and the individual $\Delta U$.
-6. The operator responds with `y` (accept) or `N` (deny):
-   - **Accepted:** apply the cycle to the schedule, lock its shift uids, increment the beneficiary's participation counter, record in the accepted log.
-   - **Denied:** add the cycle's exact swap signature to $\mathcal{R}$; the schedule is unchanged. Return to step 1 so the next-best candidate is proposed.
-7. The session ends when all remaining candidates are either blacklisted or capped. The accepted-swap log is printed and the HTML report is written.
+1. **Build** the trade graph $G$ once against the original schedule. The schedule is not modified during the selection pass.
+2. **Enumerate** all simple cycles of length $\le n_{\max}$ and evaluate each against the original snapshot: recompute each participant's post-trade utility and discard cycles where any participant is worse off or no participant is strictly better. Each surviving cycle's deltas are measured against the original, unmodified schedule.
+3. **Sort** surviving cycles by total utility gain $\Delta U_{\text{total}}=\sum_{x}\Delta U_x$, descending.
+4. **Select greedily**: iterate over sorted candidates and, for each, apply three acceptance tests in order:
+   - **Shift-disjointness.** If any shift uid in the candidate (given or received) appears in an already-selected trade, skip. This ensures no shift is traded twice.
+   - **Participation cap.** If any participant would exceed $K_{\text{pp}}$ total trades, skip (unless $K_{\text{pp}}=-1$).
+   - **All-subset independence check.** For every participant $i$, let $T_i$ be the set of already-selected trades in which $i$ appears. For every non-empty subset $S \subseteq T_i \cup \{\text{candidate}\}$ that includes the candidate, reconstruct $i$'s shift set from the original by applying every move in $S$. Require (a) $V(A_i') = 1$ (ACGME-legal, day-off-respecting, no overlap) and (b) $U_i(A_i') \ge U_i(A_i^{\text{orig}})$. If any subset fails, skip the candidate.
 
-Because the graph is rebuilt from the mutated schedule after each accepted swap, Live mode does **not** provide the full-independence guarantee of the batch optimizer (Proposition 5 in Section 6). Instead it provides the same sequential guarantee as the original iterative solver: each accepted swap was Pareto-improving and ACGME-legal against the schedule at the moment it was proposed, and each swap's shifts are locked so no shift is ever traded twice.
+   If all three tests pass, **accept** the candidate: record it, mark its shifts used, and update participant counts.
+5. **Apply** all selected trades to the schedule. Because selected trades are shift-disjoint, the final schedule is the same regardless of application order.
 
-### 9.2 Rejection Blacklist
+### 9.2 The Full Independence Guarantee
 
-A denied swap is identified by its **exact swap key**: the frozen set of $(giver, shift\_given, shift\_received)$ triples that constitute the cycle. Using a frozenset makes the key invariant to cycle rotation (the same three-way trade written starting from a different node maps to the same key). The blacklist $\mathcal{R}$ is maintained in memory for the duration of the session; it is not persisted across runs.
+Limited Mode provides a powerful guarantee:
 
-The blacklist ensures that:
-- The operator is never shown the same swap twice in a session.
-- After a denial the graph rebuild surfaces the next-best alternative rather than immediately re-proposing the same cycle.
-- If all remaining Pareto-improving candidates are blacklisted, the session terminates cleanly.
+**Proposition 5 (Full independence).** *Any non-empty subset of the recommended trades, applied in any order, is ACGME-legal and leaves no participant's utility below their original value.*
 
-### 9.3 Comparison with Batch Mode
+*Argument.* Fix any non-empty subset $\mathcal{S}$ of recommended trades and any participant $i$ who appears in at least one trade in $\mathcal{S}$. Let $\mathcal{S}_i \subseteq \mathcal{S}$ be the trades in $\mathcal{S}$ that involve $i$. By shift-disjointness, no shift uid appears in two selected trades, so the moves of the trades in $\mathcal{S}_i$ act on disjoint shifts; the order in which they are applied is therefore irrelevant and the resulting shift set $A_i'$ depends only on $\mathcal{S}_i$, not on any other trade in $\mathcal{S}$. The all-subset independence check required, at the moment each trade in $\mathcal{S}_i$ was accepted, that for every subset of the then-selected trades for $i$ plus the candidate—including the subset $\mathcal{S}_i$ itself—the resulting $A_i' $ satisfies $V(A_i')=1$ and $U_i(A_i') \ge U_i(A_i^{\text{orig}})$. Non-participants have $A_i' = A_i^{\text{orig}}$ and are trivially unaffected. Hence the post-trade schedule for every subset $\mathcal{S}$ is legal and Pareto-non-worsening for all residents. $\square$
 
-| Property | Batch mode | Live mode |
-|---|---|---|
-| Graph built | Once, against original | Each iteration, against current |
-| Human review | None | Every swap |
-| Full-independence guarantee | Yes (Proposition 5) | No (sequential only) |
-| Rejection memory | N/A | In-session blacklist |
-| Output | HTML + CLI log | HTML + CLI log (accepted swaps only) |
+This guarantee ensures that a chief resident can approve any subset of recommendations in any order without invalidating the rest, making Limited Mode the preferred production mode.
 
 ---
 
 ## 10. Conclusion
 
-We framed resident schedule improvement not as a re-optimization problem but as a *trade discovery* problem, and solved it with a bounded, Pareto-improving cycle mechanism on a directed trade graph. The result is a tool that respects the existing schedule, never harms anyone, never breaks the rules, and explains every recommendation it makes. Two parameters, the swap budget $K$ and the cycle length $n_{\max}$, let a program control how many swaps are executed. The optional Live mode extends the tool into an interactive decision-support system, letting a chief resident vet each proposed trade in real time while retaining all hard-constraint and Pareto guarantees for the swaps that are accepted.
+We framed resident schedule improvement as a trade discovery problem, solved with a bounded, Pareto-improving cycle mechanism on a directed trade graph. The mechanism supports two modes:
+
+1. **Complete Mode:** An iterative graph-rebuilding solver that maximizes trade opportunities sequentially.
+2. **Limited Mode (Production Mode):** A single-snapshot solver that guarantees full independence of recommended trades, making voluntary shift swaps practically possible for administrative approval.

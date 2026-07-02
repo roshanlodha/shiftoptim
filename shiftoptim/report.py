@@ -9,15 +9,7 @@ def format_swap(result, sched=None) -> str:
     return "\n".join(lines)
 
 
-def cli_confirm(result, sched=None) -> bool:
-    """Print the proposed swap and prompt the user for y/n confirmation."""
-    print()
-    print(format_swap(result, sched))
-    try:
-        answer = input("Apply this swap? [y/N]: ").strip().lower()
-    except EOFError:
-        answer = ""
-    return answer in ("y", "yes")
+
 
 
 def format_log(log, sched=None) -> str:
