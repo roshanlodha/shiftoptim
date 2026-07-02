@@ -1,4 +1,4 @@
-# A Bounded Pareto-Improving Exchange Mechanism for Resident Shift Scheduling
+# A Greedy, Bounded Graph-Based Pareto Exchange Algorithm for Resident Shift Scheduling
 
 ## Abstract
 
