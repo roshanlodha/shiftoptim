@@ -1,31 +1,30 @@
 """Soft constraints (weighted objective) for the PGY-4 CP-SAT schedule model."""
 
 from .config import (
+    DAY_SHIFTS,
     EXTRA_SHIFT,
     NIGHT_SHIFT,
-    SHIFT_TYPES,
     SHIFTS,
     W_BALANCE,
     W_EXTRA_SHIFT,
     W_EXTRA_WEEKEND,
     W_FLEX_NIGHT_REWARD,
-    W_MORNING_SWING_SPREAD,
     W_NIGHTS_STRUCTURE,
     W_NON_FLEX_NIGHT_PENALTY,
     W_TIMEOFF,
     WEEKEND_DAYS,
 )
-from .history import empty_entry, history_type_totals
+from .history import empty_entry
 
 
-def add_timeoff_penalties(model, works, dates, residents, last_name, timeoff, penalties):
+def add_timeoff_penalties(model, works, dates, residents, timeoff, penalties):
     """Time-off requests are soft (heavily penalized): a shift "touches" a
     requested day if any of its hours fall on it, including a spilled-over
     overnight from the previous day. Returns the list of (name, date, shift, var)
     tuples so callers can report violations after solving."""
     violations = []
     for r, name in enumerate(residents):
-        for start, end in timeoff.get(last_name[name], []):
+        for start, end in timeoff.get(name, []):
             for d, date in enumerate(dates):
                 if not (start <= date <= end):
                     continue
@@ -67,39 +66,40 @@ def add_relief_shift_penalties(model, works, dates, num_residents, penalties):
                 penalties.append(works[(r, d, EXTRA_SHIFT)] * W_EXTRA_WEEKEND)
 
 
-def add_balance_penalties(model, works, dates, residents, last_name, history, penalties):
-    """Laura's rule: spread cumulative (history + this block) Morning/Swing/Overnight
-    counts evenly across residents, and keep each resident's Morning vs Swing roughly
-    even within the block. Returns per-resident cumulative IntVars for history update."""
+def add_evenness_penalties(model, works, dates, residents, role_at, history, penalties):
+    """Laura's rule, simplified: for each day-shift kind (everything except the
+    overnight and the relief shift), spread cumulative (history + this block)
+    counts as evenly as possible across residents. Residents who are "MGB
+    Nights" for every active day this block can't work any day shift, so
+    they're excluded rather than dragging the minimum down to zero.
+
+    Overnights are intentionally left out here: they're governed by the
+    nights/flex priority in add_nights_and_flex_penalties instead of evenness.
+    """
     num_days = len(dates)
-    cumulative = {}
-    for r, name in enumerate(residents):
-        carry = history_type_totals(history.get(last_name[name], empty_entry()))
-        by_type = {
-            t: sum(works[(r, d, s)] for d in range(num_days) for s in SHIFTS if SHIFTS[s]["type"] == t)
-            for t in SHIFT_TYPES
-        }
-        cumulative[r] = {}
-        for t in SHIFT_TYPES:
-            cum = model.NewIntVar(0, 500, f"cum_{t}_r{r}")
-            model.Add(cum == by_type[t] + carry[t])
-            cumulative[r][t] = cum
+    day_eligible = [
+        r for r, name in enumerate(residents)
+        if {role_at(name, d) for d in range(num_days)} - {None} != {"MGB Nights"}
+    ]
 
-        diff = model.NewIntVar(-100, 100, f"morning_swing_diff_r{r}")
-        model.Add(diff == by_type["Morning"] - by_type["Swing"])
-        abs_diff = model.NewIntVar(0, 100, f"morning_swing_absdiff_r{r}")
-        model.AddAbsEquality(abs_diff, diff)
-        penalties.append(abs_diff * W_MORNING_SWING_SPREAD)
+    counts_by_shift = {s: {} for s in DAY_SHIFTS}
+    for r in day_eligible:
+        name = residents[r]
+        carry = history.get(name, empty_entry())["shifts"]
+        for s in DAY_SHIFTS:
+            count_this_block = sum(works[(r, d, s)] for d in range(num_days))
+            cum = model.NewIntVar(0, 500, f"cum_s{s}_r{r}")
+            model.Add(cum == count_this_block + carry.get(SHIFTS[s]["name"], 0))
+            counts_by_shift[s][r] = cum
 
-    if len(residents) > 1:
-        for shift_type in SHIFT_TYPES:
-            values = [cumulative[r][shift_type] for r in range(len(residents))]
-            max_v = model.NewIntVar(0, 500, f"max_{shift_type}")
-            min_v = model.NewIntVar(0, 500, f"min_{shift_type}")
-            model.AddMaxEquality(max_v, values)
-            model.AddMinEquality(min_v, values)
-            spread = model.NewIntVar(0, 500, f"spread_{shift_type}")
-            model.Add(spread == max_v - min_v)
-            penalties.append(spread * W_BALANCE)
-
-    return cumulative
+    for s, values in counts_by_shift.items():
+        if len(values) < 2:
+            continue
+        values = list(values.values())
+        max_v = model.NewIntVar(0, 500, f"max_s{s}")
+        min_v = model.NewIntVar(0, 500, f"min_s{s}")
+        model.AddMaxEquality(max_v, values)
+        model.AddMinEquality(min_v, values)
+        spread = model.NewIntVar(0, 500, f"spread_s{s}")
+        model.Add(spread == max_v - min_v)
+        penalties.append(spread * W_BALANCE)

@@ -5,14 +5,12 @@ from ortools.sat.python import cp_model
 from . import constraints, objective
 from .config import EXTRA_SHIFT, SHIFT_MIN_PER_HALF, SHIFTS
 from .history import empty_entry, load_history
-from .roster import LAST_NAME, load_block
-from .timeoff import load_timeoff
+from .inputs import load_block, load_timeoff
 
 
 def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0):
     dates, residents, role_on, active_halves = load_block(block)
     num_residents = len(residents)
-    last_name = {r: LAST_NAME.get(r, r) for r in residents}
 
     def role_at(name, d):
         return role_on.get((name, dates[d]))
@@ -33,11 +31,11 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
 
     penalties = []
     timeoff_violations = objective.add_timeoff_penalties(
-        model, works, dates, residents, last_name, timeoff, penalties)
+        model, works, dates, residents, timeoff, penalties)
     objective.add_nights_and_flex_penalties(model, works, dates, residents, role_at, penalties)
     objective.add_relief_shift_penalties(model, works, dates, num_residents, penalties)
-    cumulative = objective.add_balance_penalties(
-        model, works, dates, residents, last_name, history, penalties)
+    objective.add_evenness_penalties(
+        model, works, dates, residents, role_at, history, penalties)
 
     model.Minimize(sum(penalties))
 
@@ -71,7 +69,7 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
                     assignments[(dates[d], s)] = name
 
     for r, name in enumerate(residents):
-        entry = history.setdefault(last_name[name], empty_entry())
+        entry = history.setdefault(name, empty_entry())
         entry["half_blocks_worked"] += active_halves[name]
         for d in range(len(dates)):
             for s, info in SHIFTS.items():

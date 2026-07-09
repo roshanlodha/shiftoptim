@@ -5,7 +5,6 @@ import os
 
 from .config import OUTPUT_DIR, SHIFT_TYPES, SHIFTS
 from .history import history_type_totals
-from .roster import LAST_NAME
 
 
 def export_grid(result):
@@ -62,8 +61,7 @@ def export_outputs(result):
 
     print(f"[Block {block}] Per-resident summary (cumulative to date):")
     for name in result["residents"]:
-        last = LAST_NAME.get(name, name)
-        entry = result["history"][last]
+        entry = result["history"][name]
         totals = history_type_totals(entry)
         print(
             f"  - {name:20s} half_blocks_worked={entry['half_blocks_worked']} "

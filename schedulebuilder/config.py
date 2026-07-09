@@ -39,6 +39,10 @@ SHIFTS = {
 NIGHT_SHIFT = 6
 EXTRA_SHIFT = 7
 SHIFT_TYPES = ("Morning", "Swing", "Overnight")
+# Day shifts eligible for the cross-resident evenness objective (excludes the
+# overnight, which is governed by nights/flex priority instead, and the relief
+# shift, which should stay rare rather than "even").
+DAY_SHIFTS = tuple(s for s in SHIFTS if s not in (NIGHT_SHIFT, EXTRA_SHIFT))
 
 ACTIVE_ROLES = ("MGB", "MGB Nights", "Flex")
 
@@ -51,6 +55,5 @@ W_NIGHTS_STRUCTURE = 200
 W_FLEX_NIGHT_REWARD = 100
 W_NON_FLEX_NIGHT_PENALTY = 30
 W_BALANCE = 15
-W_MORNING_SWING_SPREAD = 5
 W_EXTRA_SHIFT = 50
 W_EXTRA_WEEKEND = 20
