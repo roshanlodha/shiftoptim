@@ -1,0 +1,91 @@
+"""Builds and solves the CP-SAT model for one full 4-week block."""
+
+from ortools.sat.python import cp_model
+
+from . import constraints, objective
+from .config import EXTRA_SHIFT, SHIFT_MIN_PER_HALF, SHIFTS
+from .history import empty_entry, load_history
+from .roster import LAST_NAME, load_block
+from .timeoff import load_timeoff
+
+
+def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0):
+    dates, residents, role_on, active_halves = load_block(block)
+    num_residents = len(residents)
+    last_name = {r: LAST_NAME.get(r, r) for r in residents}
+
+    def role_at(name, d):
+        return role_on.get((name, dates[d]))
+
+    timeoff = load_timeoff()
+    history = load_history()
+
+    model = cp_model.CpModel()
+    works = {
+        (r, d, s): model.NewBoolVar(f"works_r{r}_d{d}_s{s}")
+        for r in range(num_residents)
+        for d in range(len(dates))
+        for s in SHIFTS
+    }
+
+    constraints.add_all_hard_constraints(model, works, dates, residents, role_at,
+                                          active_halves, shift_min_per_half)
+
+    penalties = []
+    timeoff_violations = objective.add_timeoff_penalties(
+        model, works, dates, residents, last_name, timeoff, penalties)
+    objective.add_nights_and_flex_penalties(model, works, dates, residents, role_at, penalties)
+    objective.add_relief_shift_penalties(model, works, dates, num_residents, penalties)
+    cumulative = objective.add_balance_penalties(
+        model, works, dates, residents, last_name, history, penalties)
+
+    model.Minimize(sum(penalties))
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = max_time_seconds
+    solver.parameters.num_search_workers = 8
+    status = solver.Solve(model)
+
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        print(f"[Block {block}] No feasible schedule found.")
+        return None
+
+    violated = [(name, date, s) for name, date, s, v in timeoff_violations if solver.Value(v)]
+    if violated:
+        print(f"[Block {block}] WARNING: {len(violated)} time-off request(s) violated:")
+        for name, date, s in violated:
+            print(f"  - {name} scheduled for {SHIFTS[s]['name']} on {date} despite requested time off")
+
+    extra_used = [(name, dates[d]) for r, name in enumerate(residents) for d in range(len(dates))
+                  if solver.Value(works[(r, d, EXTRA_SHIFT)])]
+    if extra_used:
+        print(f"[Block {block}] Relief shift (FF/Ex Swing) used {len(extra_used)} time(s):")
+        for name, date in extra_used:
+            print(f"  - {name} on {date} ({date.strftime('%A')})")
+
+    assignments = {}
+    for r, name in enumerate(residents):
+        for d in range(len(dates)):
+            for s in SHIFTS:
+                if solver.Value(works[(r, d, s)]):
+                    assignments[(dates[d], s)] = name
+
+    for r, name in enumerate(residents):
+        entry = history.setdefault(last_name[name], empty_entry())
+        entry["half_blocks_worked"] += active_halves[name]
+        for d in range(len(dates)):
+            for s, info in SHIFTS.items():
+                if solver.Value(works[(r, d, s)]):
+                    entry["shifts"][info["name"]] = entry["shifts"].get(info["name"], 0) + 1
+
+    return {
+        "block": block,
+        "dates": dates,
+        "residents": residents,
+        "active_halves": active_halves,
+        "assignments": assignments,
+        "history": history,
+        "solver": solver,
+        "works": works,
+        "num_residents": num_residents,
+    }
