@@ -30,15 +30,7 @@
   {% endif %}
 </div>
 
-{% if g.user.role == 'resident' %}
-  {% set is_resident_view = true %}
-  {% set current_user_last_name = g.user.username.split('.')[1] if '.' in g.user.username else '' %}
-{% else %}
-  {% set is_resident_view = false %}
-  {% set current_user_last_name = '' %}
-{% endif %}
-
-{% include "_grid.html" %}
+{% include "_grid.html" with context %}
 {% else %}
 <p class="hint">No published schedules yet. Please check back later.</p>
 {% endif %}

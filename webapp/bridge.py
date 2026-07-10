@@ -82,6 +82,12 @@ def load_history_from_db(conn, pgy_level):
         entry = history.setdefault(row["last_name"], _empty_entry(shift_names))
         if row["shift_name"] in entry["shifts"]:
             entry["shifts"][row["shift_name"]] += 1
+        
+        # Accumulate hours
+        s_info = next((info for info in SHIFTS.values() if info["name"] == row["shift_name"]), None)
+        if s_info:
+            entry["hours_worked"] = entry.get("hours_worked", 0) + s_info["duration"]
+
         day = dt.date.fromisoformat(row["day"])
         if day.weekday() in WEEKEND_DAYS:
             entry["weekend"] += 1
@@ -106,7 +112,7 @@ def load_history_from_db(conn, pgy_level):
 
 
 def _empty_entry(shift_names):
-    return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0}
+    return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0, "hours_worked": 0}
 
 
 def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half, max_time_seconds):
@@ -280,6 +286,7 @@ def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, request
     Only checks ACGME constraints (rest, 60h/wk, 1 free day/wk).
     """
     base = _load_run_assignments(conn, run_id)
+    by_name = _shift_info_by_name()
 
     # Get all residents in this run (excluding requester)
     other_ids = {rid for (rid, _) in base if rid != requester_resident_id}
@@ -323,12 +330,14 @@ def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, request
             # Check both residents are still ACGME-compliant
             if _acgme_ok(swapped, requester_resident_id, run_id, conn) and \
                _acgme_ok(swapped, target_id, run_id, conn):
+                tinfo = by_name.get(target_shift, {})
                 results.append({
                     "target_id": target_id,
                     "target_name": name_by_id.get(target_id, str(target_id)),
                     "target_last": last_by_id.get(target_id, str(target_id)),
                     "target_day": target_day,
                     "target_shift": target_shift,
+                    "target_type": tinfo.get("type", ""),
                 })
 
     # Sort by date then name

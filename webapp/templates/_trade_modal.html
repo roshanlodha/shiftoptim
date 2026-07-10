@@ -1,48 +1,71 @@
-{# Trade request modal — include once on resident_schedule.html #}
-<dialog id="trade-modal" style="
-  border: none; border-radius: var(--radius-lg); padding: 0; max-width: 640px; width: 95%;
-  box-shadow: 8px 8px 0px var(--shadow-color); background: var(--card);
-  border: 2px solid var(--border);
-">
-  <div style="padding: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+{# Trade request modal — included once in resident_schedule.html #}
+<dialog id="trade-modal">
+  <div class="trade-modal-inner">
+    {# Header #}
+    <div class="trade-modal-header">
       <div>
-        <h2 style="margin: 0 0 0.25rem; font-size: 1.5rem;">Request a Swap</h2>
-        <p id="trade-modal-subtitle" style="margin: 0; color: var(--muted-foreground); font-size: 0.9rem; font-weight: 500;"></p>
+        <h2 style="margin: 0 0 0.2rem; font-size: 1.4rem;">Request a Swap</h2>
+        <p id="trade-modal-subtitle" style="margin: 0; color: var(--muted-foreground); font-size: 0.88rem; font-weight: 600;"></p>
       </div>
-      <button type="button" id="trade-modal-close" class="subtle" style="padding: 0.4rem 0.75rem; margin: 0; font-size: 1.2rem; line-height: 1;">✕</button>
+      <button type="button" id="trade-modal-close" class="subtle"
+              style="padding: 0.35rem 0.75rem; margin: 0; font-size: 1.1rem; line-height: 1; flex-shrink: 0;">✕</button>
     </div>
 
-    {# Loading state #}
-    <div id="trade-loading" style="text-align: center; padding: 2rem 1rem; display: none;">
-      <div style="display: inline-block; width: 2.5rem; height: 2.5rem; border: 3px solid var(--muted); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-      <p style="margin-top: 1rem; color: var(--muted-foreground); font-weight: 500;">Checking ACGME compliance…</p>
+    {# Loading #}
+    <div id="trade-loading" style="text-align: center; padding: 2.5rem 1rem; display: none;">
+      <div class="trade-spinner"></div>
+      <p style="margin-top: 1rem; color: var(--muted-foreground); font-weight: 600; font-size: 0.9rem;">
+        Checking ACGME compliance…
+      </p>
     </div>
 
-    {# Error state #}
-    <div id="trade-error" style="display: none;" class="error"></div>
+    {# Error #}
+    <div id="trade-error" class="error" style="display: none;"></div>
 
-    {# Empty state #}
+    {# Empty #}
     <div id="trade-empty" style="display: none;">
-      <div class="hint" style="text-align: center; display: block; padding: 2rem;">
+      <div class="hint" style="display: block; text-align: center; padding: 2rem;">
         <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">🔍</span>
-        No valid ACGME-compliant swaps found for this shift.
+        No ACGME-compliant swaps found for this shift.
       </div>
     </div>
 
     {# Results #}
     <div id="trade-results" style="display: none;">
-      <p style="font-size: 0.85rem; color: var(--muted-foreground); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1rem;">
-        Available swaps — all ACGME compliant
-      </p>
-      <div class="table-scroll" style="max-height: 340px; overflow-y: auto; border-radius: var(--radius-md);">
-        <table id="trade-results-table" style="margin: 0;">
+      {# Filters bar #}
+      <div id="trade-filters" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 2px solid var(--border);">
+        {# Filter Row #}
+        <div style="display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); min-width: 60px;">Filter:</span>
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <button type="button" class="trade-type-btn active" data-type="" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; margin: 0;">All</button>
+            <button type="button" class="trade-type-btn" data-type="Morning" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; margin: 0; background: var(--quaternary); color: var(--foreground);">Morning</button>
+            <button type="button" class="trade-type-btn" data-type="Swing" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; margin: 0; background: var(--tertiary); color: var(--foreground);">Swing</button>
+            <button type="button" class="trade-type-btn" data-type="Overnight" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; margin: 0; background: var(--accent); color: white;">Overnight</button>
+          </div>
+        </div>
+
+        {# Sort Row #}
+        <div style="display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); min-width: 60px;">Sort:</span>
+          <select id="trade-sort" style="width: auto; font-size: 0.82rem; padding: 0.35rem 0.75rem; border-radius: var(--radius-full);">
+            <option value="date-dist">Closest date first</option>
+            <option value="date-asc">Date ascending</option>
+            <option value="name">Resident name</option>
+          </select>
+          <span id="trade-count" style="margin-left: auto; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--muted-foreground);"></span>
+        </div>
+      </div>
+
+      {# Table #}
+      <div class="table-scroll" style="max-height: 320px; overflow-y: auto; border-radius: var(--radius-md); border: 2px solid var(--border); box-shadow: none;">
+        <table id="trade-results-table" style="margin: 0; width: 100%; border: none; box-shadow: none; border-collapse: collapse;">
           <thead>
             <tr>
-              <th>Resident</th>
-              <th>Their Shift</th>
-              <th>Date</th>
-              <th></th>
+              <th style="padding: 0.75rem; border-bottom: 2px solid var(--border); text-align: left;">Resident</th>
+              <th style="padding: 0.75rem; border-bottom: 2px solid var(--border); text-align: left;">Shift</th>
+              <th style="padding: 0.75rem; border-bottom: 2px solid var(--border); text-align: left;">Date</th>
+              <th style="padding: 0.75rem; border-bottom: 2px solid var(--border);"></th>
             </tr>
           </thead>
           <tbody id="trade-results-body"></tbody>
@@ -52,102 +75,236 @@
   </div>
 </dialog>
 
-{# Hidden form to submit trade request #}
-<form id="trade-submit-form" method="POST" action="{{ url_for('trades_request') }}" style="display:none;">
-  <input type="hidden" name="run_id" id="tsf-run-id">
-  <input type="hidden" name="requester_day" id="tsf-req-day">
+{# Hidden submit form — lives OUTSIDE the dialog to avoid any dialog quirks #}
+<form id="trade-submit-form" method="POST" action="{{ url_for('trades_request') }}">
+  <input type="hidden" name="run_id"         id="tsf-run-id">
+  <input type="hidden" name="requester_day"   id="tsf-req-day">
   <input type="hidden" name="requester_shift" id="tsf-req-shift">
-  <input type="hidden" name="target_id" id="tsf-tgt-id">
-  <input type="hidden" name="target_day" id="tsf-tgt-day">
-  <input type="hidden" name="target_shift" id="tsf-tgt-shift">
+  <input type="hidden" name="target_id"       id="tsf-tgt-id">
+  <input type="hidden" name="target_day"      id="tsf-tgt-day">
+  <input type="hidden" name="target_shift"    id="tsf-tgt-shift">
 </form>
 
 <style>
+/* ---- Modal dialog centering & chrome ---- */
+#trade-modal {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 600px;
+  width: calc(100vw - 2rem);
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 8px 8px 0px var(--shadow-color);
+  background: var(--card);
+  /* Force centering — overrides browser UA sheet */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+}
+
+#trade-modal::backdrop {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+#trade-modal[open] {
+  animation: trade-modal-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes trade-modal-in {
+  from { opacity: 0; scale: 0.92; }
+  to   { opacity: 1; scale: 1; }
+}
+
+.trade-modal-inner {
+  padding: 1.75rem;
+  overflow-y: auto;
+  max-height: 85vh;
+}
+
+.trade-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.trade-spinner {
+  display: inline-block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--muted);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
-dialog::backdrop { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(2px); }
+
+/* Type filter button active state */
+.trade-type-btn.active {
+  background-color: var(--foreground) !important;
+  color: white !important;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
 </style>
 
 <script>
-(function() {
-  const modal = document.getElementById('trade-modal');
-  const closeBtn = document.getElementById('trade-modal-close');
-  const subtitle = document.getElementById('trade-modal-subtitle');
-  const loading = document.getElementById('trade-loading');
-  const errorDiv = document.getElementById('trade-error');
-  const emptyDiv = document.getElementById('trade-empty');
+(function () {
+  const modal      = document.getElementById('trade-modal');
+  const closeBtn   = document.getElementById('trade-modal-close');
+  const subtitle   = document.getElementById('trade-modal-subtitle');
+  const loading    = document.getElementById('trade-loading');
+  const errorDiv   = document.getElementById('trade-error');
+  const emptyDiv   = document.getElementById('trade-empty');
   const resultsDiv = document.getElementById('trade-results');
-  const resultsBody = document.getElementById('trade-results-body');
+  const tbody      = document.getElementById('trade-results-body');
+  const countEl    = document.getElementById('trade-count');
+  const sortSel    = document.getElementById('trade-sort');
 
-  // Close handlers
+  let allSwaps = [];       // raw from API
+  let reqDay   = '';       // original shift date (for Δ sort)
+  let activeType = '';     // '' = all
+
+  // ---- Close ----
   closeBtn.addEventListener('click', () => modal.close());
   modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
 
-  function setState(state) {
-    loading.style.display = state === 'loading' ? 'block' : 'none';
-    errorDiv.style.display = state === 'error' ? 'block' : 'none';
-    emptyDiv.style.display = state === 'empty' ? 'block' : 'none';
-    resultsDiv.style.display = state === 'results' ? 'block' : 'none';
+  // ---- State helper ----
+  function setState(s) {
+    loading.style.display    = s === 'loading'  ? 'block' : 'none';
+    errorDiv.style.display   = s === 'error'    ? 'block' : 'none';
+    emptyDiv.style.display   = s === 'empty'    ? 'block' : 'none';
+    resultsDiv.style.display = s === 'results'  ? 'block' : 'none';
   }
 
-  function formatDate(iso) {
+  // ---- Date helpers ----
+  function daysBetween(a, b) {
+    return Math.abs((new Date(a) - new Date(b)) / 86400000);
+  }
+  function fmtDate(iso) {
     const [y, m, d] = iso.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 
-  window.openTradeModal = function(day, shift, displayDate) {
+  // ---- Render filtered + sorted table ----
+  function render() {
+    let swaps = allSwaps.slice();
+
+    // Type filter
+    if (activeType) swaps = swaps.filter(s => s.target_type === activeType);
+
+    // Sort
+    const sort = sortSel.value;
+    if (sort === 'date-dist') {
+      swaps.sort((a, b) => daysBetween(a.target_day, reqDay) - daysBetween(b.target_day, reqDay));
+    } else if (sort === 'date-asc') {
+      swaps.sort((a, b) => a.target_day.localeCompare(b.target_day));
+    } else {
+      swaps.sort((a, b) => a.target_last.localeCompare(b.target_last));
+    }
+
+    // Count label
+    countEl.textContent = swaps.length + ' result' + (swaps.length !== 1 ? 's' : '');
+
+    // Build rows
+    tbody.innerHTML = '';
+    if (swaps.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="4" style="text-align:center; color: var(--muted-foreground); padding: 1.5rem;">No results match your filters.</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    const typeColors = { Morning: 'var(--quaternary)', Swing: 'var(--tertiary)', Overnight: 'var(--accent)' };
+
+    swaps.forEach(s => {
+      const tc = typeColors[s.target_type] || 'var(--muted)';
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #E2E8F0';
+      tr.innerHTML = `
+        <td style="font-weight: 700; padding: 0.75rem;">${s.target_name}</td>
+        <td style="padding: 0.75rem;">
+          <span class="chip" style="background: ${tc}; border-color: var(--border); font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--foreground); box-shadow: none;">
+            ${s.target_shift}
+          </span>
+        </td>
+        <td style="white-space: nowrap; font-size: 0.85rem; padding: 0.75rem;">${fmtDate(s.target_day)}</td>
+        <td style="padding: 0.75rem; text-align: right;">
+          <button type="button"
+            class="trade-req-btn"
+            style="padding: 0.4rem 1rem; font-size: 0.82rem; margin: 0;"
+            data-run-id="${window._tradeRunId}"
+            data-req-day="${reqDay}"
+            data-req-shift="${encodeURIComponent(window._tradeReqShift)}"
+            data-tgt-id="${s.target_id}"
+            data-tgt-day="${s.target_day}"
+            data-tgt-shift="${encodeURIComponent(s.target_shift)}">
+            Request
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---- Submit via data attributes (avoids quote-escaping in onclick HTML) ----
+  tbody.addEventListener('click', e => {
+    const btn = e.target.closest('.trade-req-btn');
+    if (!btn) return;
+    document.getElementById('tsf-run-id').value    = btn.dataset.runId;
+    document.getElementById('tsf-req-day').value   = btn.dataset.reqDay;
+    document.getElementById('tsf-req-shift').value = decodeURIComponent(btn.dataset.reqShift);
+    document.getElementById('tsf-tgt-id').value    = btn.dataset.tgtId;
+    document.getElementById('tsf-tgt-day').value   = btn.dataset.tgtDay;
+    document.getElementById('tsf-tgt-shift').value = decodeURIComponent(btn.dataset.tgtShift);
+    document.getElementById('trade-submit-form').submit();
+  });
+
+  // ---- Filter / sort event listeners ----
+  document.querySelectorAll('.trade-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.trade-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeType = btn.dataset.type;
+      render();
+    });
+  });
+  sortSel.addEventListener('change', render);
+
+  // ---- Open modal (called from grid cells) ----
+  window.openTradeModal = function (day, shift, displayDate) {
+    reqDay = day;
+    window._tradeReqShift = shift;
+    window._tradeRunId = null;
+    allSwaps = [];
+    activeType = '';
+    document.querySelectorAll('.trade-type-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.trade-type-btn[data-type=""]').classList.add('active');
+    sortSel.value = 'date-dist';
+
     subtitle.textContent = shift + ' · ' + displayDate;
     setState('loading');
-    resultsBody.innerHTML = '';
     modal.showModal();
 
     const fd = new FormData();
-    fd.append('day', day);
+    fd.append('day',   day);
     fd.append('shift', shift);
 
     fetch("{{ url_for('trades_find') }}", { method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => {
-        if (data.error) {
-          errorDiv.textContent = data.error;
-          setState('error');
-          return;
-        }
-        const swaps = data.swaps;
-        if (!swaps || swaps.length === 0) {
-          setState('empty');
-          return;
-        }
-        swaps.forEach(s => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-weight: 700;">${s.target_name}</td>
-            <td style="font-size: 0.85rem;">${s.target_shift}</td>
-            <td style="font-size: 0.85rem; white-space: nowrap;">${formatDate(s.target_day)}</td>
-            <td>
-              <button type="button" class="button" style="padding: 0.4rem 1rem; font-size: 0.85rem; margin: 0;"
-                onclick="submitTrade(${data.run_id}, '${day}', ${JSON.stringify(shift)}, ${s.target_id}, '${s.target_day}', ${JSON.stringify(s.target_shift)})">
-                Request
-              </button>
-            </td>`;
-          resultsBody.appendChild(tr);
-        });
+        if (data.error) { errorDiv.textContent = data.error; setState('error'); return; }
+        allSwaps = data.swaps || [];
+        window._tradeRunId = data.run_id;
+        if (allSwaps.length === 0) { setState('empty'); return; }
+        render();
         setState('results');
       })
-      .catch(() => {
-        errorDiv.textContent = 'Network error. Please try again.';
-        setState('error');
-      });
-  };
-
-  window.submitTrade = function(runId, reqDay, reqShift, tgtId, tgtDay, tgtShift) {
-    document.getElementById('tsf-run-id').value = runId;
-    document.getElementById('tsf-req-day').value = reqDay;
-    document.getElementById('tsf-req-shift').value = reqShift;
-    document.getElementById('tsf-tgt-id').value = tgtId;
-    document.getElementById('tsf-tgt-day').value = tgtDay;
-    document.getElementById('tsf-tgt-shift').value = tgtShift;
-    document.getElementById('trade-submit-form').submit();
+      .catch(() => { errorDiv.textContent = 'Network error. Please try again.'; setState('error'); });
   };
 })();
 </script>

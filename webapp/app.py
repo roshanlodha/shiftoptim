@@ -32,6 +32,15 @@ def create_app(db_path=None):
     @app.before_request
     def _before_request():
         load_logged_in_user()
+        g.pending_trades_count = 0
+        if g.user:
+            conn = db_conn()
+            if g.user["role"] == "admin":
+                row = conn.execute("SELECT COUNT(*) FROM trade_requests WHERE status = 'pending_admin'").fetchone()
+                g.pending_trades_count = row[0] if row else 0
+            elif g.user["role"] == "resident" and g.user["resident_id"]:
+                row = conn.execute("SELECT COUNT(*) FROM trade_requests WHERE status = 'pending_peer' AND target_id = ?", (g.user["resident_id"],)).fetchone()
+                g.pending_trades_count = row[0] if row else 0
 
     @app.teardown_appcontext
     def _close_db(exception=None):
@@ -249,10 +258,19 @@ def register_routes(app, db_conn):
             if run and hb:
                 grid = _build_grid(conn, run["id"], hb["start_date"], hb["end_date"])
 
+        # Pass the real DB last_name so grid can identify the resident's own cells
+        resident_last_name = ""
+        resident_id = g.user["resident_id"]
+        if resident_id:
+            row = conn.execute("SELECT last_name FROM residents WHERE id = ?", (resident_id,)).fetchone()
+            if row:
+                resident_last_name = row["last_name"]
+
         return render_template(
             "resident_schedule.html", blocks=blocks, block_number=block_number,
             half=half, viewable_halves=viewable_halves,
             grid=grid, shift_names=SHIFT_NAMES,
+            resident_last_name=resident_last_name,
         )
 
     @app.route("/timeoff", methods=["GET", "POST"])
