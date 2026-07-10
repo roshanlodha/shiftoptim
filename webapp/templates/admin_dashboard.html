@@ -1,37 +1,77 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1>Blocks</h1>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
-<p class="hint">Run the solver for a block, review the draft (4a / 4b tabs), then publish. Solving takes up to a minute.</p>
 
-<table class="blocks">
-  <tr><th>Block</th><th>Dates</th><th>Status</th><th>Action</th></tr>
+<h1>ED Schedule Builder</h1>
+
+<hr class="decorative-divider">
+
+<h2>Blocks Overview</h2>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<div class="block-grid">
   {% for b in blocks %}
-  {% set block_runs = runs_by_block.get(b.block_number, {}) %}
-  {% set draft = block_runs.get('draft') %}
-  {% set published = block_runs.get('published') %}
-  <tr>
-    <td>Block {{ b.block_number }}</td>
-    <td>{{ b.start_date }} &ndash; {{ b.end_date }}</td>
-    <td>
-      {% if draft %}<span class="status draft">Draft pending review</span>
-      {% elif published %}<span class="status published">Published</span>
-      {% else %}<span class="status none">Not scheduled</span>{% endif %}
-    </td>
-    <td class="actions">
-      {% if draft %}
-        <a class="button" href="{{ url_for('admin_review_run', run_id=draft.id) }}">Review draft</a>
-      {% else %}
-        <form method="post" action="{{ url_for('admin_run', block_number=b.block_number) }}" class="inline-form">
-          <button type="submit">{{ 'Re-run' if published else 'Run solver' }}</button>
-        </form>
-      {% endif %}
-      {% if published %}
-        <a class="button subtle" href="{{ url_for('admin_review_run', run_id=published.id) }}">View</a>
-      {% endif %}
-    </td>
-  </tr>
+    {% set block_runs = runs_by_block.get(b.block_number, {}) %}
+    {% set draft = block_runs.get('draft') %}
+    {% set published = block_runs.get('published') %}
+    
+    {# Calculate card click URL #}
+    {% if draft %}
+      {% set card_url = url_for('admin_review_run', run_id=draft.id) %}
+    {% elif published %}
+      {% set card_url = url_for('admin_review_run', run_id=published.id) %}
+    {% else %}
+      {% set card_url = none %}
+    {% endif %}
+    
+    {# Alternate styling using loop index #}
+    {% set color_class = 'accent-badge' if loop.index0 % 3 == 0 else ('pink-badge' if loop.index0 % 3 == 1 else 'mint-badge') %}
+    {% set card_border_class = 'featured' if draft else '' %}
+    
+    <div class="card-sticker {{ card_border_class }}" 
+         {% if card_url %}
+           onclick="window.location.href='{{ card_url }}'" 
+           style="cursor: pointer;"
+         {% endif %}>
+      <div class="card-icon-badge {{ color_class }}">
+        <i data-lucide="calendar-days" style="width: 22px; height: 22px; color: #1E293B;"></i>
+      </div>
+      
+      <div class="block-card-header">
+        <h3>Block {{ b.block_number }}</h3>
+        <div>
+          {% if draft %}
+            <span class="status-badge draft">Draft</span>
+          {% elif published %}
+            <span class="status-badge published">Published</span>
+          {% else %}
+            <span class="status-badge none">Not Run</span>
+          {% endif %}
+        </div>
+      </div>
+      
+      <p style="font-weight: 500; font-size: 0.95rem; color: var(--muted-foreground); margin-bottom: 1.5rem;">
+        <i data-lucide="clock" style="display: inline-block; vertical-align: middle; width: 16px; height: 16px; margin-right: 4px;"></i>
+        {{ b.start_date }} &ndash; {{ b.end_date }}
+      </p>
+      
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        {% if not draft %}
+          <form method="post" action="{{ url_for('admin_run', block_number=b.block_number) }}" onclick="event.stopPropagation();" style="display: inline-block; width: 100%; margin: 0;">
+            {% if published %}
+              <button type="submit" class="btn-rerun" style="width: 100%;">
+                Re-run solver <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+              </button>
+            {% else %}
+              <button type="submit" style="width: 100%;">
+                Run solver <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+              </button>
+            {% endif %}
+          </form>
+        {% endif %}
+      </div>
+    </div>
   {% endfor %}
-</table>
+</div>
+
 {% endblock %}

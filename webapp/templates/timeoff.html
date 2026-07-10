@@ -1,34 +1,76 @@
 {% extends "base.html" %}
 {% block title %}Time off{% endblock %}
 {% block content %}
-<h1>My time-off requests</h1>
-<p class="hint">Requests are taken into account the next time a schedule is built. For a single day, use the same start and end date.</p>
+<h1>My Time-Off Requests</h1>
+<div class="hint">
+  <i data-lucide="info" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 6px;"></i>
+  Requests are taken into account the next time a schedule is built. For a single day, use the same start and end date.
+</div>
 
-<form method="post" class="inline-form">
-  <input type="hidden" name="action" value="add">
-  <input type="date" name="start_date" required>
-  <input type="date" name="end_date" required>
-  <button type="submit">Request time off</button>
-</form>
+<div class="card-sticker featured" style="max-width: 600px; margin-top: 1.5rem; margin-bottom: 2.5rem;">
+  <div class="card-icon-badge accent-badge">
+    <i data-lucide="calendar-plus" style="width: 22px; height: 22px; color: white;"></i>
+  </div>
+  
+  <h3 style="margin-top: 0.5rem; margin-bottom: 1.25rem;">New Request</h3>
+  
+  <form method="post" style="display: flex; flex-direction: column; gap: 1rem;">
+    <input type="hidden" name="action" value="add">
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="start_date">Start Date</label>
+        <input type="date" id="start_date" name="start_date" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="end_date">End Date</label>
+        <input type="date" id="end_date" name="end_date" required>
+      </div>
+    </div>
+    
+    <button type="submit" style="align-self: flex-start; margin-top: 0.5rem; width: 100%;">
+      Request Time Off <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+    </button>
+  </form>
+</div>
 
+<h2>Current Requests Log</h2>
 {% if requests %}
-<table class="time-off">
-  <tr><th>Start</th><th>End</th><th></th></tr>
-  {% for t in requests %}
-  <tr>
-    <td>{{ t.start_date }}</td>
-    <td>{{ t.end_date }}</td>
-    <td>
-      <form method="post" class="inline-form">
-        <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="time_off_id" value="{{ t.id }}">
-        <button type="submit" class="danger">Remove</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-scroll">
+  <table class="time-off">
+    <thead>
+      <tr>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th style="width: 120px; text-align: center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in requests %}
+      <tr>
+        <td style="font-weight: 700;">
+          <i data-lucide="calendar" style="display: inline-block; vertical-align: middle; width: 16px; height: 16px; margin-right: 6px; color: var(--muted-foreground);"></i>
+          {{ t.start_date }}
+        </td>
+        <td style="font-weight: 700;">
+          <i data-lucide="calendar" style="display: inline-block; vertical-align: middle; width: 16px; height: 16px; margin-right: 6px; color: var(--muted-foreground);"></i>
+          {{ t.end_date }}
+        </td>
+        <td style="text-align: center;">
+          <form method="post" style="margin: 0; display: inline-block;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="time_off_id" value="{{ t.id }}">
+            <button type="submit" class="danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; box-shadow: 2px 2px 0 var(--shadow-color);">
+              Remove <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-<p>No requests yet.</p>
+<p class="hint" style="margin-top: 1rem;">No active requests logged yet.</p>
 {% endif %}
 {% endblock %}

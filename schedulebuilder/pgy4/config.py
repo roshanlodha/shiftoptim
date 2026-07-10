@@ -8,7 +8,7 @@ BASE_YEAR = 2026  # academic year 2026-2027; block 4/5 fall entirely in 2026
 
 MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
 ALL_DAYS = frozenset(range(7))
-WEEKEND_DAYS = frozenset({FRI, SAT, SUN})
+WEEKEND_DAYS = frozenset({SAT, SUN})
 
 # --- Shift catalog -----------------------------------------------------
 # start/end in 24h clock; an "Overnight" shift's end < start means it spans midnight.
@@ -71,7 +71,7 @@ W_FLEX_NIGHT_REWARD = 100
 W_NON_FLEX_NIGHT_PENALTY = 30
 # Evenness spread weights (per category); higher = optimized first among balance goals.
 BALANCE_WEIGHTS = {
-    "Weekend": 60,
+    "Weekend": 100,
     "Morning": 30,
     "Swing": 30,
     "MGH": 15,

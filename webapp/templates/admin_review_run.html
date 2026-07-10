@@ -1,27 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Block {{ run.block_number }}{{ half }} schedule{% endblock %}
 {% block content %}
-<h1>Block {{ run.block_number }} &mdash; {{ 'draft' if run.status == 'draft' else 'published' }}</h1>
-<p><a href="{{ url_for('admin_dashboard') }}">&larr; Back to dashboard</a></p>
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 2rem;">
+  <div>
+    <h1 style="margin-bottom: 0.5rem;">
+      Block {{ run.block_number }} &mdash; 
+      {% if run.status == 'draft' %}
+        <span style="color: var(--accent);">Draft</span>
+      {% else %}
+        <span style="color: var(--quaternary);">Published</span>
+      {% endif %}
+    </h1>
+    <a href="{{ url_for('admin_dashboard') }}" style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; color: var(--foreground); text-decoration: none;">
+      <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Back to dashboard
+    </a>
+  </div>
+
+  {% if run.status == 'draft' %}
+  <div class="review-actions" style="margin-bottom: 0;">
+    <form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
+      <button type="submit">
+        Publish schedule <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+    <form method="post" action="{{ url_for('admin_discard_run', run_id=run.id) }}" class="inline-form">
+      <button type="submit" class="danger">
+        Discard <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+  </div>
+  {% endif %}
+</div>
 
 <div class="half-tabs">
   {% for h in viewable_halves %}
   <a class="tab{% if h.half == half %} active{% endif %}"
-     href="{{ url_for('admin_review_run', run_id=run.id, half=h.half) }}">{{ run.block_number }}{{ h.half }}</a>
+     href="{{ url_for('admin_review_run', run_id=run.id, half=h.half) }}">
+     <i data-lucide="calendar" style="display: inline-block; vertical-align: middle; width: 16px; height: 16px; margin-right: 4px;"></i>
+     Block {{ run.block_number }}{{ h.half | upper }}
+  </a>
   {% endfor %}
 </div>
 
-{% if run.status == 'draft' %}
-<div class="review-actions">
-  <form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
-    <button type="submit">Publish</button>
-  </form>
-  <form method="post" action="{{ url_for('admin_discard_run', run_id=run.id) }}" class="inline-form">
-    <button type="submit" class="danger">Discard</button>
-  </form>
-</div>
-{% endif %}
-
 {% include "_grid.html" %}
 {% include "_summary.html" %}
+
 {% endblock %}

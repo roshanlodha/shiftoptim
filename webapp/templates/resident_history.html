@@ -1,19 +1,88 @@
 {% extends "base.html" %}
 {% block title %}My history{% endblock %}
 {% block content %}
-<h1>My shift history</h1>
+<h1>My Shift History</h1>
 
-<p>Half-blocks worked to date: <strong>{{ entry.half_blocks_worked }}</strong></p>
+<div class="resident-history-grid">
+  <!-- Left Side: Clinical Activity Summary -->
+  <div class="card-sticker featured">
+    <div class="card-icon-badge accent-badge">
+      <i data-lucide="sparkles" style="width: 22px; height: 22px; color: white;"></i>
+    </div>
+    <h3 style="margin-top: 0.5rem; margin-bottom: 1rem;">Clinical Activity Summary</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+      <div>
+        <div class="history-stat-value">{{ entry.shifts.values() | sum }}</div>
+        <p style="font-weight: 700; font-size: 1rem; margin-top: 0.25rem;">Total Shifts</p>
+      </div>
+      <div>
+        <div class="history-stat-value" style="border-bottom-color: var(--secondary);">{{ entry.half_blocks_worked }}</div>
+        <p style="font-weight: 700; font-size: 1rem; margin-top: 0.25rem;">Half-Blocks</p>
+      </div>
+    </div>
+  </div>
 
-<h2>Wellness categories</h2>
-<table class="history">
-  <tr>{% for c in category_columns %}<th>{{ c }}</th>{% endfor %}</tr>
-  <tr>{% for c in category_columns %}<td>{{ totals[c] }}</td>{% endfor %}</tr>
-</table>
+  <!-- Right Side: Wellness Balance Card -->
+  <div class="card-sticker">
+    <div class="card-icon-badge pink-badge">
+      <i data-lucide="heart" style="width: 22px; height: 22px; color: #1E293B;"></i>
+    </div>
+    <h3 style="margin-top: 0.5rem; margin-bottom: 1rem;">Wellness Balances</h3>
+    <p style="color: var(--muted-foreground); font-size: 0.9rem; margin-bottom: 1rem;">Cumulative totals across balanced scheduling rules:</p>
+    
+    <div class="table-scroll" style="box-shadow: none; border: none; margin-bottom: 0;">
+      <table style="margin: 0; box-shadow: none; width: 100%;">
+        <thead>
+          <tr>
+            {% for c in category_columns %}
+              <th style="font-size: 0.75rem; padding: 0.5rem; text-align: center;">{{ c }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {% for c in category_columns %}
+              <td style="text-align: center; font-weight: 800; font-size: 1.1rem; color: var(--accent); padding: 0.75rem;">
+                {{ totals[c] }}
+              </td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-<h2>By shift type</h2>
-<table class="history">
-  <tr>{% for sn in shift_names %}<th>{{ sn }}</th>{% endfor %}</tr>
-  <tr>{% for sn in shift_names %}<td>{{ entry.shifts[sn] }}</td>{% endfor %}</tr>
-</table>
+<hr class="decorative-divider">
+
+<!-- By Shift Type section -->
+<div class="card-sticker" style="margin-top: 2rem;">
+  <div class="card-icon-badge mint-badge">
+    <i data-lucide="list-checks" style="width: 22px; height: 22px; color: #1E293B;"></i>
+  </div>
+  <h3 style="margin-top: 0.5rem; margin-bottom: 1rem;">Cumulative Shift Log</h3>
+  <p style="color: var(--muted-foreground); font-size: 0.9rem;">Distribution of shifts by schedule type:</p>
+  
+  <div class="table-scroll" style="box-shadow: none; border: none; margin-bottom: 0;">
+    <table style="margin: 0; box-shadow: none; width: 100%;">
+      <thead>
+        <tr>
+          {% for sn in shift_names %}
+            <th style="font-size: 0.75rem; padding: 0.5rem; text-align: center;">{{ sn }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for sn in shift_names %}
+            <td style="text-align: center; font-weight: 700; font-size: 1rem; padding: 0.75rem;">
+              {{ entry.shifts[sn] }}
+            </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}

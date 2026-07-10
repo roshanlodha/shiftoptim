@@ -1,30 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Audit{% endblock %}
 {% block content %}
-<h1>Cumulative audit</h1>
-<p class="hint">Wellness-balance totals from published schedules only, grouped by PGY year.</p>
+<h1>Cumulative Audit</h1>
+
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+  <div class="toggle-container" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block;">
+    <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
+      <input type="checkbox" id="proportion-toggle" checked style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+      <span>Show Proportion</span>
+    </label>
+  </div>
+</div>
 
 {% for pgy_level, rows in groups %}
-<h2>PGY-{{ pgy_level }}</h2>
+<h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+  <i data-lucide="award" style="color: var(--secondary); width: 28px; height: 28px;"></i>
+  PGY-{{ pgy_level }}
+</h2>
+
 <div class="table-scroll">
-<table class="audit">
-  <tr>
-    <th>Resident</th>
-    <th class="num">Half-blocks</th>
-    {% for c in category_columns %}<th class="num">{{ c }}</th>{% endfor %}
-    <th class="num">Total shifts</th>
-  </tr>
-  {% for row in rows %}
-  <tr>
-    <td>{{ row.full_name }}</td>
-    <td class="num">{{ row.half_blocks_worked }}</td>
-    {% for c in category_columns %}<td class="num">{{ row.totals[c] }}</td>{% endfor %}
-    <td class="num"><strong>{{ row.total_shifts }}</strong></td>
-  </tr>
-  {% endfor %}
-</table>
+  <table class="audit">
+    <thead>
+      <tr>
+        <th>Resident</th>
+        <th class="num" style="text-align: right;">Half-blocks</th>
+        {% for c in category_columns %}
+          <th class="num" style="text-align: right;">{{ c }}</th>
+        {% endfor %}
+        <th class="num" style="text-align: right; background-color: rgba(139, 92, 246, 0.1);">Total shifts</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td style="font-weight: 700;">{{ row.full_name }}</td>
+        <td class="num" style="text-align: right; font-weight: 500;">{{ row.half_blocks_worked }}</td>
+        {% for c in category_columns %}
+          <td class="num" style="text-align: right;">
+            <span class="val-raw">{{ row.totals[c] }}</span>
+            <span class="val-percent" style="display: none;">
+              {% if row.total_shifts > 0 %}
+                {{ ((row.totals[c] / row.total_shifts) * 100) | round | int }}%
+              {% else %}
+                0%
+              {% endif %}
+            </span>
+          </td>
+        {% endfor %}
+        <td class="num" style="text-align: right; font-weight: 800; background-color: rgba(139, 92, 246, 0.05); color: var(--accent);">
+          {{ row.total_shifts }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% else %}
 <p>No residents in the database.</p>
 {% endfor %}
+
+<script>
+  (function() {
+    const toggle = document.getElementById('proportion-toggle');
+    const rawVals = document.querySelectorAll('.val-raw');
+    const percentVals = document.querySelectorAll('.val-percent');
+    
+    function updateAuditView() {
+      if (!toggle) return;
+      const showProportion = toggle.checked;
+      
+      rawVals.forEach(el => el.style.display = showProportion ? 'none' : 'inline');
+      percentVals.forEach(el => el.style.display = showProportion ? 'inline' : 'none');
+    }
+    
+    if (toggle) {
+      toggle.addEventListener('change', updateAuditView);
+      // Run once on load
+      updateAuditView();
+    }
+  })();
+</script>
 {% endblock %}

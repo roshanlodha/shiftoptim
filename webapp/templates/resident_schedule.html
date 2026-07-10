@@ -1,31 +1,125 @@
 {% extends "base.html" %}
 {% block title %}Schedule{% endblock %}
 {% block content %}
-<h1>Published schedule</h1>
+<h1>Published Schedule</h1>
 
 {% if blocks %}
-<form method="get" class="inline-form block-picker">
-  <select name="block" onchange="this.form.submit()">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+  <!-- Horizontally scrollable published block half tabs -->
+  <div style="overflow-x: auto; white-space: nowrap; display: flex; gap: 0.75rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; flex: 1;">
     {% for b in blocks %}
-    <option value="{{ b.block_number }}" {% if b.block_number == block_number %}selected{% endif %}>
-      Block {{ b.block_number }} ({{ b.start_date }} &ndash; {{ b.end_date }})
-    </option>
+      {% for h in ['a', 'b'] %}
+        {% set is_active = (b.block_number == block_number and h == half) %}
+        <a href="{{ url_for('resident_schedule', block=b.block_number, half=h) }}" 
+           class="tab {% if is_active %}active{% endif %}" 
+           style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; border-radius: var(--radius-full); text-decoration: none;">
+          <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem; line-height: 1;">Block {{ b.block_number }}{{ h | upper }}</span>
+        </a>
+      {% endfor %}
     {% endfor %}
-  </select>
-  <input type="hidden" name="half" value="{{ half }}">
-</form>
+  </div>
 
-{% if viewable_halves %}
-<div class="half-tabs">
-  {% for h in viewable_halves %}
-  <a class="tab{% if h.half == half %} active{% endif %}"
-     href="{{ url_for('resident_schedule', block=block_number, half=h.half) }}">{{ block_number }}{{ h.half }}</a>
-  {% endfor %}
+  {% if g.user.role == 'resident' %}
+  <div class="toggle-container" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block; flex-shrink: 0; margin-bottom: 0.5rem;">
+    <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
+      <input type="checkbox" id="schedule-toggle" checked style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+      <span>Show only my shifts</span>
+    </label>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
 
 {% include "_grid.html" %}
 {% else %}
-<p>No published schedules yet.</p>
+<p class="hint">No published schedules yet. Please check back later.</p>
 {% endif %}
+
+<script>
+  (function() {
+    // 1. Redirection logic (if blocks exist and block param is missing)
+    {% if blocks and not request.args.get('block') %}
+      const blocks = [
+        {% for b in blocks %}
+        { number: {{ b.block_number }}, start: "{{ b.start_date }}", end: "{{ b.end_date }}" },
+        {% endfor %}
+      ];
+      const now = new Date();
+      // Format as YYYY-MM-DD in local timezone
+      const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      
+      let selectedBlock = null;
+      let earliestUpcoming = null;
+      let earliestUpcomingDate = null;
+      
+      for (const b of blocks) {
+        if (todayStr >= b.start && todayStr <= b.end) {
+          selectedBlock = b.number;
+          break;
+        }
+        if (b.start > todayStr) {
+          if (!earliestUpcomingDate || b.start < earliestUpcomingDate) {
+            earliestUpcomingDate = b.start;
+            earliestUpcoming = b.number;
+          }
+        }
+      }
+      
+      const targetBlock = selectedBlock || earliestUpcoming || (blocks.length > 0 ? blocks[0].number : null);
+      if (targetBlock) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('block', targetBlock);
+        window.location.replace(url.toString());
+        return; // stop execution, window is reloading
+      }
+    {% endif %}
+
+    // 2. Filter schedule logic (only for residents)
+    const toggle = document.getElementById('schedule-toggle');
+    const username = "{{ g.user.username }}";
+    // For resident, username is first_name.last_name. Extract last_name from the second token.
+    const userLastNamePart = (username && username.includes('.')) ? username.split('.')[1].toLowerCase().replace(/'/g, "").replace(/\s/g, "") : "";
+
+    function updateScheduleView() {
+      if (!toggle) return;
+      const showOnlyMine = toggle.checked;
+      const cells = document.querySelectorAll('.cell-shift.has-resident');
+      
+      cells.forEach(cell => {
+        const resident = cell.getAttribute('data-resident') || "";
+        const normalized = resident.toLowerCase().replace(/'/g, "").replace(/\s/g, "");
+        const isMine = (normalized === userLastNamePart);
+        
+        if (showOnlyMine && !isMine) {
+          cell.classList.add('hide-resident');
+        } else {
+          cell.classList.remove('hide-resident');
+        }
+      });
+      
+      // Mute/dim non-user legend chips
+      const chips = document.querySelectorAll('.legend .chip');
+      chips.forEach(chip => {
+        const chipText = chip.textContent || "";
+        const residentName = chipText.split('·')[0].trim();
+        const normalized = residentName.toLowerCase().replace(/'/g, "").replace(/\s/g, "");
+        const isMine = (normalized === userLastNamePart);
+        
+        if (showOnlyMine && !isMine) {
+          chip.style.opacity = '0.25';
+          chip.style.boxShadow = 'none';
+        } else {
+          chip.style.opacity = '1';
+          chip.style.boxShadow = '';
+        }
+      });
+    }
+
+    if (toggle) {
+      toggle.addEventListener('change', updateScheduleView);
+      // Run once on initial load, but wait a tick for Lucide replacement or browser render
+      setTimeout(updateScheduleView, 10);
+    }
+  })();
+</script>
 {% endblock %}

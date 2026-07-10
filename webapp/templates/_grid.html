@@ -1,28 +1,113 @@
 {% if grid and grid.weeks %}
-<div class="legend">
-  {% for item in grid.legend %}
-  <span class="chip" style="background: {{ item.color.bg }}; color: {{ item.color.color }}">{{ item.full_name }} &middot; {{ item.count }}</span>
-  {% endfor %}
-</div>
 
-{% for week in grid.weeks %}
-<table class="calendar">
-  <tr>
-    <th class="shift-col">Shift</th>
-    {% for d in week %}<th>{{ d.strftime('%a') }}<br><small>{{ d.month }}/{{ d.day }}</small></th>{% endfor %}
-  </tr>
-  {% for sn in shift_names %}
-  <tr>
-    <td class="shift-col">{{ sn }}</td>
-    {% for d in week %}
-    {% set name = grid.cells.get((sn, d.isoformat())) %}
-    {% set style = grid.colors.get(name) if name else none %}
-    <td {% if style %}style="background: {{ style.bg }}; color: {{ style.color }}"{% endif %}>{{ name or "" }}</td>
-    {% endfor %}
-  </tr>
+  {% if grid.weeks | length > 1 %}
+  <!-- Week navigation bar for blocks with multiple weeks -->
+  <div class="week-nav-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background-color: var(--card); border: 2px solid var(--border); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); box-shadow: 3px 3px 0 var(--shadow-color);">
+    <button id="prev-week-btn" class="button subtle" style="padding: 0.5rem 1rem; margin: 0;" onclick="event.preventDefault();">
+      <i data-lucide="arrow-left" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"></i> Prev Week
+    </button>
+    
+    <span id="week-label" style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--foreground);">
+      Week 1 of {{ grid.weeks | length }}
+    </span>
+    
+    <button id="next-week-btn" class="button subtle" style="padding: 0.5rem 1rem; margin: 0;" onclick="event.preventDefault();">
+      Next Week <i data-lucide="arrow-right" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"></i>
+    </button>
+  </div>
+  {% endif %}
+
+  {% for week in grid.weeks %}
+  <div class="calendar-week-container table-scroll" data-week-index="{{ loop.index0 }}" style="margin-bottom: 2rem; border: 2px solid var(--border); box-shadow: 4px 4px 0px var(--shadow-color);">
+    <table class="calendar" style="margin: 0; width: 100%; border: none; box-shadow: none; border-collapse: separate; border-spacing: 4px; background-color: var(--background);">
+      <thead>
+        <tr>
+          <th class="shift-col" style="background-color: var(--muted); border: 2px solid var(--border); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; text-transform: uppercase; padding: 0.75rem;">Shift</th>
+          {% for d in week %}
+          <th style="background-color: var(--muted); border: 2px solid var(--border); padding: 0.75rem; text-align: center;">
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem;">{{ d.strftime('%a') }}</div>
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--muted-foreground);">{{ d.month }}/{{ d.day }}</div>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for sn in shift_names %}
+        <tr>
+          <td class="shift-col" style="background-color: var(--card); border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; font-size: 0.9rem; padding: 0.75rem;">
+            {{ sn }}
+          </td>
+          {% for d in week %}
+            {% set name = grid.cells.get((sn, d.isoformat())) %}
+            {% set style = grid.colors.get(name) if name else none %}
+            {% if name %}
+              <td class="cell-shift has-resident" data-resident="{{ name }}" style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;">
+                {{ name }}
+              </td>
+            {% else %}
+              <td class="cell-shift" style="border: 2px dashed rgba(30, 41, 59, 0.15); background-color: transparent; text-align: center; vertical-align: middle; padding: 0.5rem;">
+                &mdash;
+              </td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% endfor %}
-</table>
-{% endfor %}
+
+  <script>
+    (function() {
+      const weekContainers = document.querySelectorAll('.calendar-week-container');
+      const totalWeeks = weekContainers.length;
+      if (totalWeeks <= 1) return;
+      
+      let currentWeekIndex = 0;
+      const prevBtn = document.getElementById('prev-week-btn');
+      const nextBtn = document.getElementById('next-week-btn');
+      const label = document.getElementById('week-label');
+      
+      function showWeek(index) {
+        if (index < 0 || index >= totalWeeks) return;
+        currentWeekIndex = index;
+        
+        weekContainers.forEach((container, idx) => {
+          if (idx === currentWeekIndex) {
+            container.style.display = 'block';
+          } else {
+            container.style.display = 'none';
+          }
+        });
+        
+        if (label) {
+          label.textContent = `Week ${currentWeekIndex + 1} of ${totalWeeks}`;
+        }
+        
+        if (prevBtn) {
+          prevBtn.style.visibility = (currentWeekIndex === 0) ? 'hidden' : 'visible';
+        }
+        if (nextBtn) {
+          nextBtn.style.visibility = (currentWeekIndex === totalWeeks - 1) ? 'hidden' : 'visible';
+        }
+      }
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          showWeek(currentWeekIndex - 1);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          showWeek(currentWeekIndex + 1);
+        });
+      }
+      
+      showWeek(0);
+    })();
+  </script>
 {% else %}
-<p>No schedule to display.</p>
+<p class="hint">No schedule to display.</p>
 {% endif %}
