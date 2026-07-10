@@ -21,4 +21,4 @@ COPY . .
 EXPOSE 10000
 
 # Seed database and start the app
-CMD ["sh", "-c", "python3 -m webapp.seed && gunicorn --bind 0.0.0.0:10000 webapp.wsgi:app"]
+CMD ["sh", "-c", "python3 -m webapp.seed && gunicorn --bind 0.0.0.0:10000 --timeout 120 webapp.wsgi:app"]

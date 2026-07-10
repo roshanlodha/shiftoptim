@@ -51,7 +51,7 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = max_time_seconds
-    solver.parameters.num_search_workers = 8
+    solver.parameters.num_search_workers = 2
     status = solver.Solve(model)
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
