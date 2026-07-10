@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Review run {{ run.id }}{% endblock %}
+{% block content %}
+<h1>Block {{ run.block_number }} &mdash; run #{{ run.id }} ({{ run.status }})</h1>
+<p><a href="{{ url_for('admin_dashboard') }}">&larr; Dashboard</a></p>
+
+{% if run.status == 'draft' %}
+<form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
+  <button type="submit">Publish</button>
+</form>
+<form method="post" action="{{ url_for('admin_discard_run', run_id=run.id) }}" class="inline-form">
+  <button type="submit" class="danger">Discard</button>
+</form>
+{% endif %}
+
+{% include "_grid.html" %}
+{% endblock %}

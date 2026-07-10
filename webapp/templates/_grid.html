@@ -1,0 +1,13 @@
+{% if grid and grid.dates %}
+<table class="grid">
+  <tr><th>Shift</th>{% for d in grid.dates %}<th>{{ d }}</th>{% endfor %}</tr>
+  {% for sn in shift_names %}
+  <tr>
+    <td>{{ sn }}</td>
+    {% for d in grid.dates %}<td>{{ grid.cells.get((sn, d), "") }}</td>{% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No schedule to display.</p>
+{% endif %}

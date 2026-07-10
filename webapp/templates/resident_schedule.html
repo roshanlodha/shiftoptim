@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Schedule{% endblock %}
+{% block content %}
+<h1>Published schedule</h1>
+
+{% if blocks %}
+<form method="get" class="inline-form">
+  <select name="block" onchange="this.form.submit()">
+    {% for b in blocks %}<option value="{{ b }}" {% if b == block_number %}selected{% endif %}>Block {{ b }}</option>{% endfor %}
+  </select>
+</form>
+{% include "_grid.html" %}
+{% else %}
+<p>No published schedules yet.</p>
+{% endif %}
+{% endblock %}

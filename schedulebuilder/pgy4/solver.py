@@ -8,15 +8,27 @@ from .history import empty_entry, load_history
 from .inputs import load_block, load_timeoff
 
 
-def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0):
-    dates, residents, role_on, active_halves = load_block(block)
+def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0,
+                     block_input=None, timeoff=None, history=None):
+    """Solves one full block.
+
+    By default loads roster/dates from config.ini, time off and history from
+    their respective files (the CLI path). Callers that already have this
+    data elsewhere (e.g. the web app's DB-backed bridge) can pass `block_input`
+    as the (dates, residents, role_on, active_halves) tuple normally returned
+    by inputs.load_block(), plus their own `timeoff`/`history` dicts, to skip
+    the file-based loaders entirely.
+    """
+    dates, residents, role_on, active_halves = block_input if block_input is not None else load_block(block)
     num_residents = len(residents)
 
     def role_at(name, d):
         return role_on.get((name, dates[d]))
 
-    timeoff = load_timeoff()
-    history = load_history()
+    if timeoff is None:
+        timeoff = load_timeoff()
+    if history is None:
+        history = load_history()
 
     model = cp_model.CpModel()
     works = {

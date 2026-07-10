@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Block {{ block_number }} rotations{% endblock %}
+{% block content %}
+<h1>Block {{ block_number }} rotations</h1>
+<p><a href="{{ url_for('admin_dashboard') }}">&larr; Dashboard</a></p>
+<form method="post">
+  <table class="rotations">
+    <tr>
+      <th>Resident</th>
+      {% for h in halves %}<th>Half {{ h.half }}<br><small>{{ h.start_date }} &ndash; {{ h.end_date }}</small></th>{% endfor %}
+    </tr>
+    {% for res in residents %}
+    <tr>
+      <td>{{ res.full_name }}</td>
+      {% for h in halves %}
+      <td>
+        <select name="rotation_{{ res.id }}_{{ h.id }}">
+          {% for opt in options %}
+          <option value="{{ opt }}" {% if rotations.get((res.id, h.id)) == opt %}selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+  <button type="submit">Save rotations</button>
+</form>
+{% endblock %}

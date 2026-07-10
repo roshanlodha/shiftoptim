@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}My history{% endblock %}
+{% block content %}
+<h1>My shift history</h1>
+
+<p>Half-blocks worked to date: <strong>{{ entry.half_blocks_worked }}</strong></p>
+
+<h2>Wellness categories</h2>
+<table class="history">
+  <tr>{% for c in category_columns %}<th>{{ c }}</th>{% endfor %}</tr>
+  <tr>{% for c in category_columns %}<td>{{ totals[c] }}</td>{% endfor %}</tr>
+</table>
+
+<h2>By shift type</h2>
+<table class="history">
+  <tr>{% for sn in shift_names %}<th>{{ sn }}</th>{% endfor %}</tr>
+  <tr>{% for sn in shift_names %}<td>{{ entry.shifts[sn] }}</td>{% endfor %}</tr>
+</table>
+{% endblock %}
