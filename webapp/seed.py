@@ -7,13 +7,11 @@ Populates:
   - each resident's rotation for every half-block (from the same CSV)
   - jeopardy assignments per half-block
   - time-off requests carried over from config.ini's [time off] section
-  - history_baseline counts carried over from data/history.json
 
 Run with: python -m webapp.seed
 """
 
 import configparser
-import json
 import os
 
 from werkzeug.security import generate_password_hash
@@ -22,7 +20,6 @@ from . import db as dbmod
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_INI = os.path.join(REPO_ROOT, "config.ini")
-HISTORY_JSON = os.path.join(REPO_ROOT, "data", "history.json")
 
 PGY4_LEVEL = 4
 DEFAULT_RESIDENT_PASSWORD = "changeme"
@@ -157,6 +154,7 @@ def _parse_date_range(text):
 
 def seed(conn):
     dbmod.init_db(conn)
+    conn.execute("DROP TABLE IF EXISTS history_baseline")
 
     resident_ids = {}
     for last_name, full_name in ROSTER:
@@ -172,7 +170,6 @@ def seed(conn):
     half_block_ids = _seed_half_blocks_and_rotations(conn, resident_ids)
     _seed_jeopardy(conn, half_block_ids, resident_ids)
     _seed_time_off(conn, resident_ids)
-    _seed_history_baseline(conn, resident_ids)
 
     conn.commit()
 
@@ -247,36 +244,6 @@ def _seed_time_off(conn, resident_ids):
             conn.execute(
                 "INSERT INTO time_off (resident_id, start_date, end_date) VALUES (?, ?, ?)",
                 (resident_id, start, end),
-            )
-
-
-def _seed_history_baseline(conn, resident_ids):
-    if not os.path.exists(HISTORY_JSON):
-        return
-    with open(HISTORY_JSON) as f:
-        raw = json.load(f)
-    # history.json's "Kira" key predates full-name migration; it's Kira Chandran.
-    name_fixups = {"Kira": "Chandran"}
-    for name, entry in raw.items():
-        last_name = name_fixups.get(name, name)
-        resident_id = resident_ids.get(last_name)
-        if resident_id is None:
-            continue
-        conn.execute(
-            "INSERT INTO history_baseline (resident_id, shift_name, count) VALUES (?, 'half_blocks_worked', ?) "
-            "ON CONFLICT (resident_id, shift_name) DO UPDATE SET count = excluded.count",
-            (resident_id, entry.get("half_blocks_worked", 0)),
-        )
-        conn.execute(
-            "INSERT INTO history_baseline (resident_id, shift_name, count) VALUES (?, 'weekend', ?) "
-            "ON CONFLICT (resident_id, shift_name) DO UPDATE SET count = excluded.count",
-            (resident_id, entry.get("weekend", 0)),
-        )
-        for shift_name, count in entry.get("shifts", {}).items():
-            conn.execute(
-                "INSERT INTO history_baseline (resident_id, shift_name, count) VALUES (?, ?, ?) "
-                "ON CONFLICT (resident_id, shift_name) DO UPDATE SET count = excluded.count",
-                (resident_id, shift_name, count),
             )
 
 

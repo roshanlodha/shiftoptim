@@ -4,7 +4,7 @@ from ortools.sat.python import cp_model
 
 from . import constraints, objective
 from .config import EXTRA_SHIFT, SHIFT_MIN_PER_HALF, SHIFTS, WEEKEND_DAYS
-from .history import empty_entry, load_history
+from .history import empty_entry
 from .inputs import load_block, load_timeoff
 
 
@@ -12,12 +12,9 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
                      block_input=None, timeoff=None, history=None):
     """Solves one full block.
 
-    By default loads roster/dates from config.ini, time off and history from
-    their respective files (the CLI path). Callers that already have this
-    data elsewhere (e.g. the web app's DB-backed bridge) can pass `block_input`
-    as the (dates, residents, role_on, active_halves) tuple normally returned
-    by inputs.load_block(), plus their own `timeoff`/`history` dicts, to skip
-    the file-based loaders entirely.
+    By default loads roster/dates from config.ini and time off from config.ini.
+    Callers (e.g. the web app) pass `block_input`, `timeoff`, and `history`
+    directly. History defaults to {} when omitted.
     """
     dates, residents, role_on, active_halves = block_input if block_input is not None else load_block(block)
     num_residents = len(residents)
@@ -28,7 +25,7 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
     if timeoff is None:
         timeoff = load_timeoff()
     if history is None:
-        history = load_history()
+        history = {}
 
     model = cp_model.CpModel()
     works = {

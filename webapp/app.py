@@ -246,7 +246,7 @@ def register_routes(app, db_conn):
         resident = conn.execute(
             "SELECT last_name, pgy_level FROM residents WHERE id = ?", (resident_id,)
         ).fetchone()
-        history = bridge.load_published_history_from_db(conn, resident["pgy_level"])
+        history = bridge.load_history_from_db(conn, resident["pgy_level"])
         entry = history.get(resident["last_name"],
                             {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in SHIFT_NAMES}, "weekend": 0})
         totals = category_totals(entry)
@@ -364,7 +364,7 @@ def _audit_groups(conn):
     ).fetchall()
     for pgy_row in pgy_levels:
         pgy_level = pgy_row["pgy_level"]
-        history = bridge.load_published_history_from_db(conn, pgy_level)
+        history = bridge.load_history_from_db(conn, pgy_level)
         residents = conn.execute(
             "SELECT full_name, last_name FROM residents WHERE pgy_level = ? ORDER BY last_name",
             (pgy_level,),

@@ -1,9 +1,4 @@
-"""Bridges the DB (rotations/time_off/history_baseline/assignments) to the
-existing CP-SAT solver, and writes results back as a draft run + assignments.
-
-Mirrors schedulebuilder.pgy4.inputs.load_block / load_timeoff / history.load_history,
-but reads from SQLite instead of config.ini / history.json.
-"""
+"""Bridges the DB (rotations/time_off/assignments) to the CP-SAT solver."""
 
 import datetime as dt
 
@@ -16,9 +11,7 @@ def _daterange(start, end):
 
 
 def load_block_from_db(conn, pgy_level, block_number):
-    """Returns (dates, residents, role_on, active_halves) like inputs.load_block(),
-    keyed by resident last_name, derived from the rotations table (no manual
-    roster re-entry needed)."""
+    """Returns (dates, residents, role_on, active_halves) keyed by last_name."""
     halves = conn.execute(
         "SELECT id, half, start_date, end_date FROM half_blocks "
         "WHERE pgy_level = ? AND block_number = ? ORDER BY half",
@@ -70,8 +63,8 @@ def load_timeoff_from_db(conn):
     return requests
 
 
-def load_published_history_from_db(conn, pgy_level):
-    """Totals from published runs only — what this app has actually scheduled."""
+def load_history_from_db(conn, pgy_level):
+    """Cumulative totals from published runs only."""
     shift_names = [info["name"] for info in SHIFTS.values()]
     history = {}
 
@@ -108,36 +101,12 @@ def load_published_history_from_db(conn, pgy_level):
     return history
 
 
-def load_history_from_db(conn, pgy_level):
-    """Solver carry-in = history_baseline + published assignments."""
-    shift_names = [info["name"] for info in SHIFTS.values()]
-    history = load_published_history_from_db(conn, pgy_level)
-
-    baseline_rows = conn.execute(
-        "SELECT res.last_name AS last_name, hb.shift_name AS shift_name, hb.count AS count "
-        "FROM history_baseline hb JOIN residents res ON res.id = hb.resident_id "
-        "WHERE res.pgy_level = ?",
-        (pgy_level,),
-    ).fetchall()
-    for row in baseline_rows:
-        entry = history.setdefault(row["last_name"], _empty_entry(shift_names))
-        if row["shift_name"] == "half_blocks_worked":
-            entry["half_blocks_worked"] += row["count"]
-        elif row["shift_name"] == "weekend":
-            entry["weekend"] += row["count"]
-        elif row["shift_name"] in entry["shifts"]:
-            entry["shifts"][row["shift_name"]] += row["count"]
-
-    return history
-
-
 def _empty_entry(shift_names):
     return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0}
 
 
 def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half, max_time_seconds):
-    """Solves the block and inserts a new draft run + its assignments. Returns
-    the run id, or None if no feasible schedule was found."""
+    """Solves the block and inserts a new draft run + its assignments."""
     block_input = load_block_from_db(conn, pgy_level, block_number)
     timeoff = load_timeoff_from_db(conn)
     history = load_history_from_db(conn, pgy_level)
@@ -153,7 +122,6 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     if result is None:
         return None
 
-    # Only one draft per block: a re-run replaces the previous unreviewed draft.
     for old in conn.execute(
         "SELECT id FROM runs WHERE pgy_level = ? AND block_number = ? AND status = 'draft'",
         (pgy_level, block_number),
@@ -189,8 +157,6 @@ def _delete_run(conn, run_id):
 
 
 def publish_run(conn, run_id):
-    """Publishes a run, deleting any previously published run for the same
-    pgy_level/block_number so exactly one schedule per block survives."""
     run = conn.execute("SELECT pgy_level, block_number FROM runs WHERE id = ?", (run_id,)).fetchone()
     if run is None:
         raise ValueError(f"No run with id {run_id}")
@@ -204,7 +170,6 @@ def publish_run(conn, run_id):
 
 
 def discard_run(conn, run_id):
-    """Deletes a draft run and its assignments outright."""
     run = conn.execute("SELECT id FROM runs WHERE id = ? AND status = 'draft'", (run_id,)).fetchone()
     if run is not None:
         _delete_run(conn, run_id)

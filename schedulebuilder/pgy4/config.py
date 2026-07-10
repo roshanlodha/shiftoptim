@@ -2,7 +2,6 @@ import os
 
 # PGY-4 block scheduler paths (repo root is three levels up from this file).
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HISTORY_JSON = os.path.join(REPO_ROOT, "data", "history.json")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output")
 
 BASE_YEAR = 2026  # academic year 2026-2027; block 4/5 fall entirely in 2026

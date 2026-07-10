@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS residents (
     id INTEGER PRIMARY KEY,
     full_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,       -- solver join key, matches config.ini/history.json era names
+    last_name TEXT NOT NULL,
     pgy_level INTEGER NOT NULL,
     UNIQUE (last_name, pgy_level)
 );
@@ -57,13 +57,6 @@ CREATE TABLE IF NOT EXISTS assignments (
     day TEXT NOT NULL,             -- ISO date
     shift_name TEXT NOT NULL,
     PRIMARY KEY (run_id, resident_id, day)
-);
-
-CREATE TABLE IF NOT EXISTS history_baseline (
-    resident_id INTEGER NOT NULL REFERENCES residents(id),
-    shift_name TEXT NOT NULL,      -- shift catalog name, or the synthetic 'weekend'/'half_blocks_worked' rows
-    count INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (resident_id, shift_name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_assignments_resident ON assignments(resident_id);

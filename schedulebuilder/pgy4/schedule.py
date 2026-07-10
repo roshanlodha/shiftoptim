@@ -1,15 +1,14 @@
 """CLI entrypoint for the PGY-4 ED schedule builder.
 
 Solves one full 4-week block at a time (e.g. "4", "5"), using the roster/
-time-off data in config.ini, and carries cross-block wellness-category
-balance (Morning/Swing, MGH/BWH, Pedi, FT, Weekend) via data/history.json.
+time-off data in config.ini. Cross-block balance carries in-memory when
+multiple blocks are solved in one invocation.
 """
 
 import argparse
 
 from .config import SHIFT_MIN_PER_HALF
 from .export import export_outputs
-from .history import save_history
 from .solver import build_and_solve
 from .verify import verify
 
@@ -23,13 +22,15 @@ def main():
     parser.add_argument("--time", type=float, default=60.0)
     args = parser.parse_args()
 
+    history = {}
     for block in args.blocks:
-        result = build_and_solve(block, shift_min_per_half=args.min, max_time_seconds=args.time)
+        result = build_and_solve(block, shift_min_per_half=args.min, max_time_seconds=args.time,
+                                 history=history)
         if result is None:
             continue
         verify(result)
         export_outputs(result)
-        save_history(result["history"])
+        history = result["history"]
 
 
 if __name__ == "__main__":
