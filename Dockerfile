@@ -1,4 +1,5 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
+
 
 # Install system dependencies (libgomp1 is required by Google OR-Tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \
