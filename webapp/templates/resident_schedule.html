@@ -4,11 +4,26 @@
 <h1>Published schedule</h1>
 
 {% if blocks %}
-<form method="get" class="inline-form">
+<form method="get" class="inline-form block-picker">
   <select name="block" onchange="this.form.submit()">
-    {% for b in blocks %}<option value="{{ b }}" {% if b == block_number %}selected{% endif %}>Block {{ b }}</option>{% endfor %}
+    {% for b in blocks %}
+    <option value="{{ b.block_number }}" {% if b.block_number == block_number %}selected{% endif %}>
+      Block {{ b.block_number }} ({{ b.start_date }} &ndash; {{ b.end_date }})
+    </option>
+    {% endfor %}
   </select>
+  <input type="hidden" name="half" value="{{ half }}">
 </form>
+
+{% if viewable_halves %}
+<div class="half-tabs">
+  {% for h in viewable_halves %}
+  <a class="tab{% if h.half == half %} active{% endif %}"
+     href="{{ url_for('resident_schedule', block=block_number, half=h.half) }}">{{ block_number }}{{ h.half }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% include "_grid.html" %}
 {% else %}
 <p>No published schedules yet.</p>

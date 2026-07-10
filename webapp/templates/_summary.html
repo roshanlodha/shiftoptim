@@ -1,0 +1,21 @@
+{% if summary %}
+<h2>Shift summary (this half)</h2>
+<table class="summary">
+  <tr>
+    <th>Resident</th>
+    <th>Assignment</th>
+    {% for sn in shift_names %}<th class="num">{{ sn }}</th>{% endfor %}
+    {% for c in category_columns %}<th class="num">{{ c }}</th>{% endfor %}
+    <th class="num">Total</th>
+  </tr>
+  {% for row in summary %}
+  <tr>
+    <td>{{ row.full_name }}</td>
+    <td>{{ row.assignment }}</td>
+    {% for sn in shift_names %}<td class="num">{{ row.shifts[sn] }}</td>{% endfor %}
+    {% for c in category_columns %}<td class="num">{{ row.totals[c] }}</td>{% endfor %}
+    <td class="num"><strong>{{ row.total }}</strong></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}

@@ -12,6 +12,7 @@
       <nav>
         {% if g.user.role == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin_audit') }}">Audit</a>
         {% else %}
           <a href="{{ url_for('resident_schedule') }}">Schedule</a>
           <a href="{{ url_for('resident_timeoff') }}">Time off</a>

@@ -1,7 +1,7 @@
 {% if grid and grid.weeks %}
 <div class="legend">
   {% for item in grid.legend %}
-  <span class="chip" style="background: {{ item.color }}">{{ item.full_name }} &middot; {{ item.count }}</span>
+  <span class="chip" style="background: {{ item.color.bg }}; color: {{ item.color.color }}">{{ item.full_name }} &middot; {{ item.count }}</span>
   {% endfor %}
 </div>
 
@@ -16,7 +16,8 @@
     <td class="shift-col">{{ sn }}</td>
     {% for d in week %}
     {% set name = grid.cells.get((sn, d.isoformat())) %}
-    <td {% if name %}style="background: {{ grid.colors[name] }}"{% endif %}>{{ name or "" }}</td>
+    {% set style = grid.colors.get(name) if name else none %}
+    <td {% if style %}style="background: {{ style.bg }}; color: {{ style.color }}"{% endif %}>{{ name or "" }}</td>
     {% endfor %}
   </tr>
   {% endfor %}

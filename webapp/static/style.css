@@ -46,8 +46,15 @@ table th { background: #eef1f6; }
 }
 .calendar { overflow-x: auto; display: block; margin-bottom: 1.5rem; }
 .calendar .shift-col { min-width: 11rem; font-size: 0.78rem; }
-.calendar td { text-align: center; font-size: 0.8rem; min-width: 4.5rem; }
+.calendar td { text-align: center; font-size: 0.8rem; min-width: 4.5rem; font-weight: 500; }
 .calendar th small { font-weight: normal; color: #666; }
+
+/* Summary & audit tables */
+.summary, .audit { font-size: 0.78rem; }
+.summary th.num, .summary td.num,
+.audit th.num, .audit td.num { text-align: right; }
+.table-scroll { overflow-x: auto; margin-bottom: 2rem; }
+.block-picker { margin-bottom: 0.75rem; }
 
 /* Forms & buttons */
 .inline-form { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0.25rem 0; }
@@ -66,6 +73,17 @@ a.button.subtle { background: transparent; color: #16223a; }
 button.danger { background: #b3261e; border-color: #b3261e; }
 select, input[type=date] { padding: 0.3rem; font-size: 0.85rem; }
 .review-actions { margin-bottom: 1rem; }
+.half-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.half-tabs .tab {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #d7dce3;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #16223a;
+  font-size: 0.85rem;
+  background: #fff;
+}
+.half-tabs .tab.active { background: #16223a; color: #fff; border-color: #16223a; }
 
 /* Login */
 .login-card { max-width: 320px; margin: 3rem auto; padding: 1.5rem; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }

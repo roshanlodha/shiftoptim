@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Audit{% endblock %}
+{% block content %}
+<h1>Cumulative audit</h1>
+<p class="hint">Wellness-balance totals from published schedules only, grouped by PGY year.</p>
+
+{% for pgy_level, rows in groups %}
+<h2>PGY-{{ pgy_level }}</h2>
+<div class="table-scroll">
+<table class="audit">
+  <tr>
+    <th>Resident</th>
+    <th class="num">Half-blocks</th>
+    {% for c in category_columns %}<th class="num">{{ c }}</th>{% endfor %}
+    <th class="num">Total shifts</th>
+  </tr>
+  {% for row in rows %}
+  <tr>
+    <td>{{ row.full_name }}</td>
+    <td class="num">{{ row.half_blocks_worked }}</td>
+    {% for c in category_columns %}<td class="num">{{ row.totals[c] }}</td>{% endfor %}
+    <td class="num"><strong>{{ row.total_shifts }}</strong></td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% else %}
+<p>No residents in the database.</p>
+{% endfor %}
+{% endblock %}

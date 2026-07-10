@@ -70,11 +70,48 @@ def load_timeoff_from_db(conn):
     return requests
 
 
-def load_history_from_db(conn, pgy_level):
-    """Carry-in totals = history_baseline + all published assignments for this
-    PGY level, aggregated the same way schedulebuilder.pgy4.history does."""
+def load_published_history_from_db(conn, pgy_level):
+    """Totals from published runs only — what this app has actually scheduled."""
     shift_names = [info["name"] for info in SHIFTS.values()]
     history = {}
+
+    assignment_rows = conn.execute(
+        "SELECT res.last_name AS last_name, a.day AS day, a.shift_name AS shift_name "
+        "FROM assignments a "
+        "JOIN residents res ON res.id = a.resident_id "
+        "JOIN runs r ON r.id = a.run_id "
+        "WHERE r.status = 'published' AND r.pgy_level = ?",
+        (pgy_level,),
+    ).fetchall()
+    for row in assignment_rows:
+        entry = history.setdefault(row["last_name"], _empty_entry(shift_names))
+        if row["shift_name"] in entry["shifts"]:
+            entry["shifts"][row["shift_name"]] += 1
+        day = dt.date.fromisoformat(row["day"])
+        if day.weekday() in WEEKEND_DAYS:
+            entry["weekend"] += 1
+
+    run_pairs = conn.execute(
+        "SELECT DISTINCT a.resident_id AS resident_id, a.run_id AS run_id, res.last_name AS last_name "
+        "FROM assignments a "
+        "JOIN residents res ON res.id = a.resident_id "
+        "JOIN runs r ON r.id = a.run_id "
+        "WHERE r.status = 'published' AND r.pgy_level = ?",
+        (pgy_level,),
+    ).fetchall()
+    half_block_counts = {}
+    for row in run_pairs:
+        half_block_counts[row["last_name"]] = half_block_counts.get(row["last_name"], 0) + 2
+    for last_name, halves in half_block_counts.items():
+        history.setdefault(last_name, _empty_entry(shift_names))["half_blocks_worked"] += halves
+
+    return history
+
+
+def load_history_from_db(conn, pgy_level):
+    """Solver carry-in = history_baseline + published assignments."""
+    shift_names = [info["name"] for info in SHIFTS.values()]
+    history = load_published_history_from_db(conn, pgy_level)
 
     baseline_rows = conn.execute(
         "SELECT res.last_name AS last_name, hb.shift_name AS shift_name, hb.count AS count "
@@ -90,38 +127,6 @@ def load_history_from_db(conn, pgy_level):
             entry["weekend"] += row["count"]
         elif row["shift_name"] in entry["shifts"]:
             entry["shifts"][row["shift_name"]] += row["count"]
-
-    assignment_rows = conn.execute(
-        "SELECT res.last_name AS last_name, a.day AS day, a.shift_name AS shift_name "
-        "FROM assignments a "
-        "JOIN residents res ON res.id = a.resident_id "
-        "JOIN runs r ON r.id = a.run_id "
-        "WHERE r.status = 'published' AND r.pgy_level = ?",
-        (pgy_level,),
-    ).fetchall()
-    half_block_counts = {}
-    for row in assignment_rows:
-        entry = history.setdefault(row["last_name"], _empty_entry(shift_names))
-        if row["shift_name"] in entry["shifts"]:
-            entry["shifts"][row["shift_name"]] += 1
-        day = dt.date.fromisoformat(row["day"])
-        if day.weekday() in WEEKEND_DAYS:
-            entry["weekend"] += 1
-
-    # half_blocks_worked from published runs: count distinct (resident, run) pairs,
-    # since each run covers one full block (2 halves).
-    run_pairs = conn.execute(
-        "SELECT DISTINCT a.resident_id AS resident_id, a.run_id AS run_id, res.last_name AS last_name "
-        "FROM assignments a "
-        "JOIN residents res ON res.id = a.resident_id "
-        "JOIN runs r ON r.id = a.run_id "
-        "WHERE r.status = 'published' AND r.pgy_level = ?",
-        (pgy_level,),
-    ).fetchall()
-    for row in run_pairs:
-        half_block_counts[row["last_name"]] = half_block_counts.get(row["last_name"], 0) + 2
-    for last_name, halves in half_block_counts.items():
-        history.setdefault(last_name, _empty_entry(shift_names))["half_blocks_worked"] += halves
 
     return history
 

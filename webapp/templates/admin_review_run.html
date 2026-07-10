@@ -1,8 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Block {{ run.block_number }} schedule{% endblock %}
+{% block title %}Block {{ run.block_number }}{{ half }} schedule{% endblock %}
 {% block content %}
-<h1>Block {{ run.block_number }} &mdash; {{ 'draft' if run.status == 'draft' else 'published' }} schedule</h1>
+<h1>Block {{ run.block_number }} &mdash; {{ 'draft' if run.status == 'draft' else 'published' }}</h1>
 <p><a href="{{ url_for('admin_dashboard') }}">&larr; Back to dashboard</a></p>
+
+<div class="half-tabs">
+  {% for h in viewable_halves %}
+  <a class="tab{% if h.half == half %} active{% endif %}"
+     href="{{ url_for('admin_review_run', run_id=run.id, half=h.half) }}">{{ run.block_number }}{{ h.half }}</a>
+  {% endfor %}
+</div>
 
 {% if run.status == 'draft' %}
 <div class="review-actions">
@@ -16,4 +23,5 @@
 {% endif %}
 
 {% include "_grid.html" %}
+{% include "_summary.html" %}
 {% endblock %}
