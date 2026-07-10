@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}My Trades{% endblock %}
+{% block content %}
+<h1>Trade Requests</h1>
+
+{% macro status_badge(status) %}
+  {% if status == 'pending_peer' %}
+    <span class="status-badge" style="background-color: var(--tertiary);">⏳ Awaiting Peer</span>
+  {% elif status == 'pending_admin' %}
+    <span class="status-badge" style="background-color: var(--accent); color: white;">🔁 Awaiting Admin</span>
+  {% elif status == 'approved' %}
+    <span class="status-badge" style="background-color: var(--quaternary);">✅ Approved</span>
+  {% elif status == 'peer_denied' %}
+    <span class="status-badge" style="background-color: var(--secondary);">✗ Declined by Peer</span>
+  {% elif status == 'admin_denied' %}
+    <span class="status-badge" style="background-color: var(--secondary);">✗ Denied by Admin</span>
+  {% endif %}
+{% endmacro %}
+
+{# ---- Incoming ---- #}
+<h2 style="margin-top: 0;">
+  <i data-lucide="inbox" style="display: inline-block; vertical-align: middle; width: 22px; height: 22px; margin-right: 6px;"></i>
+  Incoming
+</h2>
+
+{% if incoming %}
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>From</th>
+        <th>Their Shift</th>
+        <th>Your Shift</th>
+        <th>Requested</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in incoming %}
+      <tr>
+        <td style="font-weight: 700;">{{ t.requester_name }}</td>
+        <td>
+          <span style="font-weight: 700;">{{ t.requester_day | human_date }}</span><br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.requester_shift }}</span>
+        </td>
+        <td>
+          <span style="font-weight: 700;">{{ t.target_day | human_date }}</span><br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.target_shift }}</span>
+        </td>
+        <td style="font-size: 0.85rem; color: var(--muted-foreground);">{{ t.created_at[:10] }}</td>
+        <td>{{ status_badge(t.status) }}</td>
+        <td>
+          {% if t.status == 'pending_peer' %}
+          <div style="display: flex; gap: 0.5rem;">
+            <form method="POST" action="{{ url_for('trades_respond', trade_id=t.id) }}" style="margin: 0;">
+              <input type="hidden" name="action" value="accept">
+              <button type="submit" style="padding: 0.4rem 1rem; font-size: 0.85rem; margin: 0; background-color: var(--quaternary); color: var(--foreground);">Accept</button>
+            </form>
+            <form method="POST" action="{{ url_for('trades_respond', trade_id=t.id) }}" style="margin: 0;">
+              <input type="hidden" name="action" value="deny">
+              <button type="submit" class="danger" style="padding: 0.4rem 1rem; font-size: 0.85rem; margin: 0;">Decline</button>
+            </form>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">No incoming trade requests.</p>
+{% endif %}
+
+<hr class="decorative-divider">
+
+{# ---- Outgoing ---- #}
+<h2>
+  <i data-lucide="send" style="display: inline-block; vertical-align: middle; width: 22px; height: 22px; margin-right: 6px;"></i>
+  Outgoing
+</h2>
+
+{% if outgoing %}
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Your Shift</th>
+        <th>Offer To</th>
+        <th>Their Shift</th>
+        <th>Sent</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in outgoing %}
+      <tr>
+        <td>
+          <span style="font-weight: 700;">{{ t.requester_day | human_date }}</span><br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.requester_shift }}</span>
+        </td>
+        <td style="font-weight: 700;">{{ t.target_name }}</td>
+        <td>
+          <span style="font-weight: 700;">{{ t.target_day | human_date }}</span><br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.target_shift }}</span>
+        </td>
+        <td style="font-size: 0.85rem; color: var(--muted-foreground);">{{ t.created_at[:10] }}</td>
+        <td>{{ status_badge(t.status) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">No outgoing trade requests. Head to your <a href="{{ url_for('resident_schedule') }}" style="color: var(--accent); font-weight: 700;">schedule</a> and click a shift to start one.</p>
+{% endif %}
+{% endblock %}

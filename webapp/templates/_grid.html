@@ -41,8 +41,14 @@
             {% set name = grid.cells.get((sn, d.isoformat())) %}
             {% set style = grid.colors.get(name) if name else none %}
             {% if name %}
-              <td class="cell-shift has-resident" data-resident="{{ name }}" style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;">
+              {% set is_mine = (is_resident_view and name == current_user_last_name) %}
+              <td class="cell-shift has-resident{% if is_mine %} cell-mine{% endif %}"
+                  data-resident="{{ name }}"
+                  data-day="{{ d.isoformat() }}"
+                  style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;{% if is_mine %} cursor: pointer;{% endif %}"
+                  {% if is_mine %}onclick="openTradeModal('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}')"{% endif %}>
                 {{ name }}
+                {% if is_mine %}<span style="display: block; font-size: 0.65rem; letter-spacing: 0.04em; opacity: 0.75; margin-top: 2px;">SWAP?</span>{% endif %}
               </td>
             {% else %}
               <td class="cell-shift" style="border: 2px dashed rgba(30, 41, 59, 0.15); background-color: transparent; text-align: center; vertical-align: middle; padding: 0.5rem;">
@@ -50,6 +56,7 @@
               </td>
             {% endif %}
           {% endfor %}
+
         </tr>
         {% endfor %}
       </tbody>

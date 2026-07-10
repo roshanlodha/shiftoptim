@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Trade Approvals{% endblock %}
+{% block content %}
+<h1>
+  <i data-lucide="arrow-left-right" style="display: inline-block; vertical-align: middle; width: 32px; height: 32px; margin-right: 8px;"></i>
+  Shift Trades
+</h1>
+
+{% set pending = trades | selectattr('status', 'equalto', 'pending_admin') | list %}
+{% set resolved = trades | rejectattr('status', 'equalto', 'pending_admin') | list %}
+
+{% if pending %}
+<div class="review-actions" style="margin-bottom: 2rem;">
+  <i data-lucide="bell-ring" style="width: 22px; height: 22px; color: var(--accent); flex-shrink: 0;"></i>
+  <span style="font-weight: 700;">{{ pending | length }} trade{{ 's' if pending | length != 1 }} awaiting your approval.</span>
+</div>
+{% endif %}
+
+<h2 style="margin-top: 0;">Awaiting Approval</h2>
+
+{% if pending %}
+<div class="block-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
+  {% for t in pending %}
+  <div class="card-sticker" style="padding: 1.5rem;">
+    <div class="block-card-header">
+      <h3 style="font-size: 1.15rem; margin: 0;">{{ t.requester_name }} ↔ {{ t.target_name }}</h3>
+      <span class="status-badge" style="background-color: var(--accent); color: white;">Pending</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem;">
+      <div style="background: var(--muted); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; text-align: center;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); margin-bottom: 0.25rem;">{{ t.requester_name.split()[0] }}</div>
+        <div style="font-weight: 700; font-size: 0.85rem;">{{ t.requester_day | human_date }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted-foreground); margin-top: 0.2rem;">{{ t.requester_shift }}</div>
+      </div>
+      <div style="font-size: 1.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--accent);">⇄</div>
+      <div style="background: var(--muted); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; text-align: center;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); margin-bottom: 0.25rem;">{{ t.target_name.split()[0] }}</div>
+        <div style="font-weight: 700; font-size: 0.85rem;">{{ t.target_day | human_date }}</div>
+        <div style="font-size: 0.8rem; color: var(--muted-foreground); margin-top: 0.2rem;">{{ t.target_shift }}</div>
+      </div>
+    </div>
+
+    <p style="font-size: 0.8rem; color: var(--muted-foreground); margin-bottom: 1rem;">
+      Requested {{ t.created_at[:10] }} · Both shifts ACGME-verified
+    </p>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <form method="POST" action="{{ url_for('admin_trades_resolve', trade_id=t.id) }}" style="margin: 0; flex: 1;">
+        <input type="hidden" name="action" value="approve">
+        <button type="submit" style="width: 100%; background-color: var(--quaternary); color: var(--foreground); margin: 0;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Approve
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('admin_trades_resolve', trade_id=t.id) }}" style="margin: 0; flex: 1;">
+        <input type="hidden" name="action" value="deny">
+        <button type="submit" class="danger" style="width: 100%; margin: 0;">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i> Deny
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="hint">No trades awaiting approval.</p>
+{% endif %}
+
+<hr class="decorative-divider">
+<h2>History</h2>
+
+{% if resolved %}
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Requester</th>
+        <th>Their Shift</th>
+        <th>Partner</th>
+        <th>Partner Shift</th>
+        <th>Status</th>
+        <th>Resolved</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in resolved %}
+      {% set status_label = {
+          'approved': ('✅ Approved', 'var(--quaternary)'),
+          'peer_denied': ('✗ Peer Declined', 'var(--secondary)'),
+          'admin_denied': ('✗ Admin Denied', 'var(--secondary)'),
+          'pending_peer': ('⏳ Awaiting Peer', 'var(--tertiary)')
+        }.get(t.status, (t.status, 'var(--muted)')) %}
+      <tr>
+        <td style="font-weight: 700;">{{ t.requester_name }}</td>
+        <td>
+          {{ t.requester_day | human_date }}<br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.requester_shift }}</span>
+        </td>
+        <td style="font-weight: 700;">{{ t.target_name }}</td>
+        <td>
+          {{ t.target_day | human_date }}<br>
+          <span style="font-size: 0.82rem; color: var(--muted-foreground);">{{ t.target_shift }}</span>
+        </td>
+        <td>
+          <span class="status-badge" style="background-color: {{ status_label[1] }};">{{ status_label[0] }}</span>
+        </td>
+        <td style="font-size: 0.85rem; color: var(--muted-foreground);">{{ t.resolved_at[:10] if t.resolved_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">No resolved trades yet.</p>
+{% endif %}
+{% endblock %}

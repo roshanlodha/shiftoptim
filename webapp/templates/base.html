@@ -17,10 +17,12 @@
         {% if g.user.role == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}"><i data-lucide="layout-dashboard" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Dashboard</a>
           <a href="{{ url_for('admin_audit') }}"><i data-lucide="file-check" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Audit</a>
+          <a href="{{ url_for('admin_trades') }}"><i data-lucide="arrow-left-right" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Trades</a>
           <a href="{{ url_for('admin_settings') }}"><i data-lucide="settings" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Settings</a>
         {% else %}
           <a href="{{ url_for('resident_schedule') }}"><i data-lucide="calendar" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Schedule</a>
           <a href="{{ url_for('resident_timeoff') }}"><i data-lucide="clock" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Time off</a>
+          <a href="{{ url_for('resident_trades') }}"><i data-lucide="arrow-left-right" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Trades</a>
           <a href="{{ url_for('resident_history') }}"><i data-lucide="history" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> My history</a>
           <a href="{{ url_for('resident_settings') }}"><i data-lucide="settings" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Settings</a>
         {% endif %}

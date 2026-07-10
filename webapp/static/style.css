@@ -845,3 +845,36 @@ table.audit td.anomaly-low {
   font-weight: 800;
   border: 2px solid #fcd34d !important;
 }
+
+/* ---- Trade request styles ---- */
+
+/* Clickable "mine" shift cell */
+.calendar td.cell-mine {
+  position: relative;
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  transition: var(--bounce-transition);
+}
+
+.calendar td.cell-mine:hover {
+  translate: -2px -2px;
+  box-shadow: 5px 5px 0px var(--accent);
+  outline-color: var(--accent);
+}
+
+/* Trade modal dialog */
+#trade-modal {
+  animation: modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+/* Status badges for trade states */
+.status-badge.trade-pending-peer  { background-color: var(--tertiary); }
+.status-badge.trade-pending-admin { background-color: var(--accent); color: white; }
+.status-badge.trade-approved      { background-color: var(--quaternary); }
+.status-badge.trade-denied        { background-color: var(--secondary); }
+

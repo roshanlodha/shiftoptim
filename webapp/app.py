@@ -2,9 +2,10 @@
 the published schedule, manage their own time off, and see their history."""
 
 import datetime as dt
+import json
 import os
 
-from flask import Flask, g, redirect, render_template, request, session, url_for
+from flask import Flask, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from schedulebuilder.pgy4.config import BALANCE_CATEGORIES, SHIFT_MIN_PER_HALF, SHIFTS, WEEKEND_DAYS
@@ -359,8 +360,170 @@ def register_routes(app, db_conn):
             success=success
         )
 
+    # --- Trade requests (resident) -----------------------------------------
+
+    def _published_run_for_resident(conn, resident_id, day):
+        """Return run row for the published run whose date range contains day."""
+        return conn.execute(
+            "SELECT r.id, r.pgy_level, r.block_number FROM runs r "
+            "JOIN half_blocks hb ON hb.pgy_level = r.pgy_level "
+            "WHERE r.status = 'published' AND ? >= hb.start_date AND ? <= hb.end_date "
+            "AND EXISTS (SELECT 1 FROM assignments a WHERE a.run_id = r.id AND a.resident_id = ? AND a.day = ?) "
+            "LIMIT 1",
+            (day, day, resident_id, day),
+        ).fetchone()
+
+    @app.route("/trades/find", methods=["POST"])
+    @login_required
+    def trades_find():
+        """JSON endpoint: returns valid swap candidates for a given shift."""
+        resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return jsonify({"error": "No resident linked"}), 403
+        day = request.form.get("day")
+        shift = request.form.get("shift")
+        if not day or not shift:
+            return jsonify({"error": "day and shift required"}), 400
+        conn = db_conn()
+        run = _published_run_for_resident(conn, resident_id, day)
+        if run is None:
+            return jsonify({"error": "No published run found for this shift"}), 404
+        swaps = bridge.find_valid_swaps(conn, run["id"], resident_id, day, shift)
+        return jsonify({"run_id": run["id"], "swaps": swaps})
+
+    @app.route("/trades/request", methods=["POST"])
+    @login_required
+    def trades_request():
+        """Create a new pending_peer trade request."""
+        resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return redirect(url_for("index"))
+        conn = db_conn()
+        run_id = request.form.get("run_id", type=int)
+        req_day = request.form.get("requester_day")
+        req_shift = request.form.get("requester_shift")
+        tgt_id = request.form.get("target_id", type=int)
+        tgt_day = request.form.get("target_day")
+        tgt_shift = request.form.get("target_shift")
+        if not all([run_id, req_day, req_shift, tgt_id, tgt_day, tgt_shift]):
+            return redirect(url_for("resident_schedule"))
+        # Verify requester actually holds that shift
+        owns = conn.execute(
+            "SELECT 1 FROM assignments WHERE run_id=? AND resident_id=? AND day=? AND shift_name=?",
+            (run_id, resident_id, req_day, req_shift),
+        ).fetchone()
+        if not owns:
+            return redirect(url_for("resident_schedule"))
+        # Prevent duplicate active request on same shift
+        dupe = conn.execute(
+            "SELECT 1 FROM trade_requests WHERE run_id=? AND requester_id=? AND requester_day=? "
+            "AND requester_shift=? AND status IN ('pending_peer','pending_admin')",
+            (run_id, resident_id, req_day, req_shift),
+        ).fetchone()
+        if dupe:
+            return redirect(url_for("resident_trades"))
+        conn.execute(
+            "INSERT INTO trade_requests (run_id, requester_id, requester_day, requester_shift, "
+            "target_id, target_day, target_shift) VALUES (?,?,?,?,?,?,?)",
+            (run_id, resident_id, req_day, req_shift, tgt_id, tgt_day, tgt_shift),
+        )
+        conn.commit()
+        return redirect(url_for("resident_trades"))
+
+    @app.route("/trades")
+    @login_required
+    def resident_trades():
+        """Resident's inbox (incoming) and outbox (outgoing) trade requests."""
+        resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return redirect(url_for("index"))
+        conn = db_conn()
+        incoming = conn.execute(
+            "SELECT t.*, req.full_name AS requester_name, tgt.full_name AS target_name "
+            "FROM trade_requests t "
+            "JOIN residents req ON req.id = t.requester_id "
+            "JOIN residents tgt ON tgt.id = t.target_id "
+            "WHERE t.target_id = ? ORDER BY t.created_at DESC",
+            (resident_id,),
+        ).fetchall()
+        outgoing = conn.execute(
+            "SELECT t.*, req.full_name AS requester_name, tgt.full_name AS target_name "
+            "FROM trade_requests t "
+            "JOIN residents req ON req.id = t.requester_id "
+            "JOIN residents tgt ON tgt.id = t.target_id "
+            "WHERE t.requester_id = ? ORDER BY t.created_at DESC",
+            (resident_id,),
+        ).fetchall()
+        return render_template("trades.html", incoming=incoming, outgoing=outgoing)
+
+    @app.route("/trades/<int:trade_id>/respond", methods=["POST"])
+    @login_required
+    def trades_respond(trade_id):
+        """Target resident accepts or denies a pending_peer request."""
+        resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return redirect(url_for("index"))
+        conn = db_conn()
+        trade = conn.execute(
+            "SELECT * FROM trade_requests WHERE id = ? AND target_id = ? AND status = 'pending_peer'",
+            (trade_id, resident_id),
+        ).fetchone()
+        if trade is None:
+            return redirect(url_for("resident_trades"))
+        action = request.form.get("action")
+        if action == "accept":
+            conn.execute(
+                "UPDATE trade_requests SET status = 'pending_admin' WHERE id = ?", (trade_id,)
+            )
+        elif action == "deny":
+            conn.execute(
+                "UPDATE trade_requests SET status = 'peer_denied', resolved_at = datetime('now') WHERE id = ?",
+                (trade_id,),
+            )
+        conn.commit()
+        return redirect(url_for("resident_trades"))
+
+    # --- Trade requests (admin) --------------------------------------------
+
+    @app.route("/admin/trades")
+    @admin_required
+    def admin_trades():
+        """Admin view: all trades awaiting admin approval."""
+        conn = db_conn()
+        pending = conn.execute(
+            "SELECT t.*, req.full_name AS requester_name, tgt.full_name AS target_name "
+            "FROM trade_requests t "
+            "JOIN residents req ON req.id = t.requester_id "
+            "JOIN residents tgt ON tgt.id = t.target_id "
+            "ORDER BY t.status DESC, t.created_at DESC",
+        ).fetchall()
+        return render_template("admin_trades.html", trades=pending)
+
+    @app.route("/admin/trades/<int:trade_id>/resolve", methods=["POST"])
+    @admin_required
+    def admin_trades_resolve(trade_id):
+        """Admin approves (swaps assignments) or denies a pending_admin request."""
+        conn = db_conn()
+        trade = conn.execute(
+            "SELECT * FROM trade_requests WHERE id = ? AND status = 'pending_admin'",
+            (trade_id,),
+        ).fetchone()
+        if trade is None:
+            return redirect(url_for("admin_trades"))
+        action = request.form.get("action")
+        if action == "approve":
+            bridge.apply_trade(conn, trade_id)  # commits inside
+        elif action == "deny":
+            conn.execute(
+                "UPDATE trade_requests SET status = 'admin_denied', resolved_at = datetime('now') WHERE id = ?",
+                (trade_id,),
+            )
+            conn.commit()
+        return redirect(url_for("admin_trades"))
+
 
 def _week_chunks(dates):
+
     weeks, week = [], []
     for d in dates:
         if week and d.weekday() == 0:

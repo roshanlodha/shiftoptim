@@ -68,3 +68,25 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS trade_requests (
+    id INTEGER PRIMARY KEY,
+    run_id INTEGER NOT NULL REFERENCES runs(id),
+    -- requester's shift
+    requester_id INTEGER NOT NULL REFERENCES residents(id),
+    requester_day TEXT NOT NULL,        -- ISO date
+    requester_shift TEXT NOT NULL,
+    -- swap partner's shift
+    target_id INTEGER NOT NULL REFERENCES residents(id),
+    target_day TEXT NOT NULL,           -- ISO date
+    target_shift TEXT NOT NULL,
+    -- workflow state
+    status TEXT NOT NULL DEFAULT 'pending_peer'
+        CHECK (status IN ('pending_peer', 'peer_denied', 'pending_admin', 'admin_denied', 'approved')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_trades_requester ON trade_requests(requester_id);
+CREATE INDEX IF NOT EXISTS idx_trades_target ON trade_requests(target_id);
+CREATE INDEX IF NOT EXISTS idx_trades_status ON trade_requests(status);

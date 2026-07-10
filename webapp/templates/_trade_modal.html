@@ -1,0 +1,153 @@
+{# Trade request modal — include once on resident_schedule.html #}
+<dialog id="trade-modal" style="
+  border: none; border-radius: var(--radius-lg); padding: 0; max-width: 640px; width: 95%;
+  box-shadow: 8px 8px 0px var(--shadow-color); background: var(--card);
+  border: 2px solid var(--border);
+">
+  <div style="padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+      <div>
+        <h2 style="margin: 0 0 0.25rem; font-size: 1.5rem;">Request a Swap</h2>
+        <p id="trade-modal-subtitle" style="margin: 0; color: var(--muted-foreground); font-size: 0.9rem; font-weight: 500;"></p>
+      </div>
+      <button type="button" id="trade-modal-close" class="subtle" style="padding: 0.4rem 0.75rem; margin: 0; font-size: 1.2rem; line-height: 1;">✕</button>
+    </div>
+
+    {# Loading state #}
+    <div id="trade-loading" style="text-align: center; padding: 2rem 1rem; display: none;">
+      <div style="display: inline-block; width: 2.5rem; height: 2.5rem; border: 3px solid var(--muted); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+      <p style="margin-top: 1rem; color: var(--muted-foreground); font-weight: 500;">Checking ACGME compliance…</p>
+    </div>
+
+    {# Error state #}
+    <div id="trade-error" style="display: none;" class="error"></div>
+
+    {# Empty state #}
+    <div id="trade-empty" style="display: none;">
+      <div class="hint" style="text-align: center; display: block; padding: 2rem;">
+        <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">🔍</span>
+        No valid ACGME-compliant swaps found for this shift.
+      </div>
+    </div>
+
+    {# Results #}
+    <div id="trade-results" style="display: none;">
+      <p style="font-size: 0.85rem; color: var(--muted-foreground); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1rem;">
+        Available swaps — all ACGME compliant
+      </p>
+      <div class="table-scroll" style="max-height: 340px; overflow-y: auto; border-radius: var(--radius-md);">
+        <table id="trade-results-table" style="margin: 0;">
+          <thead>
+            <tr>
+              <th>Resident</th>
+              <th>Their Shift</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="trade-results-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+{# Hidden form to submit trade request #}
+<form id="trade-submit-form" method="POST" action="{{ url_for('trades_request') }}" style="display:none;">
+  <input type="hidden" name="run_id" id="tsf-run-id">
+  <input type="hidden" name="requester_day" id="tsf-req-day">
+  <input type="hidden" name="requester_shift" id="tsf-req-shift">
+  <input type="hidden" name="target_id" id="tsf-tgt-id">
+  <input type="hidden" name="target_day" id="tsf-tgt-day">
+  <input type="hidden" name="target_shift" id="tsf-tgt-shift">
+</form>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+dialog::backdrop { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(2px); }
+</style>
+
+<script>
+(function() {
+  const modal = document.getElementById('trade-modal');
+  const closeBtn = document.getElementById('trade-modal-close');
+  const subtitle = document.getElementById('trade-modal-subtitle');
+  const loading = document.getElementById('trade-loading');
+  const errorDiv = document.getElementById('trade-error');
+  const emptyDiv = document.getElementById('trade-empty');
+  const resultsDiv = document.getElementById('trade-results');
+  const resultsBody = document.getElementById('trade-results-body');
+
+  // Close handlers
+  closeBtn.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
+
+  function setState(state) {
+    loading.style.display = state === 'loading' ? 'block' : 'none';
+    errorDiv.style.display = state === 'error' ? 'block' : 'none';
+    emptyDiv.style.display = state === 'empty' ? 'block' : 'none';
+    resultsDiv.style.display = state === 'results' ? 'block' : 'none';
+  }
+
+  function formatDate(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  window.openTradeModal = function(day, shift, displayDate) {
+    subtitle.textContent = shift + ' · ' + displayDate;
+    setState('loading');
+    resultsBody.innerHTML = '';
+    modal.showModal();
+
+    const fd = new FormData();
+    fd.append('day', day);
+    fd.append('shift', shift);
+
+    fetch("{{ url_for('trades_find') }}", { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          errorDiv.textContent = data.error;
+          setState('error');
+          return;
+        }
+        const swaps = data.swaps;
+        if (!swaps || swaps.length === 0) {
+          setState('empty');
+          return;
+        }
+        swaps.forEach(s => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-weight: 700;">${s.target_name}</td>
+            <td style="font-size: 0.85rem;">${s.target_shift}</td>
+            <td style="font-size: 0.85rem; white-space: nowrap;">${formatDate(s.target_day)}</td>
+            <td>
+              <button type="button" class="button" style="padding: 0.4rem 1rem; font-size: 0.85rem; margin: 0;"
+                onclick="submitTrade(${data.run_id}, '${day}', ${JSON.stringify(shift)}, ${s.target_id}, '${s.target_day}', ${JSON.stringify(s.target_shift)})">
+                Request
+              </button>
+            </td>`;
+          resultsBody.appendChild(tr);
+        });
+        setState('results');
+      })
+      .catch(() => {
+        errorDiv.textContent = 'Network error. Please try again.';
+        setState('error');
+      });
+  };
+
+  window.submitTrade = function(runId, reqDay, reqShift, tgtId, tgtDay, tgtShift) {
+    document.getElementById('tsf-run-id').value = runId;
+    document.getElementById('tsf-req-day').value = reqDay;
+    document.getElementById('tsf-req-shift').value = reqShift;
+    document.getElementById('tsf-tgt-id').value = tgtId;
+    document.getElementById('tsf-tgt-day').value = tgtDay;
+    document.getElementById('tsf-tgt-shift').value = tgtShift;
+    document.getElementById('trade-submit-form').submit();
+  };
+})();
+</script>

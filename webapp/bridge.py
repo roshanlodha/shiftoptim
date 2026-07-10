@@ -180,3 +180,186 @@ def discard_run(conn, run_id):
     if run is not None:
         _delete_run(conn, run_id)
     conn.commit()
+
+
+# ---------------------------------------------------------------------------
+# Shift trade helpers
+# ---------------------------------------------------------------------------
+
+def _load_run_assignments(conn, run_id):
+    """Return {(resident_id, iso_date): shift_name} for an entire run."""
+    rows = conn.execute(
+        "SELECT resident_id, day, shift_name FROM assignments WHERE run_id = ?", (run_id,)
+    ).fetchall()
+    return {(r["resident_id"], r["day"]): r["shift_name"] for r in rows}
+
+
+def _shift_info_by_name():
+    """Name → SHIFTS entry mapping (cached once per import)."""
+    return {info["name"]: info for info in SHIFTS.values()}
+
+
+def _acgme_ok(assignments_map, resident_id, run_id, conn):
+    """
+    Check ACGME hard constraints for one resident given a (possibly mutated)
+    assignments_map {(resident_id, iso_date): shift_name}.
+    Returns True if all constraints pass.
+    Checks:
+      - ≥shift-duration (min 8h) rest between consecutive shifts
+      - ≤60 ED hours in any rolling 7-day window
+      - ≥1 completely free day per 7-day window
+    """
+    by_name = _shift_info_by_name()
+    shifts_desc = [info for info in SHIFTS.values()]  # noqa: for reference
+
+    # Collect this resident's assigned (date, shift_info) sorted by date
+    entries = []
+    for (rid, iso), sname in sorted(assignments_map.items()):
+        if rid != resident_id:
+            continue
+        info = by_name.get(sname)
+        if info is None:
+            continue
+        entries.append((dt.date.fromisoformat(iso), info))
+    entries.sort(key=lambda x: x[0])
+
+    if not entries:
+        return True
+
+    # Rest constraint: gap between consecutive shifts
+    for i in range(len(entries) - 1):
+        d1, info1 = entries[i]
+        d2, info2 = entries[i + 1]
+        # Only relevant for back-to-back days
+        if (d2 - d1).days > 1:
+            continue
+        end1 = info1["end"] + (24 if info1["type"] == "Overnight" else 0)
+        start2 = info2["start"] + 24  # next day
+        rest = start2 - end1
+        required = max(8, info1["duration"])
+        if rest < required:
+            return False
+
+    # Build a date range covering all worked days
+    all_dates = sorted({d for d, _ in entries})
+    if not all_dates:
+        return True
+    start_d = all_dates[0]
+    end_d = all_dates[-1]
+    total_days = (end_d - start_d).days + 1
+
+    # Build per-day lookup: date -> shift info (or None)
+    day_map = {d: info for d, info in entries}
+
+    # Rolling 7-day windows
+    for w in range(total_days - 6):
+        window = [start_d + dt.timedelta(days=w + i) for i in range(7)]
+        ed_hours = sum(day_map[d]["duration"] for d in window if d in day_map)
+        if ed_hours > 60:
+            return False
+        # Free day: not worked AND not recovering from previous-night overnight
+        free_days = 0
+        for i, d in enumerate(window):
+            if d in day_map:
+                continue
+            prev = d - dt.timedelta(days=1)
+            prev_info = day_map.get(prev)
+            if prev_info and prev_info["type"] == "Overnight":
+                continue  # recovering from overnight counts as not free
+            free_days += 1
+        if free_days < 1:
+            return False
+
+    return True
+
+
+def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, requester_shift):
+    """
+    Return list of swap candidates that keep BOTH residents ACGME-compliant.
+    Each candidate: {target_id, target_name, target_day, target_shift}
+    Only checks ACGME constraints (rest, 60h/wk, 1 free day/wk).
+    """
+    base = _load_run_assignments(conn, run_id)
+
+    # Get all residents in this run (excluding requester)
+    other_ids = {rid for (rid, _) in base if rid != requester_resident_id}
+
+    # Name lookup
+    res_rows = conn.execute("SELECT id, full_name, last_name FROM residents").fetchall()
+    name_by_id = {r["id"]: r["full_name"] for r in res_rows}
+    last_by_id = {r["id"]: r["last_name"] for r in res_rows}
+
+    # Active trades: block shifts already in a pending trade
+    active_trades = conn.execute(
+        "SELECT requester_id, requester_day, requester_shift, "
+        "target_id, target_day, target_shift "
+        "FROM trade_requests WHERE run_id = ? AND status IN ('pending_peer','pending_admin')",
+        (run_id,),
+    ).fetchall()
+    blocked = set()
+    for t in active_trades:
+        blocked.add((t["requester_id"], t["requester_day"], t["requester_shift"]))
+        blocked.add((t["target_id"], t["target_day"], t["target_shift"]))
+
+    # Requester's own shift must not be blocked
+    if (requester_resident_id, requester_day, requester_shift) in blocked:
+        return []
+
+    results = []
+    for target_id in other_ids:
+        # Find all of this target's shifts
+        target_shifts = [
+            (iso, sname)
+            for (rid, iso), sname in base.items()
+            if rid == target_id
+        ]
+        for target_day, target_shift in target_shifts:
+            if (target_id, target_day, target_shift) in blocked:
+                continue
+            # Simulate swap
+            swapped = dict(base)
+            swapped[(requester_resident_id, requester_day)] = target_shift
+            swapped[(target_id, target_day)] = requester_shift
+            # Check both residents are still ACGME-compliant
+            if _acgme_ok(swapped, requester_resident_id, run_id, conn) and \
+               _acgme_ok(swapped, target_id, run_id, conn):
+                results.append({
+                    "target_id": target_id,
+                    "target_name": name_by_id.get(target_id, str(target_id)),
+                    "target_last": last_by_id.get(target_id, str(target_id)),
+                    "target_day": target_day,
+                    "target_shift": target_shift,
+                })
+
+    # Sort by date then name
+    results.sort(key=lambda x: (x["target_day"], x["target_last"]))
+    return results
+
+
+def apply_trade(conn, trade_id):
+    """Swap the two assignment rows and mark the trade approved."""
+    trade = conn.execute(
+        "SELECT run_id, requester_id, requester_day, requester_shift, "
+        "target_id, target_day, target_shift FROM trade_requests WHERE id = ?",
+        (trade_id,),
+    ).fetchone()
+    if trade is None:
+        raise ValueError(f"Trade {trade_id} not found")
+
+    run_id = trade["run_id"]
+    # Update requester's assignment day → target's shift
+    conn.execute(
+        "UPDATE assignments SET shift_name = ? WHERE run_id = ? AND resident_id = ? AND day = ?",
+        (trade["target_shift"], run_id, trade["requester_id"], trade["requester_day"]),
+    )
+    # Update target's assignment day → requester's shift
+    conn.execute(
+        "UPDATE assignments SET shift_name = ? WHERE run_id = ? AND resident_id = ? AND day = ?",
+        (trade["requester_shift"], run_id, trade["target_id"], trade["target_day"]),
+    )
+    conn.execute(
+        "UPDATE trade_requests SET status = 'approved', resolved_at = datetime('now') WHERE id = ?",
+        (trade_id,),
+    )
+    conn.commit()
+
