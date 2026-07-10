@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: shiftoptim
+    runtime: docker
+    plan: free
+    envVars:
+      - key: SHIFTOPTIM_SECRET_KEY
+        generateValue: true
