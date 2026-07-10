@@ -1,16 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Review run {{ run.id }}{% endblock %}
+{% block title %}Block {{ run.block_number }} schedule{% endblock %}
 {% block content %}
-<h1>Block {{ run.block_number }} &mdash; run #{{ run.id }} ({{ run.status }})</h1>
-<p><a href="{{ url_for('admin_dashboard') }}">&larr; Dashboard</a></p>
+<h1>Block {{ run.block_number }} &mdash; {{ 'draft' if run.status == 'draft' else 'published' }} schedule</h1>
+<p><a href="{{ url_for('admin_dashboard') }}">&larr; Back to dashboard</a></p>
 
 {% if run.status == 'draft' %}
-<form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
-  <button type="submit">Publish</button>
-</form>
-<form method="post" action="{{ url_for('admin_discard_run', run_id=run.id) }}" class="inline-form">
-  <button type="submit" class="danger">Discard</button>
-</form>
+<div class="review-actions">
+  <form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
+    <button type="submit">Publish</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_discard_run', run_id=run.id) }}" class="inline-form">
+    <button type="submit" class="danger">Discard</button>
+  </form>
+</div>
 {% endif %}
 
 {% include "_grid.html" %}

@@ -12,9 +12,9 @@
       <nav>
         {% if g.user.role == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin_time_off') }}">Time off</a>
         {% else %}
           <a href="{{ url_for('resident_schedule') }}">Schedule</a>
+          <a href="{{ url_for('resident_timeoff') }}">Time off</a>
           <a href="{{ url_for('resident_history') }}">My history</a>
         {% endif %}
         <span class="who">{{ g.user.username }}</span>

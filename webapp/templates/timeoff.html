@@ -1,34 +1,34 @@
 {% extends "base.html" %}
 {% block title %}Time off{% endblock %}
 {% block content %}
-<h1>Time off requests</h1>
-<p><a href="{{ url_for('admin_dashboard') }}">&larr; Dashboard</a></p>
+<h1>My time-off requests</h1>
+<p class="hint">Requests are taken into account the next time a schedule is built. For a single day, use the same start and end date.</p>
 
 <form method="post" class="inline-form">
   <input type="hidden" name="action" value="add">
-  <select name="resident_id" required>
-    {% for res in residents %}<option value="{{ res.id }}">{{ res.full_name }}</option>{% endfor %}
-  </select>
   <input type="date" name="start_date" required>
   <input type="date" name="end_date" required>
-  <button type="submit">Add</button>
+  <button type="submit">Request time off</button>
 </form>
 
+{% if requests %}
 <table class="time-off">
-  <tr><th>Resident</th><th>Start</th><th>End</th><th></th></tr>
-  {% for t in time_off %}
+  <tr><th>Start</th><th>End</th><th></th></tr>
+  {% for t in requests %}
   <tr>
-    <td>{{ t.full_name }}</td>
     <td>{{ t.start_date }}</td>
     <td>{{ t.end_date }}</td>
     <td>
       <form method="post" class="inline-form">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="time_off_id" value="{{ t.id }}">
-        <button type="submit">Remove</button>
+        <button type="submit" class="danger">Remove</button>
       </form>
     </td>
   </tr>
   {% endfor %}
 </table>
+{% else %}
+<p>No requests yet.</p>
+{% endif %}
 {% endblock %}

@@ -1,13 +1,27 @@
-{% if grid and grid.dates %}
-<table class="grid">
-  <tr><th>Shift</th>{% for d in grid.dates %}<th>{{ d }}</th>{% endfor %}</tr>
+{% if grid and grid.weeks %}
+<div class="legend">
+  {% for item in grid.legend %}
+  <span class="chip" style="background: {{ item.color }}">{{ item.full_name }} &middot; {{ item.count }}</span>
+  {% endfor %}
+</div>
+
+{% for week in grid.weeks %}
+<table class="calendar">
+  <tr>
+    <th class="shift-col">Shift</th>
+    {% for d in week %}<th>{{ d.strftime('%a') }}<br><small>{{ d.month }}/{{ d.day }}</small></th>{% endfor %}
+  </tr>
   {% for sn in shift_names %}
   <tr>
-    <td>{{ sn }}</td>
-    {% for d in grid.dates %}<td>{{ grid.cells.get((sn, d), "") }}</td>{% endfor %}
+    <td class="shift-col">{{ sn }}</td>
+    {% for d in week %}
+    {% set name = grid.cells.get((sn, d.isoformat())) %}
+    <td {% if name %}style="background: {{ grid.colors[name] }}"{% endif %}>{{ name or "" }}</td>
+    {% endfor %}
   </tr>
   {% endfor %}
 </table>
+{% endfor %}
 {% else %}
 <p>No schedule to display.</p>
 {% endif %}

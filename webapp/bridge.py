@@ -148,6 +148,13 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     if result is None:
         return None
 
+    # Only one draft per block: a re-run replaces the previous unreviewed draft.
+    for old in conn.execute(
+        "SELECT id FROM runs WHERE pgy_level = ? AND block_number = ? AND status = 'draft'",
+        (pgy_level, block_number),
+    ).fetchall():
+        _delete_run(conn, old["id"])
+
     resident_id_by_name = {
         row["last_name"]: row["id"]
         for row in conn.execute(
@@ -171,20 +178,29 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     return run_id
 
 
+def _delete_run(conn, run_id):
+    conn.execute("DELETE FROM assignments WHERE run_id = ?", (run_id,))
+    conn.execute("DELETE FROM runs WHERE id = ?", (run_id,))
+
+
 def publish_run(conn, run_id):
-    """Marks a run published, discarding any other run for the same
-    pgy_level/block_number so only one published run remains authoritative."""
+    """Publishes a run, deleting any previously published run for the same
+    pgy_level/block_number so exactly one schedule per block survives."""
     run = conn.execute("SELECT pgy_level, block_number FROM runs WHERE id = ?", (run_id,)).fetchone()
     if run is None:
         raise ValueError(f"No run with id {run_id}")
-    conn.execute(
-        "UPDATE runs SET status = 'discarded' WHERE pgy_level = ? AND block_number = ? AND status = 'published'",
-        (run["pgy_level"], run["block_number"]),
-    )
+    for old in conn.execute(
+        "SELECT id FROM runs WHERE pgy_level = ? AND block_number = ? AND status = 'published' AND id != ?",
+        (run["pgy_level"], run["block_number"], run_id),
+    ).fetchall():
+        _delete_run(conn, old["id"])
     conn.execute("UPDATE runs SET status = 'published' WHERE id = ?", (run_id,))
     conn.commit()
 
 
 def discard_run(conn, run_id):
-    conn.execute("UPDATE runs SET status = 'discarded' WHERE id = ? AND status = 'draft'", (run_id,))
+    """Deletes a draft run and its assignments outright."""
+    run = conn.execute("SELECT id FROM runs WHERE id = ? AND status = 'draft'", (run_id,)).fetchone()
+    if run is not None:
+        _delete_run(conn, run_id)
     conn.commit()

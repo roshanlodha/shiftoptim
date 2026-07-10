@@ -1,42 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Admin dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1>Admin dashboard</h1>
+<h1>Blocks</h1>
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
+<p class="hint">Run the solver for a block, review the draft, then publish it. Solving takes up to a minute.</p>
 
-<section>
-  <h2>Run solver</h2>
-  <table class="blocks">
-    <tr><th>Block</th><th>Rotations</th><th></th></tr>
-    {% for b in blocks %}
-    <tr>
-      <td>Block {{ b.block_number }}</td>
-      <td><a href="{{ url_for('admin_rotations', block_number=b.block_number) }}">Edit rotations</a></td>
-      <td>
+<table class="blocks">
+  <tr><th>Block</th><th>Dates</th><th>Status</th><th>Action</th></tr>
+  {% for b in blocks %}
+  {% set block_runs = runs_by_block.get(b.block_number, {}) %}
+  {% set draft = block_runs.get('draft') %}
+  {% set published = block_runs.get('published') %}
+  <tr>
+    <td>Block {{ b.block_number }}</td>
+    <td>{{ b.start_date }} &ndash; {{ b.end_date }}</td>
+    <td>
+      {% if draft %}<span class="status draft">Draft pending review</span>
+      {% elif published %}<span class="status published">Published</span>
+      {% else %}<span class="status none">Not scheduled</span>{% endif %}
+    </td>
+    <td class="actions">
+      {% if draft %}
+        <a class="button" href="{{ url_for('admin_review_run', run_id=draft.id) }}">Review draft</a>
+      {% else %}
         <form method="post" action="{{ url_for('admin_run', block_number=b.block_number) }}" class="inline-form">
-          <input type="number" name="min_shifts" value="8" min="1" title="Min shifts per active half">
-          <input type="number" name="time_limit" value="60" min="1" title="Solver time limit (s)">
-          <button type="submit">Run solver</button>
+          <button type="submit">{{ 'Re-run' if published else 'Run solver' }}</button>
         </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</section>
-
-<section>
-  <h2>Runs</h2>
-  <table class="runs">
-    <tr><th>Block</th><th>Status</th><th>Min shifts</th><th>Created</th><th></th></tr>
-    {% for r in runs %}
-    <tr>
-      <td>{{ r.block_number }}</td>
-      <td>{{ r.status }}</td>
-      <td>{{ r.min_shifts }}</td>
-      <td>{{ r.created_at }}</td>
-      <td><a href="{{ url_for('admin_review_run', run_id=r.id) }}">Review</a></td>
-    </tr>
-    {% endfor %}
-  </table>
-</section>
+      {% endif %}
+      {% if published %}
+        <a class="button subtle" href="{{ url_for('admin_review_run', run_id=published.id) }}">View</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
 {% endblock %}

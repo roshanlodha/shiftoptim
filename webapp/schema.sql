@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY,
     pgy_level INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'discarded')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
     min_shifts INTEGER NOT NULL,
     time_limit REAL NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
