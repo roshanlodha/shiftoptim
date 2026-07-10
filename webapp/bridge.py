@@ -164,6 +164,7 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
 
 
 def _delete_run(conn, run_id):
+    conn.execute("DELETE FROM trade_requests WHERE run_id = ?", (run_id,))
     conn.execute("DELETE FROM assignments WHERE run_id = ?", (run_id,))
     conn.execute("DELETE FROM runs WHERE id = ?", (run_id,))
 

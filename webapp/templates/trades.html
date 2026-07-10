@@ -5,15 +5,15 @@
 
 {% macro status_badge(status) %}
   {% if status == 'pending_peer' %}
-    <span class="status-badge" style="background-color: var(--tertiary);">⏳ Awaiting Peer</span>
+    <span class="status-badge" style="background-color: var(--tertiary);">Awaiting Peer</span>
   {% elif status == 'pending_admin' %}
-    <span class="status-badge" style="background-color: var(--accent); color: white;">🔁 Awaiting Admin</span>
+    <span class="status-badge" style="background-color: var(--accent); color: white;">Awaiting Admin</span>
   {% elif status == 'approved' %}
-    <span class="status-badge" style="background-color: var(--quaternary);">✅ Approved</span>
+    <span class="status-badge" style="background-color: var(--quaternary);">Approved</span>
   {% elif status == 'peer_denied' %}
-    <span class="status-badge" style="background-color: var(--secondary);">✗ Declined by Peer</span>
+    <span class="status-badge" style="background-color: var(--secondary);">Declined by Peer</span>
   {% elif status == 'admin_denied' %}
-    <span class="status-badge" style="background-color: var(--secondary);">✗ Denied by Admin</span>
+    <span class="status-badge" style="background-color: var(--secondary);">Denied by Admin</span>
   {% endif %}
 {% endmacro %}
 

@@ -181,6 +181,7 @@ def register_routes(app, db_conn):
     @admin_required
     def admin_reset_all():
         conn = db_conn()
+        conn.execute("DELETE FROM trade_requests")
         conn.execute("DELETE FROM assignments")
         conn.execute("DELETE FROM runs")
         conn.commit()
