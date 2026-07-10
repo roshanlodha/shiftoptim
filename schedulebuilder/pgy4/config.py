@@ -1,6 +1,7 @@
 import os
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# PGY-4 block scheduler paths (repo root is three levels up from this file).
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HISTORY_JSON = os.path.join(REPO_ROOT, "data", "history.json")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output")
 

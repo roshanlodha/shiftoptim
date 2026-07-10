@@ -8,7 +8,8 @@ migration.
 import json
 import os
 
-from .config import BALANCE_CATEGORIES, HISTORY_JSON, SHIFTS, WEEKEND_DAYS
+from . import config
+from .config import BALANCE_CATEGORIES, SHIFTS, WEEKEND_DAYS
 
 
 def load_history():
@@ -17,9 +18,9 @@ def load_history():
     Returns {} if history.json doesn't exist yet, so the first block balances
     evenly on its own with no carry-in.
     """
-    if not os.path.exists(HISTORY_JSON):
+    if not os.path.exists(config.HISTORY_JSON):
         return {}
-    with open(HISTORY_JSON) as f:
+    with open(config.HISTORY_JSON) as f:
         raw = json.load(f)
     shift_names = [info["name"] for info in SHIFTS.values()]
     history = {}
@@ -54,8 +55,8 @@ def empty_entry():
 
 
 def save_history(history):
-    os.makedirs(os.path.dirname(HISTORY_JSON), exist_ok=True)
-    with open(HISTORY_JSON, "w") as f:
+    os.makedirs(os.path.dirname(config.HISTORY_JSON), exist_ok=True)
+    with open(config.HISTORY_JSON, "w") as f:
         json.dump(history, f, indent=2, sort_keys=True)
 
 

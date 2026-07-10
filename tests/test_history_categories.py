@@ -1,4 +1,4 @@
-"""Plain-assert smoke test for schedulebuilder.history: JSON round-trip and
+"""Plain-assert smoke test for schedulebuilder.pgy4.history: JSON round-trip and
 category_totals math. Run directly: python tests/test_history_categories.py
 """
 
@@ -8,7 +8,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from schedulebuilder import config, history
+from schedulebuilder.pgy4 import config, history
 
 
 def test_missing_file_gives_empty_history():

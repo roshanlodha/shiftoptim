@@ -1,5 +1,11 @@
 import argparse
+import sys
 from pathlib import Path
+
+# Archived shift-swap tool; keep imports working when run from repo root.
+_SHIFTSWAP_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SHIFTSWAP_ROOT))
+
 from shiftoptim.ingest import build_schedule
 from shiftoptim.optimizer import optimize
 from shiftoptim.report import format_log
@@ -10,8 +16,8 @@ import shiftoptim.config as config
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ics", default="data/07_27_2026.ics")
-    ap.add_argument("--prefs", default="data/preferences.csv")
+    ap.add_argument("--ics", default=str(_SHIFTSWAP_ROOT / "data" / "schedule.ics"))
+    ap.add_argument("--prefs", default=str(_SHIFTSWAP_ROOT / "data" / "preferences.csv"))
     ap.add_argument("-K", "--max-swaps-per-person", type=int,
                     default=DEFAULT_MAX_SWAPS_PER_PERSON,
                     help="max swaps per person (-1 = unlimited, default: 3)")

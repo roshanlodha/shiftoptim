@@ -2,13 +2,17 @@
 rosters, and time-off requests. Everyone is identified by last name only.
 
 See config.ini at the repo root for the format and inline comments.
+This file is PGY-4-specific; other training years will get their own INI later.
 """
 
 import configparser
 import datetime as dt
 import os
 
-CONFIG_INI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.ini")
+CONFIG_INI = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "config.ini",
+)
 
 
 def _parse_date(text):
