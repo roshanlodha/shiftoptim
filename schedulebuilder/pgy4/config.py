@@ -53,6 +53,7 @@ DAY_SHIFTS = tuple(s for s in SHIFTS if s not in (NIGHT_SHIFT, EXTRA_SHIFT))
 BALANCE_CATEGORIES = {
     "Morning": tuple(s for s in DAY_SHIFTS if SHIFTS[s]["type"] == "Morning"),
     "Swing": tuple(s for s in DAY_SHIFTS if SHIFTS[s]["type"] == "Swing"),
+    "Night": (6,),
     "MGH": tuple(s for s in DAY_SHIFTS if SHIFTS[s]["site"] == "MGH"),
     "BWH": tuple(s for s in DAY_SHIFTS if SHIFTS[s]["site"] == "BWH"),
     "Pedi": (4,),
@@ -74,6 +75,7 @@ BALANCE_WEIGHTS = {
     "Weekend": 100,
     "Morning": 30,
     "Swing": 30,
+    "Night": 20,
     "MGH": 15,
     "BWH": 15,
     "Pedi": 8,

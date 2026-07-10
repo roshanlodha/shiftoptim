@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+
+{% if success %}<p class="hint" style="background-color: #ecfdf5; border-color: #10b981; color: #065f46; box-shadow: 2px 2px 0px #10b981;">{{ success }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; margin-top: 1.5rem; width: 100%;">
+  
+  <!-- Column 1: Preferences (Beta) -->
+  <div class="card-sticker featured" style="flex: 1 1 550px; margin: 0; max-width: 600px;">
+    <div class="card-icon-badge accent-badge">
+      <i data-lucide="sliders" style="width: 22px; height: 22px; color: white;"></i>
+    </div>
+    
+    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+      <h2 style="font-size: 1.5rem; margin: 0; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--foreground);">My Preferences</h2>
+      <span class="status-badge" style="background-color: var(--tertiary); color: var(--border); border: 2px solid var(--border); box-shadow: 1px 1px 0 var(--shadow-color); margin-left: 0.75rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 800; border-radius: var(--radius-sm); padding: 0.15rem 0.5rem;">Beta</span>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--muted-foreground); margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif;">
+      Define your desired priority weights for blocks. (Note: this is currently a preview and does not affect the solver yet).
+    </p>
+
+    <form method="post" class="settings-form" style="max-width: 100%;">
+      <input type="hidden" name="form_type" value="preferences">
+      <table class="settings" style="margin-top: 0.5rem; box-shadow: none;">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align: center; width: 280px;">Desired Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td style="font-weight: 700; font-size: 1rem; color: var(--foreground); vertical-align: middle;">{{ cat }}</td>
+            <td style="text-align: center; width: 280px; vertical-align: middle;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="range" id="range-{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" 
+                       oninput="document.getElementById('input-{{ cat }}').value = this.value" 
+                       style="flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; padding: 0; margin: 0;">
+                <input type="number" id="input-{{ cat }}" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000"
+                       oninput="document.getElementById('range-{{ cat }}').value = this.value"
+                       style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; width: 4.5rem; text-align: right; color: var(--accent); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; background-color: var(--background); margin: 0; box-shadow: 2px 2px 0 var(--shadow-color);">
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      <button type="submit" style="width: 100%; margin-top: 1.5rem;">
+        Save Preferences <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- Column 2: Change Password -->
+  <div class="card-sticker featured" style="flex: 1 1 400px; margin: 0; max-width: 450px;">
+    <div class="card-icon-badge pink-badge">
+      <i data-lucide="key-round" style="width: 22px; height: 22px; color: #1E293B;"></i>
+    </div>
+    
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--foreground);">Change Password</h2>
+    <p style="font-size: 0.9rem; color: var(--muted-foreground); margin-bottom: 1.5rem; font-family: 'Plus Jakarta Sans', sans-serif;">
+      Update your account security details here.
+    </p>
+    
+    <form method="post" style="max-width: 100%;">
+      <input type="hidden" name="form_type" value="password">
+      
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--foreground);">Current Password</label>
+        <input type="password" name="current_password" required style="width: 100%; padding: 0.6rem 0.85rem; border: 2px solid var(--border); border-radius: var(--radius-sm); box-shadow: 2px 2px 0 var(--shadow-color); font-family: 'Plus Jakarta Sans', sans-serif;">
+      </div>
+      
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--foreground);">New Password</label>
+        <input type="password" name="new_password" required style="width: 100%; padding: 0.6rem 0.85rem; border: 2px solid var(--border); border-radius: var(--radius-sm); box-shadow: 2px 2px 0 var(--shadow-color); font-family: 'Plus Jakarta Sans', sans-serif;">
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--foreground);">Confirm New Password</label>
+        <input type="password" name="confirm_password" required style="width: 100%; padding: 0.6rem 0.85rem; border: 2px solid var(--border); border-radius: var(--radius-sm); box-shadow: 2px 2px 0 var(--shadow-color); font-family: 'Plus Jakarta Sans', sans-serif;">
+      </div>
+      
+      <button type="submit" class="button" style="width: 100%; margin: 0; background-color: var(--secondary); border-color: var(--border); box-shadow: 3px 3px 0 var(--shadow-color); color: var(--border);">
+        Update Password <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

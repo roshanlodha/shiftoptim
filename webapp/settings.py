@@ -5,7 +5,7 @@ import json
 from schedulebuilder.pgy4.config import BALANCE_WEIGHTS
 
 BALANCE_WEIGHTS_KEY = "balance_weights"
-CATEGORY_ORDER = ("Weekend", "Morning", "Swing", "MGH", "BWH", "Pedi", "FT")
+CATEGORY_ORDER = ("Weekend", "Morning", "Swing", "Night", "MGH", "BWH", "Pedi", "FT")
 
 
 def default_balance_weights():

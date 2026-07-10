@@ -5,7 +5,7 @@ import datetime as dt
 import os
 
 from flask import Flask, g, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from schedulebuilder.pgy4.config import BALANCE_CATEGORIES, SHIFT_MIN_PER_HALF, SHIFTS, WEEKEND_DAYS
 from schedulebuilder.pgy4.history import category_totals
@@ -42,6 +42,20 @@ def create_app(db_path=None):
         if "db" not in g:
             g.db = get_db(app.config.get("DB_PATH"))
         return g.db
+
+    @app.template_filter('human_date')
+    def format_human_date(date_str):
+        import datetime
+        try:
+            d = datetime.date.fromisoformat(date_str)
+            day = d.day
+            if 11 <= day <= 13:
+                suffix = 'th'
+            else:
+                suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
+            return d.strftime(f'%B {day}{suffix}')
+        except Exception:
+            return date_str
 
     register_routes(app, db_conn)
     return app
@@ -127,8 +141,10 @@ def register_routes(app, db_conn):
     def admin_audit():
         conn = db_conn()
         groups = _audit_groups(conn)
+        show_prop_row = conn.execute("SELECT value FROM settings WHERE key = 'show_proportions'").fetchone()
+        show_proportions = int(show_prop_row["value"]) if show_prop_row else 1
         return render_template("admin_audit.html", groups=groups,
-                               category_columns=CATEGORY_COLUMNS)
+                               category_columns=CATEGORY_COLUMNS, show_proportions=show_proportions)
 
     @app.route("/admin/settings", methods=["GET", "POST"])
     @admin_required
@@ -137,10 +153,28 @@ def register_routes(app, db_conn):
         if request.method == "POST":
             weights = {cat: request.form.get(cat, 0) for cat in CATEGORY_ORDER}
             save_balance_weights(conn, weights)
+            show_prop = 1 if request.form.get("show_proportions") else 0
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES ('show_proportions', ?) "
+                "ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+                (str(show_prop),)
+            )
+            conn.commit()
             return redirect(url_for("admin_settings"))
         weights = load_balance_weights(conn)
+        show_prop_row = conn.execute("SELECT value FROM settings WHERE key = 'show_proportions'").fetchone()
+        show_proportions = int(show_prop_row["value"]) if show_prop_row else 1
         return render_template("admin_settings.html", weights=weights,
-                               categories=CATEGORY_ORDER)
+                               categories=CATEGORY_ORDER, show_proportions=show_proportions)
+
+    @app.route("/admin/reset", methods=["POST"])
+    @admin_required
+    def admin_reset_all():
+        conn = db_conn()
+        conn.execute("DELETE FROM assignments")
+        conn.execute("DELETE FROM runs")
+        conn.commit()
+        return redirect(url_for("admin_dashboard"))
 
     @app.route("/admin/blocks/<int:block_number>/run", methods=["POST"])
     @admin_required
@@ -266,6 +300,63 @@ def register_routes(app, db_conn):
         return render_template(
             "resident_history.html", entry=entry, totals=totals,
             category_columns=CATEGORY_COLUMNS, shift_names=SHIFT_NAMES,
+        )
+
+    @app.route("/resident/settings", methods=["GET", "POST"])
+    @login_required
+    def resident_settings():
+        conn = db_conn()
+        resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return redirect(url_for("admin_settings"))
+            
+        error = None
+        success = None
+        pref_key = f"pref_resident_{resident_id}"
+        
+        if request.method == "POST":
+            form_type = request.form.get("form_type")
+            if form_type == "password":
+                current_pw = request.form.get("current_password")
+                new_pw = request.form.get("new_password")
+                confirm_pw = request.form.get("confirm_password")
+                
+                user_row = conn.execute("SELECT password_hash FROM users WHERE id = ?", (g.user["id"],)).fetchone()
+                if not user_row or not check_password_hash(user_row["password_hash"], current_pw):
+                    error = "Incorrect current password."
+                elif new_pw != confirm_pw:
+                    error = "New passwords do not match."
+                elif not new_pw:
+                    error = "New password cannot be empty."
+                else:
+                    new_hash = generate_password_hash(new_pw)
+                    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, g.user["id"]))
+                    conn.commit()
+                    success = "Password changed successfully!"
+            elif form_type == "preferences":
+                weights = {cat: int(request.form.get(cat, 0)) for cat in CATEGORY_ORDER}
+                import json
+                conn.execute(
+                    "INSERT INTO settings (key, value) VALUES (?, ?) "
+                    "ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+                    (pref_key, json.dumps(weights))
+                )
+                conn.commit()
+                success = "Preferences saved! (Note: preferences are currently in Beta and do not affect the active solver yet)."
+                
+        import json
+        pref_row = conn.execute("SELECT value FROM settings WHERE key = ?", (pref_key,)).fetchone()
+        if pref_row:
+            weights = json.loads(pref_row["value"])
+        else:
+            weights = load_balance_weights(conn)
+            
+        return render_template(
+            "resident_settings.html",
+            weights=weights,
+            categories=CATEGORY_ORDER,
+            error=error,
+            success=success
         )
 
 
@@ -394,6 +485,28 @@ def _audit_groups(conn):
                 "half_blocks_worked": entry["half_blocks_worked"],
                 "totals": totals,
                 "total_shifts": sum(entry["shifts"].values()),
+                "cell_styles": {},
             })
+
+        # Calculate group averages for category columns to find anomalies
+        for c in CATEGORY_COLUMNS:
+            sum_totals = sum(r["totals"].get(c, 0) for r in rows)
+            sum_shifts = sum(r["total_shifts"] for r in rows)
+            group_avg_prop = sum_totals / sum_shifts if sum_shifts > 0 else 0
+            
+            for r in rows:
+                if r["total_shifts"] > 0:
+                    r_prop = r["totals"].get(c, 0) / r["total_shifts"]
+                    diff = r_prop - group_avg_prop
+                    # Using a threshold of 18% absolute difference for gross anomalies
+                    if diff > 0.18:
+                        r["cell_styles"][c] = "anomaly-high"
+                    elif diff < -0.18:
+                        r["cell_styles"][c] = "anomaly-low"
+                    else:
+                        r["cell_styles"][c] = ""
+                else:
+                    r["cell_styles"][c] = ""
+
         groups.append((pgy_level, rows))
     return groups

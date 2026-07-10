@@ -52,12 +52,12 @@
       
       <p style="font-weight: 500; font-size: 0.95rem; color: var(--muted-foreground); margin-bottom: 1.5rem;">
         <i data-lucide="clock" style="display: inline-block; vertical-align: middle; width: 16px; height: 16px; margin-right: 4px;"></i>
-        {{ b.start_date }} &ndash; {{ b.end_date }}
+        {{ b.start_date | human_date }} &ndash; {{ b.end_date | human_date }}
       </p>
       
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         {% if not draft %}
-          <form method="post" action="{{ url_for('admin_run', block_number=b.block_number) }}" onclick="event.stopPropagation();" style="display: inline-block; width: 100%; margin: 0;">
+          <form method="post" action="{{ url_for('admin_run', block_number=b.block_number) }}" data-block-number="{{ b.block_number }}" class="solver-form" onclick="event.stopPropagation();" style="display: inline-block; width: 100%; margin: 0;">
             {% if published %}
               <button type="submit" class="btn-rerun" style="width: 100%;">
                 Re-run solver <i data-lucide="play" style="width: 16px; height: 16px;"></i>
@@ -74,4 +74,54 @@
   {% endfor %}
 </div>
 
+<!-- Fullscreen Solving Modal -->
+<div id="solving-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 9999;">
+  <div class="card-sticker" style="background-color: var(--card); border: 3px solid var(--border); box-shadow: 8px 8px 0 var(--shadow-color); padding: 3rem; text-align: center; max-width: 450px; width: 90%; border-radius: var(--radius-md);">
+    
+    <!-- Animated shapes loop -->
+    <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+      <div style="width: 24px; height: 24px; background-color: var(--accent); border: 2px solid var(--border); border-radius: 50%; animation: bounce-shape 1.2s infinite ease-in-out;"></div>
+      <div style="width: 24px; height: 24px; background-color: var(--secondary); border: 2px solid var(--border); transform: rotate(45deg); animation: bounce-shape 1.2s infinite ease-in-out; animation-delay: 0.2s;"></div>
+      <div style="width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 24px solid var(--tertiary); position: relative; animation: bounce-shape 1.2s infinite ease-in-out; animation-delay: 0.4s;">
+        <div style="position: absolute; top: 2px; left: -12px; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 20px solid var(--tertiary);"></div>
+      </div>
+    </div>
+    
+    <h2 style="font-size: 1.8rem; font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 0.5rem; color: var(--foreground);">
+      Solving Block <span id="solving-block-number"></span>
+    </h2>
+    <p style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 1.05rem; color: var(--muted-foreground); margin: 0;">
+      This can take a few minutes...
+    </p>
+  </div>
+</div>
+
+<style>
+  @keyframes bounce-shape {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-15px) scale(1.15) rotate(180deg);
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    document.querySelectorAll('.solver-form').forEach(form => {
+      form.addEventListener('submit', function() {
+        const blockNum = this.getAttribute('data-block-number');
+        const modal = document.getElementById('solving-modal');
+        const span = document.getElementById('solving-block-number');
+        if (span) {
+          span.textContent = blockNum;
+        }
+        if (modal) {
+          modal.style.display = 'flex';
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}

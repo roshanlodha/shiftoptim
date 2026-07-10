@@ -3,18 +3,8 @@
 {% block content %}
 <h1>Cumulative Audit</h1>
 
-
-<div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
-  <div class="toggle-container" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block;">
-    <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
-      <input type="checkbox" id="proportion-toggle" checked style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
-      <span>Show Proportion</span>
-    </label>
-  </div>
-</div>
-
 {% for pgy_level, rows in groups %}
-<h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+<h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2rem; margin-bottom: 1rem;">
   <i data-lucide="award" style="color: var(--secondary); width: 28px; height: 28px;"></i>
   PGY-{{ pgy_level }}
 </h2>
@@ -37,15 +27,17 @@
         <td style="font-weight: 700;">{{ row.full_name }}</td>
         <td class="num" style="text-align: right; font-weight: 500;">{{ row.half_blocks_worked }}</td>
         {% for c in category_columns %}
-          <td class="num" style="text-align: right;">
-            <span class="val-raw">{{ row.totals[c] }}</span>
-            <span class="val-percent" style="display: none;">
+          {% set style_class = row.cell_styles.get(c) %}
+          <td class="num {% if style_class %}{{ style_class }}{% endif %}" style="text-align: right;">
+            {% if show_proportions %}
               {% if row.total_shifts > 0 %}
                 {{ ((row.totals[c] / row.total_shifts) * 100) | round | int }}%
               {% else %}
                 0%
               {% endif %}
-            </span>
+            {% else %}
+              {{ row.totals[c] }}
+            {% endif %}
           </td>
         {% endfor %}
         <td class="num" style="text-align: right; font-weight: 800; background-color: rgba(139, 92, 246, 0.05); color: var(--accent);">
@@ -59,26 +51,4 @@
 {% else %}
 <p>No residents in the database.</p>
 {% endfor %}
-
-<script>
-  (function() {
-    const toggle = document.getElementById('proportion-toggle');
-    const rawVals = document.querySelectorAll('.val-raw');
-    const percentVals = document.querySelectorAll('.val-percent');
-    
-    function updateAuditView() {
-      if (!toggle) return;
-      const showProportion = toggle.checked;
-      
-      rawVals.forEach(el => el.style.display = showProportion ? 'none' : 'inline');
-      percentVals.forEach(el => el.style.display = showProportion ? 'inline' : 'none');
-    }
-    
-    if (toggle) {
-      toggle.addEventListener('change', updateAuditView);
-      // Run once on load
-      updateAuditView();
-    }
-  })();
-</script>
 {% endblock %}

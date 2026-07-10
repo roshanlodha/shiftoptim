@@ -22,6 +22,7 @@
           <a href="{{ url_for('resident_schedule') }}"><i data-lucide="calendar" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Schedule</a>
           <a href="{{ url_for('resident_timeoff') }}"><i data-lucide="clock" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Time off</a>
           <a href="{{ url_for('resident_history') }}"><i data-lucide="history" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> My history</a>
+          <a href="{{ url_for('resident_settings') }}"><i data-lucide="settings" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Settings</a>
         {% endif %}
         <span class="who">{{ g.user.username }}</span>
         <a href="{{ url_for('logout') }}"><i data-lucide="log-out" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 4px;"></i> Log out</a>

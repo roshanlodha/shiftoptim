@@ -1,38 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Solver settings{% endblock %}
 {% block content %}
-<h1>Balance weights</h1>
-<div class="card-sticker featured" style="max-width: 550px; margin-top: 1.5rem;">
-  <div class="card-icon-badge accent-badge">
-    <i data-lucide="sliders" style="width: 22px; height: 22px; color: white;"></i>
-  </div>
+<h1>Settings</h1>
+
+<div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; margin-top: 1.5rem; width: 100%;">
   
-  <form method="post" class="settings-form" style="max-width: 100%;">
-    <table class="settings" style="margin-top: 0.5rem; box-shadow: none;">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th style="text-align: center; width: 260px;">Weight</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for cat in categories %}
-        <tr>
-          <td style="font-weight: 700; font-size: 1rem; color: var(--foreground); vertical-align: middle;">{{ cat }}</td>
-          <td style="text-align: center; width: 260px; vertical-align: middle;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <input type="range" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" oninput="this.nextElementSibling.value = this.value" style="flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; padding: 0; margin: 0;">
-              <output style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem; width: 3rem; text-align: right; color: var(--accent); display: inline-block;">{{ weights[cat] }}</output>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- Column 1: Balance Weights Settings -->
+  <div class="card-sticker featured" style="flex: 1 1 550px; margin: 0; max-width: 600px;">
+    <div class="card-icon-badge accent-badge">
+      <i data-lucide="sliders" style="width: 22px; height: 22px; color: white;"></i>
+    </div>
     
-    <button type="submit" style="width: 100%; margin-top: 1rem;">
-      Save Settings <i data-lucide="save" style="width: 18px; height: 18px;"></i>
-    </button>
-  </form>
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--foreground);">Balance Weights</h2>
+    <p style="font-size: 0.9rem; color: var(--muted-foreground); margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif;">
+      Adjust solver priority weights. Enter values directly or slide to adjust.
+    </p>
+
+    <form method="post" class="settings-form" style="max-width: 100%;">
+      <table class="settings" style="margin-top: 0.5rem; box-shadow: none;">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align: center; width: 280px;">Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td style="font-weight: 700; font-size: 1rem; color: var(--foreground); vertical-align: middle;">{{ cat }}</td>
+            <td style="text-align: center; width: 280px; vertical-align: middle;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="range" id="range-{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" 
+                       oninput="document.getElementById('input-{{ cat }}').value = this.value" 
+                       style="flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; padding: 0; margin: 0;">
+                <input type="number" id="input-{{ cat }}" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000"
+                       oninput="document.getElementById('range-{{ cat }}').value = this.value"
+                       style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; width: 4.5rem; text-align: right; color: var(--accent); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; background-color: var(--background); margin: 0; box-shadow: 2px 2px 0 var(--shadow-color);">
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="toggle-container" style="background-color: var(--background); border: 2px solid var(--border); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: block; margin-top: 1.5rem; margin-bottom: 1rem;">
+        <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0; width: 100%;">
+          <input type="checkbox" name="show_proportions" {% if show_proportions %}checked{% endif %} style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+          <span>Show Shift Proportions in Cumulative Audit</span>
+        </label>
+      </div>
+      
+      <button type="submit" style="width: 100%; margin-top: 1rem;">
+        Save Settings <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- Column 2: Danger Zone -->
+  <div class="card-sticker featured" style="flex: 1 1 400px; margin: 0; max-width: 450px; border-color: #ef4444; box-shadow: 4px 4px 0px #ef4444;">
+    <div class="card-icon-badge" style="background-color: #ef4444;">
+      <i data-lucide="trash-2" style="width: 22px; height: 22px; color: white;"></i>
+    </div>
+    
+    <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: #ef4444; font-family: 'Outfit', sans-serif; font-weight: 800;">Danger Zone</h2>
+    <p style="font-size: 0.9rem; color: var(--muted-foreground); margin-bottom: 1rem; font-family: 'Plus Jakarta Sans', sans-serif;">
+      Permanently delete all generated schedule runs and assignments. This action is irreversible.
+    </p>
+    
+    <form action="{{ url_for('admin_reset_all') }}" method="post" onsubmit="return confirm('Are you sure you want to permanently delete all schedule data? This cannot be undone.');">
+      <button type="submit" class="button" style="width: 100%; margin: 0; background-color: #ef4444; border-color: #ef4444; box-shadow: 3px 3px 0px #b91c1c;">
+        Reset All Schedules <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
+  </div>
+
 </div>
 {% endblock %}

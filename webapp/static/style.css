@@ -830,3 +830,18 @@ table tr:hover td {
     scale: none !important;
   }
 }
+
+/* Cumulative Audit Anomaly Highlighting */
+table.audit td.anomaly-high {
+  background-color: #fef2f2 !important; /* light red */
+  color: #b91c1c !important; /* dark red text */
+  font-weight: 800;
+  border: 2px solid #fca5a5 !important;
+}
+
+table.audit td.anomaly-low {
+  background-color: #fffbeb !important; /* light yellow */
+  color: #b45309 !important; /* dark yellow text */
+  font-weight: 800;
+  border: 2px solid #fcd34d !important;
+}
