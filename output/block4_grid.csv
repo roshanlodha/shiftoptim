@@ -1,9 +1,39 @@
-Shift,2026-09-21,2026-09-22,2026-09-23,2026-09-24,2026-09-25,2026-09-26,2026-09-27,2026-09-28,2026-09-29,2026-09-30,2026-10-01,2026-10-02,2026-10-03,2026-10-04,2026-10-05,2026-10-06,2026-10-07,2026-10-08,2026-10-09,2026-10-10,2026-10-11,2026-10-12,2026-10-13,2026-10-14,2026-10-15,2026-10-16,2026-10-17,2026-10-18
-Acute 7a-4p (MGH),D'Amore,Hurwitz,,Anyaso,Anyaso,Fonjungo,Anyaso,Kira,Tamirian,,Eappen,Anyaso,Raynor,Raynor,Traboulsi,Tamirian,,Qi,D'Amore,Eappen,Eappen,Kira,D'Amore,,Tamirian,D'Amore,Tamirian,Kira
-FF 7a-4p (BWH),Kira,Tamirian,,Tamirian,Fonjungo,Anyaso,Kira,Anyaso,Kira,,Anyaso,Tamirian,Eappen,Eappen,Shoaib,Traboulsi,,Shoaib,Eappen,Shoaib,Qi,Eappen,Eappen,,D'Amore,Kira,D'Amore,D'Amore
-Fast Track 2p-11p (MGH),,,,Raynor,,,,,,,Fonjungo,,,,,,,Anyaso,,,,,,,Eappen,,,
-FF 3p-12a (BWH),Fonjungo,Kira,,D'Amore,Kira,Raynor,Raynor,Hurwitz,Hurwitz,,D'Amore,Fonjungo,Hurwitz,Fonjungo,Kira,Shoaib,,Traboulsi,Kira,Tamirian,Anyaso,Anyaso,Tamirian,,Anyaso,Qi,Anyaso,Eappen
-Peds Snr 3p-11p (MGH),Hurwitz,Raynor,,,D'Amore,,,Eappen,Raynor,,,Eappen,,,Tamirian,Qi,,,Tamirian,,,Shoaib,Qi,,,Anyaso,,
-Acute 3p-12a (MGH),Eappen,D'Amore,D'Amore,Kira,Raynor,Eappen,Eappen,Fonjungo,Fonjungo,Fonjungo,Hurwitz,Hurwitz,Kira,Kira,Qi,Kira,Anyaso,Tamirian,Qi,Anyaso,Tamirian,Qi,Kira,Shoaib,Shoaib,Shoaib,Eappen,Anyaso
-Acute 11p-8a (MGH),Menzies,Menzies,Menzies,Menzies,Tamirian,Tamirian,Tamirian,Menzies,Menzies,Menzies,Menzies,D'Amore,D'Amore,Hurwitz,Fonjungo,Fonjungo,Fonjungo,Fonjungo,Traboulsi,D'Amore,D'Amore,Fonjungo,Fonjungo,Traboulsi,Fonjungo,Traboulsi,Traboulsi,Traboulsi
-FF/Ex Swing 3p-12a (BWH),,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Shift,2026-09-21,2026-09-22,2026-09-23,2026-09-24,2026-09-25,2026-09-26,2026-09-27
+Acute 7a-4p (MGH),Kira,D'Amore,,D'Amore,Anyaso,Eappen,Anyaso
+FF 7a-4p (BWH),Tamirian,Kira,,Hurwitz,Raynor,Anyaso,Kira
+Fast Track 2p-11p (MGH),,,,Kira,,,
+FF 3p-12a (BWH),Hurwitz,Anyaso,,Eappen,Kira,Fonjungo,Fonjungo
+Peds Snr 3p-11p (MGH),D'Amore,Eappen,,,Fonjungo,,
+Acute 3p-12a (MGH),Fonjungo,Hurwitz,Anyaso,Fonjungo,D'Amore,Raynor,Raynor
+Acute 11p-8a (MGH),Menzies,Menzies,Menzies,Menzies,Tamirian,Tamirian,Tamirian
+FF/Ex Swing 3p-12a (BWH),,,,,,,
+
+Shift,2026-09-28,2026-09-29,2026-09-30,2026-10-01,2026-10-02,2026-10-03,2026-10-04
+Acute 7a-4p (MGH),Hurwitz,D'Amore,,Fonjungo,Hurwitz,Kira,Eappen
+FF 7a-4p (BWH),Kira,Raynor,,D'Amore,Fonjungo,Fonjungo,Kira
+Fast Track 2p-11p (MGH),,,,Eappen,,,
+FF 3p-12a (BWH),Anyaso,Kira,,Anyaso,D'Amore,Hurwitz,Hurwitz
+Peds Snr 3p-11p (MGH),Raynor,Hurwitz,,,Anyaso,,
+Acute 3p-12a (MGH),Eappen,Eappen,Anyaso,Tamirian,Raynor,D'Amore,D'Amore
+Acute 11p-8a (MGH),Menzies,Menzies,Menzies,Menzies,Eappen,Raynor,Raynor
+FF/Ex Swing 3p-12a (BWH),,,,,,,
+
+Shift,2026-10-05,2026-10-06,2026-10-07,2026-10-08,2026-10-09,2026-10-10,2026-10-11
+Acute 7a-4p (MGH),Traboulsi,Shoaib,,Kira,Eappen,Tamirian,Tamirian
+FF 7a-4p (BWH),Shoaib,Qi,,Tamirian,Tamirian,Eappen,Eappen
+Fast Track 2p-11p (MGH),,,,Traboulsi,,,
+FF 3p-12a (BWH),Tamirian,Tamirian,,Shoaib,Qi,Shoaib,Qi
+Peds Snr 3p-11p (MGH),Qi,Traboulsi,,,Shoaib,,
+Acute 3p-12a (MGH),Kira,Kira,Shoaib,Qi,D'Amore,Kira,Anyaso
+Acute 11p-8a (MGH),Fonjungo,Fonjungo,Fonjungo,Fonjungo,Traboulsi,D'Amore,Kira
+FF/Ex Swing 3p-12a (BWH),,,,,,,
+
+Shift,2026-10-12,2026-10-13,2026-10-14,2026-10-15,2026-10-16,2026-10-17,2026-10-18
+Acute 7a-4p (MGH),Eappen,Tamirian,,Anyaso,Shoaib,Anyaso,Anyaso
+FF 7a-4p (BWH),D'Amore,D'Amore,,D'Amore,Anyaso,Qi,Eappen
+Fast Track 2p-11p (MGH),,,,Tamirian,,,
+FF 3p-12a (BWH),Anyaso,Eappen,,Traboulsi,Eappen,D'Amore,Tamirian
+Peds Snr 3p-11p (MGH),Tamirian,Kira,,,D'Amore,,
+Acute 3p-12a (MGH),Shoaib,Qi,Traboulsi,Eappen,Tamirian,Kira,Qi
+Acute 11p-8a (MGH),Fonjungo,Fonjungo,Fonjungo,Fonjungo,Traboulsi,Traboulsi,Traboulsi
+FF/Ex Swing 3p-12a (BWH),,Anyaso,,,,,

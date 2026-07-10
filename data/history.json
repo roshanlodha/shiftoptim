@@ -1,0 +1,212 @@
+{
+  "Anyaso": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 5,
+      "FF 3p-12a (BWH)": 4,
+      "FF 7a-4p (BWH)": 2,
+      "FF/Ex Swing 3p-12a (BWH)": 1,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 1
+    },
+    "weekend": 8
+  },
+  "Botticelli": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 4,
+      "FF 3p-12a (BWH)": 2,
+      "FF 7a-4p (BWH)": 4,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 10
+  },
+  "D'Amore": {
+    "half_blocks_worked": 4,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 9,
+      "Acute 3p-12a (MGH)": 7,
+      "Acute 7a-4p (MGH)": 4,
+      "FF 3p-12a (BWH)": 5,
+      "FF 7a-4p (BWH)": 4,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 10
+  },
+  "Eappen": {
+    "half_blocks_worked": 3,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 9,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 4,
+      "FF 3p-12a (BWH)": 3,
+      "FF 7a-4p (BWH)": 3,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 1
+    },
+    "weekend": 8
+  },
+  "Fonjungo": {
+    "half_blocks_worked": 3,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 8,
+      "Acute 3p-12a (MGH)": 2,
+      "Acute 7a-4p (MGH)": 4,
+      "FF 3p-12a (BWH)": 5,
+      "FF 7a-4p (BWH)": 3,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 9
+  },
+  "Hurwitz": {
+    "half_blocks_worked": 3,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 6,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 5,
+      "FF 3p-12a (BWH)": 5,
+      "FF 7a-4p (BWH)": 3,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 11
+  },
+  "Kira": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 1,
+      "Acute 3p-12a (MGH)": 4,
+      "Acute 7a-4p (MGH)": 3,
+      "FF 3p-12a (BWH)": 2,
+      "FF 7a-4p (BWH)": 4,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 1
+    },
+    "weekend": 7
+  },
+  "Malits": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 3,
+      "FF 3p-12a (BWH)": 2,
+      "FF 7a-4p (BWH)": 5,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 9
+  },
+  "Menzies": {
+    "half_blocks_worked": 1,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 8,
+      "Acute 3p-12a (MGH)": 0,
+      "Acute 7a-4p (MGH)": 0,
+      "FF 3p-12a (BWH)": 0,
+      "FF 7a-4p (BWH)": 0,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 0
+    },
+    "weekend": 0
+  },
+  "Okonkwo": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 4,
+      "Acute 7a-4p (MGH)": 3,
+      "FF 3p-12a (BWH)": 3,
+      "FF 7a-4p (BWH)": 3,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 9
+  },
+  "Qi": {
+    "half_blocks_worked": 1,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 0,
+      "FF 3p-12a (BWH)": 2,
+      "FF 7a-4p (BWH)": 2,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 1
+    },
+    "weekend": 4
+  },
+  "Raynor": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 2,
+      "Acute 3p-12a (MGH)": 4,
+      "Acute 7a-4p (MGH)": 2,
+      "FF 3p-12a (BWH)": 2,
+      "FF 7a-4p (BWH)": 4,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 10
+  },
+  "Shoaib": {
+    "half_blocks_worked": 2,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 0,
+      "Acute 3p-12a (MGH)": 3,
+      "Acute 7a-4p (MGH)": 3,
+      "FF 3p-12a (BWH)": 4,
+      "FF 7a-4p (BWH)": 4,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 0,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 9
+  },
+  "Tamirian": {
+    "half_blocks_worked": 4,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 9,
+      "Acute 3p-12a (MGH)": 8,
+      "Acute 7a-4p (MGH)": 3,
+      "FF 3p-12a (BWH)": 4,
+      "FF 7a-4p (BWH)": 5,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 14
+  },
+  "Traboulsi": {
+    "half_blocks_worked": 3,
+    "shifts": {
+      "Acute 11p-8a (MGH)": 4,
+      "Acute 3p-12a (MGH)": 6,
+      "Acute 7a-4p (MGH)": 5,
+      "FF 3p-12a (BWH)": 5,
+      "FF 7a-4p (BWH)": 2,
+      "FF/Ex Swing 3p-12a (BWH)": 0,
+      "Fast Track 2p-11p (MGH)": 1,
+      "Peds Snr 3p-11p (MGH)": 2
+    },
+    "weekend": 10
+  }
+}

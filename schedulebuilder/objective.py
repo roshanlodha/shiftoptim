@@ -1,7 +1,7 @@
 """Soft constraints (weighted objective) for the PGY-4 CP-SAT schedule model."""
 
 from .config import (
-    DAY_SHIFTS,
+    BALANCE_CATEGORIES,
     EXTRA_SHIFT,
     NIGHT_SHIFT,
     SHIFTS,
@@ -67,14 +67,17 @@ def add_relief_shift_penalties(model, works, dates, num_residents, penalties):
 
 
 def add_evenness_penalties(model, works, dates, residents, role_at, history, penalties):
-    """Laura's rule, simplified: for each day-shift kind (everything except the
-    overnight and the relief shift), spread cumulative (history + this block)
-    counts as evenly as possible across residents. Residents who are "MGB
-    Nights" for every active day this block can't work any day shift, so
-    they're excluded rather than dragging the minimum down to zero.
+    """Laura's rule: spread cumulative (history + this block) counts as evenly
+    as possible across residents, per wellness category, rather than per
+    specific named shift. Categories are Morning/Swing (time-of-day),
+    MGH/BWH (site), Pedi/FT (the two specialty day shifts), and Weekend
+    (any shift worked on Fri/Sat/Sun). Residents who are "MGB Nights" for
+    every active day this block can't work any day shift, so they're
+    excluded rather than dragging the minimum down to zero.
 
-    Overnights are intentionally left out here: they're governed by the
-    nights/flex priority in add_nights_and_flex_penalties instead of evenness.
+    Overnights are intentionally left out of the shift-derived categories:
+    the dedicated night rotation is governed by the nights/flex priority in
+    add_nights_and_flex_penalties instead of evenness.
     """
     num_days = len(dates)
     day_eligible = [
@@ -82,24 +85,38 @@ def add_evenness_penalties(model, works, dates, residents, role_at, history, pen
         if {role_at(name, d) for d in range(num_days)} - {None} != {"MGB Nights"}
     ]
 
-    counts_by_shift = {s: {} for s in DAY_SHIFTS}
+    counts_by_category = {cat: {} for cat in BALANCE_CATEGORIES}
+    counts_by_category["Weekend"] = {}
     for r in day_eligible:
         name = residents[r]
-        carry = history.get(name, empty_entry())["shifts"]
-        for s in DAY_SHIFTS:
-            count_this_block = sum(works[(r, d, s)] for d in range(num_days))
-            cum = model.NewIntVar(0, 500, f"cum_s{s}_r{r}")
-            model.Add(cum == count_this_block + carry.get(SHIFTS[s]["name"], 0))
-            counts_by_shift[s][r] = cum
+        entry = history.get(name, empty_entry())
+        carry = entry["shifts"]
 
-    for s, values in counts_by_shift.items():
+        for category, shift_ids in BALANCE_CATEGORIES.items():
+            count_this_block = sum(
+                works[(r, d, s)] for d in range(num_days) for s in shift_ids
+            )
+            carry_count = sum(carry.get(SHIFTS[s]["name"], 0) for s in shift_ids)
+            cum = model.NewIntVar(0, 500, f"cum_{category}_r{r}")
+            model.Add(cum == count_this_block + carry_count)
+            counts_by_category[category][r] = cum
+
+        weekend_days = [d for d, date in enumerate(dates) if date.weekday() in WEEKEND_DAYS]
+        weekend_this_block = sum(
+            works[(r, d, s)] for d in weekend_days for s in SHIFTS
+        )
+        cum_weekend = model.NewIntVar(0, 500, f"cum_Weekend_r{r}")
+        model.Add(cum_weekend == weekend_this_block + entry.get("weekend", 0))
+        counts_by_category["Weekend"][r] = cum_weekend
+
+    for category, values in counts_by_category.items():
         if len(values) < 2:
             continue
         values = list(values.values())
-        max_v = model.NewIntVar(0, 500, f"max_s{s}")
-        min_v = model.NewIntVar(0, 500, f"min_s{s}")
+        max_v = model.NewIntVar(0, 500, f"max_{category}")
+        min_v = model.NewIntVar(0, 500, f"min_{category}")
         model.AddMaxEquality(max_v, values)
         model.AddMinEquality(min_v, values)
-        spread = model.NewIntVar(0, 500, f"spread_s{s}")
+        spread = model.NewIntVar(0, 500, f"spread_{category}")
         model.Add(spread == max_v - min_v)
         penalties.append(spread * W_BALANCE)

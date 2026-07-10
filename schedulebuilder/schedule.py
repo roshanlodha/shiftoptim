@@ -1,8 +1,8 @@
 """CLI entrypoint for the PGY-4 ED schedule builder.
 
-Solves one full 4-week block at a time (e.g. "4", "5"), using the hardcoded
-roster/time-off data in schedulebuilder.roster / schedulebuilder.timeoff, and
-carries cross-block Morning/Swing/Overnight balance via data/shift_history.csv.
+Solves one full 4-week block at a time (e.g. "4", "5"), using the roster/
+time-off data in config.ini, and carries cross-block wellness-category
+balance (Morning/Swing, MGH/BWH, Pedi, FT, Weekend) via data/history.json.
 """
 
 import argparse

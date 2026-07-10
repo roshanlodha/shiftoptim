@@ -3,8 +3,23 @@
 import csv
 import os
 
-from .config import OUTPUT_DIR, SHIFT_TYPES, SHIFTS
-from .history import history_type_totals
+from .config import BALANCE_CATEGORIES, OUTPUT_DIR, SHIFTS, WEEKEND_DAYS
+from .history import category_totals
+
+CATEGORY_COLUMNS = list(BALANCE_CATEGORIES) + ["Weekend"]
+
+
+def _week_chunks(dates):
+    """Split sorted block dates into calendar weeks (Mon–Sun)."""
+    weeks, week = [], []
+    for d in dates:
+        if week and d.weekday() == 0:
+            weeks.append(week)
+            week = []
+        week.append(d)
+    if week:
+        weeks.append(week)
+    return weeks
 
 
 def export_grid(result):
@@ -13,39 +28,47 @@ def export_grid(result):
     grid_path = os.path.join(OUTPUT_DIR, f"block{result['block']}_grid.csv")
     with open(grid_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["Shift"] + [d.isoformat() for d in dates])
-        for s, info in SHIFTS.items():
-            row = [info["name"]] + [assignments.get((d, s), "") for d in dates]
-            writer.writerow(row)
+        for i, week_dates in enumerate(_week_chunks(dates)):
+            if i:
+                writer.writerow([])
+            writer.writerow(["Shift"] + [d.isoformat() for d in week_dates])
+            for s, info in SHIFTS.items():
+                writer.writerow(
+                    [info["name"]] + [assignments.get((d, s), "") for d in week_dates]
+                )
     return grid_path
 
 
 def export_shift_summary(result):
-    """One row per resident: count of each shift worked THIS block, plus
-    Morning/Swing/Overnight subtotals and a total, for the block just solved
-    (not the cumulative cross-block history)."""
+    """One row per resident: count of each shift worked THIS block, plus the
+    wellness-balance category subtotals (Morning/Swing/MGH/BWH/Pedi/FT/Weekend)
+    and a total, for the block just solved (not the cumulative cross-block
+    history)."""
     residents = result["residents"]
     solver = result["solver"]
     works = result["works"]
-    num_days = len(result["dates"])
+    dates = result["dates"]
     shift_names = [info["name"] for info in SHIFTS.values()]
 
     summary_path = os.path.join(OUTPUT_DIR, f"block{result['block']}_summary.csv")
     with open(summary_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["resident"] + shift_names + list(SHIFT_TYPES) + ["total"])
+        writer.writerow(["resident"] + shift_names + CATEGORY_COLUMNS + ["total"])
         for r, name in enumerate(residents):
             counts = {info["name"]: 0 for info in SHIFTS.values()}
-            for d in range(num_days):
+            weekend = 0
+            for d, date in enumerate(dates):
                 for s, info in SHIFTS.items():
                     if solver.Value(works[(r, d, s)]):
                         counts[info["name"]] += 1
-            entry = {"shifts": counts}
-            totals = history_type_totals(entry)
+                        if date.weekday() in WEEKEND_DAYS:
+                            weekend += 1
+            entry = {"shifts": counts, "weekend": weekend}
+            totals = category_totals(entry)
             writer.writerow(
                 [name]
                 + [counts[sn] for sn in shift_names]
-                + [totals[t] for t in SHIFT_TYPES]
+                + [totals[c] for c in CATEGORY_COLUMNS]
                 + [sum(counts.values())]
             )
     return summary_path
@@ -62,8 +85,8 @@ def export_outputs(result):
     print(f"[Block {block}] Per-resident summary (cumulative to date):")
     for name in result["residents"]:
         entry = result["history"][name]
-        totals = history_type_totals(entry)
+        totals = category_totals(entry)
         print(
             f"  - {name:20s} half_blocks_worked={entry['half_blocks_worked']} "
-            f"Morning={totals['Morning']:>3} Swing={totals['Swing']:>3} Overnight={totals['Overnight']:>3}"
+            + " ".join(f"{c}={totals[c]:>3}" for c in CATEGORY_COLUMNS)
         )

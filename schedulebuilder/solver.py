@@ -3,7 +3,7 @@
 from ortools.sat.python import cp_model
 
 from . import constraints, objective
-from .config import EXTRA_SHIFT, SHIFT_MIN_PER_HALF, SHIFTS
+from .config import EXTRA_SHIFT, SHIFT_MIN_PER_HALF, SHIFTS, WEEKEND_DAYS
 from .history import empty_entry, load_history
 from .inputs import load_block, load_timeoff
 
@@ -75,6 +75,8 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
             for s, info in SHIFTS.items():
                 if solver.Value(works[(r, d, s)]):
                     entry["shifts"][info["name"]] = entry["shifts"].get(info["name"], 0) + 1
+                    if dates[d].weekday() in WEEKEND_DAYS:
+                        entry["weekend"] = entry.get("weekend", 0) + 1
 
     return {
         "block": block,
