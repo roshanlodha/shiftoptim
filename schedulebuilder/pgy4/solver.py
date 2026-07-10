@@ -44,7 +44,7 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
     objective.add_nights_and_flex_penalties(model, works, dates, residents, role_at, penalties)
     objective.add_relief_shift_penalties(model, works, dates, num_residents, penalties)
     objective.add_evenness_penalties(
-        model, works, dates, residents, role_at, history, penalties)
+        model, works, dates, residents, role_at, history, active_halves, penalties)
 
     model.Minimize(sum(penalties))
 
