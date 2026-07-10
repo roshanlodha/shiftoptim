@@ -63,3 +63,8 @@ CREATE INDEX IF NOT EXISTS idx_assignments_resident ON assignments(resident_id);
 CREATE INDEX IF NOT EXISTS idx_assignments_run ON assignments(run_id);
 CREATE INDEX IF NOT EXISTS idx_rotations_half_block ON rotations(half_block_id);
 CREATE INDEX IF NOT EXISTS idx_time_off_resident ON time_off(resident_id);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);

@@ -14,6 +14,7 @@ from . import bridge
 from .auth import admin_required, load_logged_in_user, login_required
 from .colors import color_map_for_residents
 from .db import get_db
+from .settings import CATEGORY_ORDER, load_balance_weights, save_balance_weights
 
 CATEGORY_COLUMNS = list(BALANCE_CATEGORIES) + ["Weekend"]
 SHIFT_NAMES = [info["name"] for info in SHIFTS.values()]
@@ -128,6 +129,18 @@ def register_routes(app, db_conn):
         groups = _audit_groups(conn)
         return render_template("admin_audit.html", groups=groups,
                                category_columns=CATEGORY_COLUMNS)
+
+    @app.route("/admin/settings", methods=["GET", "POST"])
+    @admin_required
+    def admin_settings():
+        conn = db_conn()
+        if request.method == "POST":
+            weights = {cat: request.form.get(cat, 0) for cat in CATEGORY_ORDER}
+            save_balance_weights(conn, weights)
+            return redirect(url_for("admin_settings"))
+        weights = load_balance_weights(conn)
+        return render_template("admin_settings.html", weights=weights,
+                               categories=CATEGORY_ORDER)
 
     @app.route("/admin/blocks/<int:block_number>/run", methods=["POST"])
     @admin_required

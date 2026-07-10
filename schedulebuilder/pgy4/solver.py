@@ -9,7 +9,7 @@ from .inputs import load_block, load_timeoff
 
 
 def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0,
-                     block_input=None, timeoff=None, history=None):
+                     block_input=None, timeoff=None, history=None, balance_weights=None):
     """Solves one full block.
 
     By default loads roster/dates from config.ini and time off from config.ini.
@@ -44,7 +44,8 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
     objective.add_nights_and_flex_penalties(model, works, dates, residents, role_at, penalties)
     objective.add_relief_shift_penalties(model, works, dates, num_residents, penalties)
     objective.add_evenness_penalties(
-        model, works, dates, residents, role_at, history, active_halves, penalties)
+        model, works, dates, residents, role_at, history, active_halves, penalties,
+        balance_weights=balance_weights)
 
     model.Minimize(sum(penalties))
 

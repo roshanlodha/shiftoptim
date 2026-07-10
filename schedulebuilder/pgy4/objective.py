@@ -2,10 +2,10 @@
 
 from .config import (
     BALANCE_CATEGORIES,
+    BALANCE_WEIGHTS,
     EXTRA_SHIFT,
     NIGHT_SHIFT,
     SHIFTS,
-    W_BALANCE,
     W_EXTRA_SHIFT,
     W_EXTRA_WEEKEND,
     W_FLEX_NIGHT_REWARD,
@@ -67,7 +67,7 @@ def add_relief_shift_penalties(model, works, dates, num_residents, penalties):
 
 
 def add_evenness_penalties(model, works, dates, residents, role_at, history, active_halves,
-                           penalties):
+                           penalties, balance_weights=None):
     """Laura's rule: spread cumulative counts **per half-block worked** as evenly
     as possible across residents, per wellness category. Residents who worked
     fewer half-blocks should not be penalized for having lower raw totals.
@@ -75,6 +75,9 @@ def add_evenness_penalties(model, works, dates, residents, role_at, history, act
     Comparison uses floor(cum * Hmax / halves) so CP-SAT avoids floating point;
     see rate_scaled() for the same math outside the model.
     """
+    if balance_weights is None:
+        balance_weights = BALANCE_WEIGHTS
+
     num_days = len(dates)
     day_eligible = [
         r for r, name in enumerate(residents)
@@ -135,7 +138,7 @@ def add_evenness_penalties(model, works, dates, residents, role_at, history, act
         model.AddMinEquality(min_v, values)
         spread = model.NewIntVar(0, adj_cap, f"spread_{category}")
         model.Add(spread == max_v - min_v)
-        penalties.append(spread * W_BALANCE)
+        penalties.append(spread * balance_weights[category])
 
 
 def rate_scaled(cum, halves, h_max):

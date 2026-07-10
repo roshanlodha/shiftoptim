@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Solver settings{% endblock %}
+{% block content %}
+<h1>Balance weights</h1>
+<p class="hint">Higher weight = the solver prioritizes evening out that category first. Weekend should usually be highest.</p>
+
+<form method="post" class="settings-form">
+  <table class="settings">
+    <tr><th>Category</th><th>Weight</th></tr>
+    {% for cat in categories %}
+    <tr>
+      <td>{{ cat }}</td>
+      <td><input type="number" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" required></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}

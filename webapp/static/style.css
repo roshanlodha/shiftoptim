@@ -55,6 +55,8 @@ table th { background: #eef1f6; }
 .audit th.num, .audit td.num { text-align: right; }
 .table-scroll { overflow-x: auto; margin-bottom: 2rem; }
 .block-picker { margin-bottom: 0.75rem; }
+.settings-form { max-width: 320px; }
+.settings input[type=number] { width: 5rem; }
 
 /* Forms & buttons */
 .inline-form { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0.25rem 0; }

@@ -5,6 +5,8 @@ import datetime as dt
 from schedulebuilder.pgy4.config import ACTIVE_ROLES, SHIFTS, WEEKEND_DAYS
 from schedulebuilder.pgy4.solver import build_and_solve
 
+from .settings import load_balance_weights
+
 
 def _daterange(start, end):
     return [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
@@ -85,16 +87,18 @@ def load_history_from_db(conn, pgy_level):
             entry["weekend"] += 1
 
     run_pairs = conn.execute(
-        "SELECT DISTINCT a.resident_id AS resident_id, a.run_id AS run_id, res.last_name AS last_name "
+        "SELECT DISTINCT res.last_name AS last_name, hb.block_number AS block_number, hb.half AS half "
         "FROM assignments a "
         "JOIN residents res ON res.id = a.resident_id "
         "JOIN runs r ON r.id = a.run_id "
+        "JOIN half_blocks hb ON hb.pgy_level = r.pgy_level "
+        "AND a.day >= hb.start_date AND a.day <= hb.end_date "
         "WHERE r.status = 'published' AND r.pgy_level = ?",
         (pgy_level,),
     ).fetchall()
     half_block_counts = {}
     for row in run_pairs:
-        half_block_counts[row["last_name"]] = half_block_counts.get(row["last_name"], 0) + 2
+        half_block_counts[row["last_name"]] = half_block_counts.get(row["last_name"], 0) + 1
     for last_name, halves in half_block_counts.items():
         history.setdefault(last_name, _empty_entry(shift_names))["half_blocks_worked"] += halves
 
@@ -110,6 +114,7 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     block_input = load_block_from_db(conn, pgy_level, block_number)
     timeoff = load_timeoff_from_db(conn)
     history = load_history_from_db(conn, pgy_level)
+    balance_weights = load_balance_weights(conn)
 
     result = build_and_solve(
         block_number,
@@ -118,6 +123,7 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
         block_input=block_input,
         timeoff=timeoff,
         history=history,
+        balance_weights=balance_weights,
     )
     if result is None:
         return None

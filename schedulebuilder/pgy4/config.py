@@ -69,6 +69,15 @@ W_TIMEOFF = 10_000
 W_NIGHTS_STRUCTURE = 200
 W_FLEX_NIGHT_REWARD = 100
 W_NON_FLEX_NIGHT_PENALTY = 30
-W_BALANCE = 15
+# Evenness spread weights (per category); higher = optimized first among balance goals.
+BALANCE_WEIGHTS = {
+    "Weekend": 60,
+    "Morning": 30,
+    "Swing": 30,
+    "MGH": 15,
+    "BWH": 15,
+    "Pedi": 8,
+    "FT": 8,
+}
 W_EXTRA_SHIFT = 50
 W_EXTRA_WEEKEND = 20
