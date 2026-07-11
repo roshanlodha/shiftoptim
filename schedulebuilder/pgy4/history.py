@@ -12,6 +12,7 @@ def category_totals(entry):
     for category, shift_ids in BALANCE_CATEGORIES.items():
         totals[category] = sum(entry["shifts"].get(shift_names_by_id[sid], 0) for sid in shift_ids)
     totals["Weekend"] = entry.get("weekend", 0)
+    totals["Total"] = sum(entry["shifts"].values())
     return totals
 
 

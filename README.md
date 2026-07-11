@@ -78,6 +78,7 @@ The solver **minimizes a weighted sum of penalties**:
 | Penalty | Weight | Purpose |
 |---------|--------|---------|
 | Time-off violation | 10 000 | Near-hard: respect requested days off |
+| **Total shift count spread** | **150** | **Highest balance priority — proportional shift count fairness** |
 | Nights structure | 200 | `MGB Nights` residents avoid weekend overnights |
 | Flex night reward | −100 | `Flex` residents incentivized onto weekend overnights |
 | Non-Flex overnight | 30 | Mild deterrent for `MGB` residents taking overnights |
@@ -101,16 +102,17 @@ CP model (`AddDivisionEquality`).
 
 **Category weights** (higher = optimized first):
 
-| Category | Weight |
-|----------|--------|
-| Weekend | 100 |
-| Morning | 30 |
-| Swing | 30 |
-| Night | 20 |
-| MGH | 15 |
-| BWH | 15 |
-| Pedi | 8 |
-| FT | 8 |
+| Category | Weight | Note |
+|----------|--------|------|
+| **Total** | **150** | **All shifts; highest balance priority** |
+| Weekend | 100 | |
+| Morning | 30 | |
+| Swing | 30 | |
+| Night | 20 | |
+| MGH | 15 | |
+| BWH | 15 | |
+| Pedi | 8 | |
+| FT | 8 | |
 
 Weights are admin-configurable at runtime via the web settings page and stored
 in the `settings` table; the solver reads them fresh each run.

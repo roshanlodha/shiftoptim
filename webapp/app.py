@@ -17,7 +17,7 @@ from .colors import color_map_for_residents
 from .db import get_db
 from .settings import CATEGORY_ORDER, load_balance_weights, save_balance_weights
 
-CATEGORY_COLUMNS = list(BALANCE_CATEGORIES) + ["Weekend"]
+CATEGORY_COLUMNS = ["Total"] + list(BALANCE_CATEGORIES) + ["Weekend"]
 SHIFT_NAMES = [info["name"] for info in SHIFTS.values()]
 SOLVER_TIME_LIMIT = 60.0
 PGY_LEVEL = 4

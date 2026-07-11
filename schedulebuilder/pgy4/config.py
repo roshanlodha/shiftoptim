@@ -69,9 +69,11 @@ SHIFT_MIN_PER_HALF = 8
 W_TIMEOFF = 10_000
 W_NIGHTS_STRUCTURE = 200
 W_FLEX_NIGHT_REWARD = 100
+W_TOTAL_SPREAD = 150   # total shift count evenness: highest-priority balance goal
 W_NON_FLEX_NIGHT_PENALTY = 30
 # Evenness spread weights (per category); higher = optimized first among balance goals.
 BALANCE_WEIGHTS = {
+    "Total": 150,      # proportional total shift count — highest balance priority
     "Weekend": 100,
     "Morning": 30,
     "Swing": 30,

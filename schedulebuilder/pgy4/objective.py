@@ -96,6 +96,7 @@ def add_evenness_penalties(model, works, dates, residents, role_at, history, act
     adj_cap = cum_cap * h_max
 
     counts_by_category = {cat: {} for cat in BALANCE_CATEGORIES}
+    counts_by_category["Total"] = {}
     counts_by_category["Weekend"] = {}
     for r in day_eligible:
         name = residents[r]
@@ -127,6 +128,17 @@ def add_evenness_penalties(model, works, dates, residents, role_at, history, act
         adj_w = model.NewIntVar(0, adj_cap, f"adj_Weekend_r{r}")
         model.AddDivisionEquality(adj_w, num_w, h_r)
         counts_by_category["Weekend"][r] = adj_w
+
+        # Total shift count (all shifts, including overnight and relief)
+        total_this_block = sum(works[(r, d, s)] for d in range(num_days) for s in SHIFTS)
+        carry_total = sum(carry.get(SHIFTS[s]["name"], 0) for s in SHIFTS)
+        cum_total = model.NewIntVar(0, cum_cap, f"cum_Total_r{r}")
+        model.Add(cum_total == total_this_block + carry_total)
+        num_total = model.NewIntVar(0, adj_cap, f"num_Total_r{r}")
+        model.Add(num_total == cum_total * h_max)
+        adj_total = model.NewIntVar(0, adj_cap, f"adj_Total_r{r}")
+        model.AddDivisionEquality(adj_total, num_total, h_r)
+        counts_by_category["Total"][r] = adj_total
 
     for category, values in counts_by_category.items():
         if len(values) < 2:
