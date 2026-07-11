@@ -396,7 +396,13 @@ def register_routes(app, db_conn):
     @login_required
     def trades_find():
         """JSON endpoint: returns valid swap candidates for a given shift."""
-        resident_id = g.user["resident_id"]
+        if g.user["role"] == "admin":
+            resident_id = request.form.get("resident_id", type=int)
+            run_id = request.form.get("run_id", type=int)
+        else:
+            resident_id = g.user["resident_id"]
+            run_id = None
+
         if resident_id is None:
             return jsonify({"error": "No resident linked"}), 403
         day = request.form.get("day")
@@ -404,11 +410,53 @@ def register_routes(app, db_conn):
         if not day or not shift:
             return jsonify({"error": "day and shift required"}), 400
         conn = db_conn()
-        run = _published_run_for_resident(conn, resident_id, day)
-        if run is None:
-            return jsonify({"error": "No published run found for this shift"}), 404
-        swaps = bridge.find_valid_swaps(conn, run["id"], resident_id, day, shift)
-        return jsonify({"run_id": run["id"], "swaps": swaps})
+        if not run_id:
+            run = _published_run_for_resident(conn, resident_id, day)
+            if run is None:
+                return jsonify({"error": "No published run found for this shift"}), 404
+            run_id = run["id"]
+        swaps = bridge.find_valid_swaps(conn, run_id, resident_id, day, shift)
+        return jsonify({"run_id": run_id, "swaps": swaps})
+
+    @app.route("/admin/schedule/swap", methods=["POST"])
+    @admin_required
+    def admin_schedule_swap():
+        """Directly execute a shift swap for the admin."""
+        run_id = request.form.get("run_id", type=int)
+        req_resident_id = request.form.get("requester_id", type=int)
+        req_day = request.form.get("requester_day")
+        req_shift = request.form.get("requester_shift")
+        tgt_resident_id = request.form.get("target_id", type=int)
+        tgt_day = request.form.get("target_day")
+        tgt_shift = request.form.get("target_shift")
+
+        if not all([run_id, req_resident_id, req_day, req_shift, tgt_resident_id, tgt_day, tgt_shift]):
+            return "Missing parameters", 400
+
+        conn = db_conn()
+        # Verify run exists
+        run = conn.execute("SELECT status, block_number FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if not run:
+            return "Run not found", 404
+
+        # Swap shift names in assignments table directly
+        # Update requester's assignment day -> target's shift
+        conn.execute(
+            "UPDATE assignments SET shift_name = ? WHERE run_id = ? AND resident_id = ? AND day = ?",
+            (tgt_shift, run_id, req_resident_id, req_day),
+        )
+        # Update target's assignment day -> requester's shift
+        conn.execute(
+            "UPDATE assignments SET shift_name = ? WHERE run_id = ? AND resident_id = ? AND day = ?",
+            (req_shift, run_id, tgt_resident_id, tgt_day),
+        )
+        conn.commit()
+
+        # Redirect back to referring page or resident schedule
+        ref = request.referrer or ""
+        if "/admin/review/" in ref:
+            return redirect(ref)
+        return redirect(url_for("resident_schedule", block=run["block_number"]))
 
     @app.route("/trades/request", methods=["POST"])
     @login_required
@@ -557,7 +605,7 @@ def _week_chunks(dates):
 def _build_grid(conn, run_id, start_date=None, end_date=None):
     query = (
         "SELECT a.day AS day, a.shift_name AS shift_name, "
-        "res.last_name AS last_name, res.full_name AS full_name "
+        "res.id AS resident_id, res.last_name AS last_name, res.full_name AS full_name "
         "FROM assignments a "
         "JOIN residents res ON res.id = a.resident_id "
         "WHERE a.run_id = ?"
@@ -574,7 +622,10 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
     counts = {}
     meta = {}
     for row in rows:
-        cells[(row["shift_name"], row["day"])] = row["last_name"]
+        cells[(row["shift_name"], row["day"])] = {
+            "last_name": row["last_name"],
+            "resident_id": row["resident_id"]
+        }
         counts[row["last_name"]] = counts.get(row["last_name"], 0) + 1
         meta[row["last_name"]] = row
 

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Schedule{% endblock %}
 {% block content %}
+{% set block_start = viewable_halves[0].start_date if viewable_halves else '' %}
+{% set block_end = viewable_halves[-1].end_date if viewable_halves else '' %}
 {% set prev_url = none %}
 {% set next_url = none %}
 {% if blocks %}
@@ -60,9 +62,7 @@
 <p class="hint">No published schedules yet. Please check back later.</p>
 {% endif %}
 
-{% if g.user.role == 'resident' %}
 {% include "_trade_modal.html" %}
-{% endif %}
 
 <script>
   (function() {

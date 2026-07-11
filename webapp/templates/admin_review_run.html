@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Block {{ run.block_number }}{{ half }} schedule{% endblock %}
 {% block content %}
+{% set block_start = viewable_halves[0].start_date if viewable_halves else '' %}
+{% set block_end = viewable_halves[-1].end_date if viewable_halves else '' %}
 {% set prev_url = none %}
 {% set next_url = none %}
 {% if viewable_halves %}
@@ -70,5 +72,5 @@
 
 {% include "_grid.html" %}
 {% include "_summary.html" %}
-
+{% include "_trade_modal.html" %}
 {% endblock %}

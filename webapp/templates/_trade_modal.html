@@ -54,6 +54,17 @@
           </select>
           <span id="trade-count" style="margin-left: auto; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--muted-foreground);"></span>
         </div>
+
+        {# Date Filter Row for admin #}
+        {% if g.user.role == 'admin' %}
+        <div style="display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); min-width: 60px;">Dates:</span>
+          <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="trade-date-filter" checked style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+            <span>Limit to Block {{ run.block_number if (run and run.block_number) else block_number }} ({{ block_start | human_date if block_start else '' }} &ndash; {{ block_end | human_date if block_end else '' }})</span>
+          </label>
+        </div>
+        {% endif %}
       </div>
 
       {# Table #}
@@ -75,8 +86,9 @@
 </dialog>
 
 {# Hidden submit form — lives OUTSIDE the dialog to avoid any dialog quirks #}
-<form id="trade-submit-form" method="POST" action="{{ url_for('trades_request') }}">
+<form id="trade-submit-form" method="POST" action="{{ url_for('admin_schedule_swap') if g.user.role == 'admin' else url_for('trades_request') }}">
   <input type="hidden" name="run_id"         id="tsf-run-id">
+  <input type="hidden" name="requester_id"   id="tsf-req-id">
   <input type="hidden" name="requester_day"   id="tsf-req-day">
   <input type="hidden" name="requester_shift" id="tsf-req-shift">
   <input type="hidden" name="target_id"       id="tsf-tgt-id">
@@ -164,6 +176,11 @@
   const tbody      = document.getElementById('trade-results-body');
   const countEl    = document.getElementById('trade-count');
   const sortSel    = document.getElementById('trade-sort');
+  const dateFilter = document.getElementById('trade-date-filter');
+
+  const blockStart = "{{ block_start }}";
+  const blockEnd = "{{ block_end }}";
+  const isAdmin = {{ 'true' if g.user.role == 'admin' else 'false' }};
 
   let allSwaps = [];       // raw from API
   let reqDay   = '';       // original shift date (for Δ sort)
@@ -193,6 +210,13 @@
   // ---- Render filtered + sorted table ----
   function render() {
     let swaps = allSwaps.slice();
+
+    // Date range filter for admin by default
+    if (isAdmin && dateFilter && dateFilter.checked) {
+      if (blockStart && blockEnd) {
+        swaps = swaps.filter(s => s.target_day >= blockStart && s.target_day <= blockEnd);
+      }
+    }
 
     // Type filter
     if (activeType) swaps = swaps.filter(s => s.target_type === activeType);
@@ -236,14 +260,14 @@
         <td style="padding: 0.75rem; text-align: right;">
           <button type="button"
             class="trade-req-btn"
-            style="padding: 0.4rem 1rem; font-size: 0.82rem; margin: 0;"
+            style="padding: 0.4rem 1rem; font-size: 0.82rem; margin: 0; ${isAdmin ? 'background-color: var(--quaternary); color: var(--foreground);' : ''}"
             data-run-id="${window._tradeRunId}"
             data-req-day="${reqDay}"
             data-req-shift="${encodeURIComponent(window._tradeReqShift)}"
             data-tgt-id="${s.target_id}"
             data-tgt-day="${s.target_day}"
             data-tgt-shift="${encodeURIComponent(s.target_shift)}">
-            Request
+            ${isAdmin ? 'Swap' : 'Request'}
           </button>
         </td>`;
       tbody.appendChild(tr);
@@ -260,6 +284,12 @@
     document.getElementById('tsf-tgt-id').value    = btn.dataset.tgtId;
     document.getElementById('tsf-tgt-day').value   = btn.dataset.tgtDay;
     document.getElementById('tsf-tgt-shift').value = decodeURIComponent(btn.dataset.tgtShift);
+
+    const tsfReqId = document.getElementById('tsf-req-id');
+    if (tsfReqId) {
+      tsfReqId.value = window._tradeReqResidentId || "";
+    }
+
     document.getElementById('trade-submit-form').submit();
   });
 
@@ -273,25 +303,39 @@
     });
   });
   sortSel.addEventListener('change', render);
+  if (dateFilter) {
+    dateFilter.addEventListener('change', render);
+  }
 
   // ---- Open modal (called from grid cells) ----
-  window.openTradeModal = function (day, shift, displayDate) {
+  window.openTradeModal = function (day, shift, displayDate, residentId, residentLastName) {
     reqDay = day;
     window._tradeReqShift = shift;
+    window._tradeReqResidentId = residentId;
     window._tradeRunId = null;
     allSwaps = [];
     activeType = '';
     document.querySelectorAll('.trade-type-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.trade-type-btn[data-type=""]').classList.add('active');
     sortSel.value = 'date-dist';
+    if (dateFilter) {
+      dateFilter.checked = true;
+    }
 
-    subtitle.textContent = shift + ' · ' + displayDate;
+    subtitle.textContent = shift + ' · ' + displayDate + (residentLastName ? ' (' + residentLastName + ')' : '');
     setState('loading');
     modal.showModal();
 
     const fd = new FormData();
     fd.append('day',   day);
     fd.append('shift', shift);
+    if (residentId) {
+      fd.append('resident_id', residentId);
+    }
+    const runId = "{{ run.id if run else '' }}";
+    if (runId) {
+      fd.append('run_id', runId);
+    }
 
     fetch("{{ url_for('trades_find') }}", { method: 'POST', body: fd })
       .then(r => r.json())

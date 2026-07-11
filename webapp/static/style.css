@@ -860,8 +860,7 @@ html, body {
     width: auto !important;
   }
 
-  /* Hide block hotkeys and shift toggle on mobile */
-  .block-hotkeys-container,
+  /* Hide shift toggle on mobile */
   .toggle-container {
     display: none !important;
   }

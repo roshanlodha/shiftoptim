@@ -40,16 +40,17 @@
             {{ sn }}
           </td>
           {% for d in week %}
-            {% set name = grid.cells.get((sn, d.isoformat())) %}
-            {% set style = grid.colors.get(name) if name else none %}
-            {% if name %}
-              {% set is_mine = (g.user.role == 'resident' and name == resident_last_name | default('')) %}
-              <td class="cell-shift has-resident{% if is_mine %} cell-mine{% endif %}"
-                  data-resident="{{ name }}"
+            {% set cell_data = grid.cells.get((sn, d.isoformat())) %}
+            {% set style = grid.colors.get(cell_data.last_name) if cell_data else none %}
+            {% if cell_data %}
+              {% set is_mine = (g.user.role == 'resident' and cell_data.last_name == resident_last_name | default('')) %}
+              {% set is_clickable = (g.user.role == 'admin') or is_mine %}
+              <td class="cell-shift has-resident{% if is_clickable %} cell-mine{% endif %}"
+                  data-resident="{{ cell_data.last_name }}"
                   data-day="{{ d.isoformat() }}"
-                  style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;{% if is_mine %} cursor: pointer;{% endif %}"
-                  {% if is_mine %}onclick="openTradeModal('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}')"{% endif %}>
-                {{ name }}
+                  style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;{% if is_clickable %} cursor: pointer;{% endif %}"
+                  {% if is_clickable %}onclick="openTradeModal('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
+                {{ cell_data.last_name }}
               </td>
             {% else %}
               <td class="cell-shift" style="border: 2px dashed rgba(30, 41, 59, 0.15); background-color: transparent; text-align: center; vertical-align: middle; padding: 0.5rem;">
