@@ -24,31 +24,33 @@
 
     <form method="post" class="settings-form" style="max-width: 100%;">
       <input type="hidden" name="form_type" value="preferences">
-      <table class="settings" style="margin-top: 0.5rem; box-shadow: none;">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th style="text-align: center; width: 280px;">Desired Weight</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for cat in categories %}
-          <tr>
-            <td style="font-weight: 700; font-size: 1rem; color: var(--foreground); vertical-align: middle;">{{ cat }}</td>
-            <td style="text-align: center; width: 280px; vertical-align: middle;">
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <input type="range" id="range-{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" 
-                       oninput="document.getElementById('input-{{ cat }}').value = this.value" 
-                       style="flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; padding: 0; margin: 0;">
-                <input type="number" id="input-{{ cat }}" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000"
-                       oninput="document.getElementById('range-{{ cat }}').value = this.value"
-                       style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; width: 4.5rem; text-align: right; color: var(--accent); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; background-color: var(--background); margin: 0; box-shadow: 2px 2px 0 var(--shadow-color);">
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-scroll" style="box-shadow: none; border: none; margin-bottom: 0;">
+        <table class="settings" style="margin-top: 0.5rem; box-shadow: none;">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th style="text-align: center; width: 280px;">Desired Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat in categories %}
+            <tr>
+              <td style="font-weight: 700; font-size: 1rem; color: var(--foreground); vertical-align: middle;">{{ cat }}</td>
+              <td style="text-align: center; width: 280px; vertical-align: middle;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <input type="range" id="range-{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000" 
+                         oninput="document.getElementById('input-{{ cat }}').value = this.value" 
+                         style="flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; padding: 0; margin: 0;">
+                  <input type="number" id="input-{{ cat }}" name="{{ cat }}" value="{{ weights[cat] }}" min="0" max="1000"
+                         oninput="document.getElementById('range-{{ cat }}').value = this.value"
+                         style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; width: 4.5rem; text-align: right; color: var(--accent); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; background-color: var(--background); margin: 0; box-shadow: 2px 2px 0 var(--shadow-color);">
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       
       <button type="submit" style="width: 100%; margin-top: 1.5rem;">
         Save Preferences <i data-lucide="save" style="width: 18px; height: 18px;"></i>

@@ -1,12 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Schedule{% endblock %}
 {% block content %}
+{% set prev_url = none %}
+{% set next_url = none %}
+{% if blocks %}
+  {% set ns = namespace(all_halves=[]) %}
+  {% for b in blocks %}
+    {% set ns.all_halves = ns.all_halves + [(b.block_number, 'a'), (b.block_number, 'b')] %}
+  {% endfor %}
+  
+  {% set ns_idx = namespace(current_idx=-1) %}
+  {% for i in range(ns.all_halves | length) %}
+    {% if ns.all_halves[i][0] == block_number and ns.all_halves[i][1] == half %}
+      {% set ns_idx.current_idx = i %}
+    {% endif %}
+  {% endfor %}
+
+  {% if ns_idx.current_idx > 0 %}
+    {% set prev_h = ns.all_halves[ns_idx.current_idx - 1] %}
+    {% set prev_url = url_for('resident_schedule', block=prev_h[0], half=prev_h[1], week='last') %}
+  {% endif %}
+  {% if ns_idx.current_idx >= 0 and ns_idx.current_idx < (ns.all_halves | length) - 1 %}
+    {% set next_h = ns.all_halves[ns_idx.current_idx + 1] %}
+    {% set next_url = url_for('resident_schedule', block=next_h[0], half=next_h[1], week='first') %}
+  {% endif %}
+{% endif %}
+
 <h1>Published Schedule</h1>
 
 {% if blocks %}
 <div style="display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
   <!-- Horizontally scrollable published block half tabs -->
-  <div style="overflow-x: auto; white-space: nowrap; display: flex; gap: 0.75rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; flex: 1;">
+  <div class="block-hotkeys-container" style="overflow-x: auto; white-space: nowrap; display: flex; gap: 0.75rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; flex: 1;">
     {% for b in blocks %}
       {% for h in ['a', 'b'] %}
         {% set is_active = (b.block_number == block_number and h == half) %}

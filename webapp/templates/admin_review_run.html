@@ -1,6 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Block {{ run.block_number }}{{ half }} schedule{% endblock %}
 {% block content %}
+{% set prev_url = none %}
+{% set next_url = none %}
+{% if viewable_halves %}
+  {% set ns = namespace(all_halves=[]) %}
+  {% for h in viewable_halves %}
+    {% set ns.all_halves = ns.all_halves + [h.half] %}
+  {% endfor %}
+
+  {% set ns_idx = namespace(current_idx=-1) %}
+  {% for i in range(ns.all_halves | length) %}
+    {% if ns.all_halves[i] == half %}
+      {% set ns_idx.current_idx = i %}
+    {% endif %}
+  {% endfor %}
+
+  {% if ns_idx.current_idx > 0 %}
+    {% set prev_h = ns.all_halves[ns_idx.current_idx - 1] %}
+    {% set prev_url = url_for('admin_review_run', run_id=run.id, half=prev_h, week='last') %}
+  {% endif %}
+  {% if ns_idx.current_idx >= 0 and ns_idx.current_idx < (ns.all_halves | length) - 1 %}
+    {% set next_h = ns.all_halves[ns_idx.current_idx + 1] %}
+    {% set next_url = url_for('admin_review_run', run_id=run.id, half=next_h, week='first') %}
+  {% endif %}
+{% endif %}
+
 
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 2rem;">
   <div>

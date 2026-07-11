@@ -12,7 +12,10 @@ def load_logged_in_user():
     g.user = None
     if user_id is not None:
         g.user = get_db().execute(
-            "SELECT id, username, role, resident_id FROM users WHERE id = ?", (user_id,)
+            "SELECT u.id AS id, u.username AS username, u.role AS role, u.resident_id AS resident_id, r.full_name AS full_name "
+            "FROM users u "
+            "LEFT JOIN residents r ON r.id = u.resident_id "
+            "WHERE u.id = ?", (user_id,)
         ).fetchone()
 
 

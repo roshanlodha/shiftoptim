@@ -762,21 +762,66 @@ table tr:hover td {
 }
 
 /* Responsive adjustments */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.card-sticker {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (max-width: 768px) {
   h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
   
   header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.75rem 1rem !important;
+    position: relative;
+  }
+
+  header #menu-toggle {
+    display: inline-flex !important;
+    width: 44px !important;
+    height: 40px !important;
+    padding: 0.5rem !important;
   }
 
   header nav {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
+    display: none;
+    flex-direction: column !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--card);
+    border-bottom: 4px solid var(--border);
+    padding: 1rem !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    gap: 0.75rem !important;
+    align-items: stretch !important;
+    z-index: 1000;
+  }
+
+  header nav.show {
+    display: flex !important;
+  }
+
+  header nav a:not(.brand) {
+    width: 100% !important;
+    text-align: center;
+    box-shadow: none !important;
+  }
+
+  header nav .who {
+    text-align: center;
+    box-shadow: none !important;
+    margin: 0.25rem 0;
   }
 
   .hero-section {
@@ -809,7 +854,144 @@ table tr:hover td {
     translate: none !important;
     box-shadow: 2px 2px 0px var(--shadow-color) !important;
   }
+
+  /* Don't make week navigation buttons full-width */
+  .week-nav-bar button, .week-nav-bar .button {
+    width: auto !important;
+  }
+
+  /* Hide block hotkeys and shift toggle on mobile */
+  .block-hotkeys-container,
+  .toggle-container {
+    display: none !important;
+  }
 }
+
+@media (max-width: 480px) {
+  /* Stack history page summary statistics vertically */
+  .history-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* Mobile landscape / small height optimization */
+@media (max-height: 500px) {
+  body {
+    padding-bottom: 1.5rem !important;
+  }
+  main {
+    padding: 0.5rem 1rem !important;
+  }
+  header {
+    padding: 0.4rem 1rem !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+  }
+  header .brand {
+    font-size: 1.15rem !important;
+    padding: 0.2rem 0.5rem !important;
+  }
+  header nav {
+    gap: 0.5rem !important;
+  }
+  header nav a:not(.brand) {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  header nav .who {
+    display: none !important;
+  }
+  h1 {
+    font-size: 1.35rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  h2 {
+    font-size: 1.15rem !important;
+    margin-top: 1rem !important;
+  }
+  .decorative-divider {
+    display: none !important;
+  }
+  .marquee-container {
+    margin: 1rem 0 !important;
+    padding: 0.4rem !important;
+  }
+  .marquee-content {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* General mobile / low height grid cell compacting */
+@media (max-width: 768px), (max-height: 500px) {
+  /* Legend horizontal scroll to prevent vertical wrap and save space */
+  .legend {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding: 0.5rem !important;
+    gap: 0.4rem !important;
+    margin-bottom: 1rem !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .legend .chip {
+    flex-shrink: 0;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Make calendar grid compact */
+  .calendar {
+    border-spacing: 3px !important;
+    margin-bottom: 1rem !important;
+  }
+  .calendar th {
+    padding: 0.35rem 0.5rem !important;
+  }
+  .calendar th div {
+    font-size: 0.85rem !important;
+  }
+  .calendar th div + div {
+    font-size: 0.7rem !important;
+  }
+  .calendar td {
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    height: auto !important;
+    min-width: 4.5rem !important;
+  }
+  .calendar .shift-col {
+    padding: 0.35rem 0.5rem !important;
+    font-weight: 700;
+    font-size: 0.8rem !important;
+    min-width: 6.5rem !important;
+  }
+  .calendar td.cell-shift {
+    min-width: 4.5rem !important;
+  }
+
+  /* Compact tab links */
+  .tab {
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.85rem !important;
+  }
+  .tab svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .tab span {
+    font-size: 0.85rem !important;
+  }
+
+  /* Compact schedule toggle */
+  .toggle-container {
+    padding: 0.4rem 0.85rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .switch-label {
+    font-size: 0.85rem !important;
+  }
+}
+
 
 /* Accessibility: respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
