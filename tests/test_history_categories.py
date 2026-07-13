@@ -16,12 +16,16 @@ def test_category_totals():
     entry["weekend"] = 3
     entry["shifts"]["Acute 7a-4p (MGH)"] = 4
     entry["shifts"]["FF 7a-4p (BWH)"] = 2
-    entry["shifts"]["Peds Snr 3p-11p (MGH)"] = 1
+    entry["shifts"]["Peds Snr 3p-12a (MGH)"] = 1
     entry["shifts"]["Fast Track 2p-11p (MGH)"] = 5
 
     totals = history.category_totals(entry)
     assert totals["Morning"] == 6
     assert totals["Pedi"] == 1
+    # Legacy posted name still rolls into Pedi.
+    legacy = history.empty_entry()
+    legacy["shifts"]["Peds Snr 3p-11p (MGH)"] = 1
+    assert history.category_totals(legacy)["Pedi"] == 1
     assert totals["FT"] == 5
     assert totals["MGH"] == 10
     assert totals["BWH"] == 2

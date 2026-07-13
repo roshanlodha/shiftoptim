@@ -2,17 +2,22 @@
 solver objective and the web UI. Persistent history lives in published
 assignments (SQLite), not files."""
 
-from .config import BALANCE_CATEGORIES, SHIFTS, WEEKEND_DAYS
+from .config import BALANCE_CATEGORIES, SHIFTS, WEEKEND_DAYS, canonical_shift_name
 
 
 def category_totals(entry):
     """Sums a history entry's per-shift counts into balance categories."""
     shift_names_by_id = {sid: info["name"] for sid, info in SHIFTS.items()}
+    # Collapse legacy names (e.g. Pedi 3p-11p) onto the current catalog keys.
+    collapsed = {}
+    for name, count in entry.get("shifts", {}).items():
+        key = canonical_shift_name(name)
+        collapsed[key] = collapsed.get(key, 0) + count
     totals = {}
     for category, shift_ids in BALANCE_CATEGORIES.items():
-        totals[category] = sum(entry["shifts"].get(shift_names_by_id[sid], 0) for sid in shift_ids)
+        totals[category] = sum(collapsed.get(shift_names_by_id[sid], 0) for sid in shift_ids)
     totals["Weekend"] = entry.get("weekend", 0)
-    totals["Total"] = sum(entry["shifts"].values())
+    totals["Total"] = sum(collapsed.values())
     return totals
 
 

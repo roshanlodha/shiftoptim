@@ -78,6 +78,7 @@ def load_history_from_db(conn, pgy_level):
     cfg, _ = _get_config(pgy_level)
     shift_names = [info["name"] for info in cfg.SHIFTS.values()]
     history = {}
+    canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
 
     assignment_rows = conn.execute(
         "SELECT res.last_name AS last_name, a.day AS day, a.shift_name AS shift_name "
@@ -89,11 +90,12 @@ def load_history_from_db(conn, pgy_level):
     ).fetchall()
     for row in assignment_rows:
         entry = history.setdefault(row["last_name"], _empty_entry(shift_names))
-        if row["shift_name"] in entry["shifts"]:
-            entry["shifts"][row["shift_name"]] += 1
+        sname = canonicalize(row["shift_name"])
+        if sname in entry["shifts"]:
+            entry["shifts"][sname] += 1
         
         # Accumulate hours
-        s_info = next((info for info in cfg.SHIFTS.values() if info["name"] == row["shift_name"]), None)
+        s_info = next((info for info in cfg.SHIFTS.values() if info["name"] == sname), None)
         if s_info:
             entry["hours_worked"] = entry.get("hours_worked", 0) + s_info["duration"]
 
@@ -267,7 +269,11 @@ def _load_run_assignments(conn, run_id):
 def _shift_info_by_name(pgy_level):
     """Name → SHIFTS entry mapping dynamically fetched per pgy_level."""
     cfg, _ = _get_config(pgy_level)
-    return {info["name"]: info for info in cfg.SHIFTS.values()}
+    by_name = {info["name"]: info for info in cfg.SHIFTS.values()}
+    for old, new in getattr(cfg, "SHIFT_NAME_ALIASES", {}).items():
+        if new in by_name:
+            by_name[old] = by_name[new]
+    return by_name
 
 
 def _acgme_ok(assignments_map, resident_id, run_id, conn):

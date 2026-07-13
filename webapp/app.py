@@ -723,13 +723,16 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
     rows = conn.execute(query, params).fetchall()
     run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
     pgy_level = run_row["pgy_level"] if run_row else 4
+    cfg, _ = bridge._get_config(pgy_level)
+    canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
     colors = color_map_for_residents(conn, pgy_level)
 
     cells = {}
     counts = {}
     meta = {}
     for row in rows:
-        cells[(row["shift_name"], row["day"])] = {
+        sname = canonicalize(row["shift_name"])
+        cells[(sname, row["day"])] = {
             "last_name": row["last_name"],
             "resident_id": row["resident_id"]
         }
@@ -784,6 +787,7 @@ def _half_summary(conn, run_id, block_number, half):
         cat_totals_fn = pgy4_category_totals
 
     shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+    canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
 
     by_resident = {}
     for row in rows:
@@ -794,8 +798,9 @@ def _half_summary(conn, run_id, block_number, half):
                 "shifts": {sn: 0 for sn in shift_names},
                 "weekend": 0,
             }
-        if row["shift_name"] in by_resident[ln]["shifts"]:
-            by_resident[ln]["shifts"][row["shift_name"]] += 1
+        sname = canonicalize(row["shift_name"])
+        if sname in by_resident[ln]["shifts"]:
+            by_resident[ln]["shifts"][sname] += 1
         if dt.date.fromisoformat(row["day"]).weekday() in cfg.WEEKEND_DAYS:
             by_resident[ln]["weekend"] += 1
 

@@ -5,12 +5,16 @@ from .config import (
     BALANCE_WEIGHTS,
     EXTRA_SHIFT,
     NIGHT_SHIFT,
+    SAT,
     SHIFTS,
+    SUN,
     W_EXTRA_SHIFT,
     W_EXTRA_WEEKEND,
     W_FLEX_NIGHT_REWARD,
+    W_ISOLATED_NIGHT,
     W_NIGHTS_STRUCTURE,
     W_NON_FLEX_NIGHT_PENALTY,
+    W_SPLIT_WEEKEND,
     W_TIMEOFF,
     WEEKEND_DAYS,
 )
@@ -64,6 +68,44 @@ def add_relief_shift_penalties(model, works, dates, num_residents, penalties):
             penalties.append(works[(r, d, EXTRA_SHIFT)] * W_EXTRA_SHIFT)
             if date.weekday() in WEEKEND_DAYS:
                 penalties.append(works[(r, d, EXTRA_SHIFT)] * W_EXTRA_WEEKEND)
+
+
+def add_isolated_night_penalties(model, works, num_residents, num_days, penalties):
+    """Prefer overnight stretches of 2–3; penalize singleton nights (circadian)."""
+    for r in range(num_residents):
+        for d in range(num_days):
+            night = works[(r, d, NIGHT_SHIFT)]
+            iso = model.NewBoolVar(f"iso_night_r{r}_d{d}")
+            lits = [night]
+            if d > 0:
+                lits.append(works[(r, d - 1, NIGHT_SHIFT)].Not())
+            if d + 1 < num_days:
+                lits.append(works[(r, d + 1, NIGHT_SHIFT)].Not())
+            model.Add(iso == 1).OnlyEnforceIf(lits)
+            model.Add(iso == 0).OnlyEnforceIf(night.Not())
+            if d > 0:
+                model.Add(iso == 0).OnlyEnforceIf(works[(r, d - 1, NIGHT_SHIFT)])
+            if d + 1 < num_days:
+                model.Add(iso == 0).OnlyEnforceIf(works[(r, d + 1, NIGHT_SHIFT)])
+            penalties.append(iso * W_ISOLATED_NIGHT)
+
+
+def add_split_weekend_penalties(model, works, dates, num_residents, penalties):
+    """Prefer working both Sat and Sun or neither (full weekend off for travel)."""
+    for d, date in enumerate(dates):
+        if date.weekday() != SAT:
+            continue
+        if d + 1 >= len(dates) or dates[d + 1].weekday() != SUN:
+            continue
+        for r in range(num_residents):
+            sat_w = model.NewBoolVar(f"wknd_sat_r{r}_d{d}")
+            sun_w = model.NewBoolVar(f"wknd_sun_r{r}_d{d}")
+            model.AddMaxEquality(sat_w, [works[(r, d, s)] for s in SHIFTS])
+            model.AddMaxEquality(sun_w, [works[(r, d + 1, s)] for s in SHIFTS])
+            split = model.NewBoolVar(f"split_wknd_r{r}_d{d}")
+            model.Add(sat_w + sun_w == 1).OnlyEnforceIf(split)
+            model.Add(sat_w + sun_w != 1).OnlyEnforceIf(split.Not())
+            penalties.append(split * W_SPLIT_WEEKEND)
 
 
 def add_evenness_penalties(model, works, dates, residents, role_at, history, active_halves,

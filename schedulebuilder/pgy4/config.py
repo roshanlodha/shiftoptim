@@ -24,7 +24,9 @@ SHIFTS = {
         "site": "MGH", "required_weekdays": frozenset({THU})},
     3: {"name": "FF 3p-12a (BWH)", "start": 15, "end": 24, "duration": 9, "type": "Swing",
         "site": "BWH", "required_weekdays": ALL_DAYS - {WED}},
-    4: {"name": "Peds Snr 3p-11p (MGH)", "start": 15, "end": 23, "duration": 8, "type": "Swing",
+    # Encoded as 3p-12a (not posted 3p-11p): sign-out runs to midnight, so rest
+    # forbids a next-day morning (same as other 3p-12a swings).
+    4: {"name": "Peds Snr 3p-12a (MGH)", "start": 15, "end": 24, "duration": 9, "type": "Swing",
         "site": "MGH", "required_weekdays": frozenset({MON, TUE, FRI})},
     # Wednesday this is de facto 6p-12a (didactics run 8a-5p); kept encoded as 3p-12a
     # with the informal understanding the resident skips the first 3 hours.
@@ -36,6 +38,16 @@ SHIFTS = {
     7: {"name": "FF/Ex Swing 3p-12a (BWH)", "start": 15, "end": 24, "duration": 9, "type": "Swing",
         "site": "BWH", "required_weekdays": frozenset()},
 }
+# Old assignment / history keys still use the posted 3p-11p Pedi name.
+SHIFT_NAME_ALIASES = {
+    "Peds Snr 3p-11p (MGH)": "Peds Snr 3p-12a (MGH)",
+}
+
+
+def canonical_shift_name(name):
+    return SHIFT_NAME_ALIASES.get(name, name)
+
+
 NIGHT_SHIFT = 6
 EXTRA_SHIFT = 7
 SHIFT_TYPES = ("Morning", "Swing", "Overnight")
@@ -71,6 +83,9 @@ W_NIGHTS_STRUCTURE = 200
 W_FLEX_NIGHT_REWARD = 100
 W_TOTAL_SPREAD = 150   # total shift count evenness: highest-priority balance goal
 W_NON_FLEX_NIGHT_PENALTY = 30
+# Soft structure prefs (below time-off / nights-structure; above mild night deterrent).
+W_SPLIT_WEEKEND = 120   # prefer Sat+Sun together or neither
+W_ISOLATED_NIGHT = 100  # prefer overnight stretches of 2–3, not singletons
 # Evenness spread weights (per category); higher = optimized first among balance goals.
 BALANCE_WEIGHTS = {
     "Total": 150,      # proportional total shift count — highest balance priority
