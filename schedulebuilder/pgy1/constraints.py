@@ -102,7 +102,7 @@ def add_shift_count_constraints(model, works, dates, residents, role_on,
             model.Add(sum_b == 0)
 
 
-def add_rest_constraints(model, works, num_residents, num_days):
+def add_rest_constraints(model, works, num_residents, num_days, prior_last_shifts=None):
     """Enforce ACGME rest constraints: at least shift_duration (min 8h) rest
     between consecutive shifts.
     """
@@ -116,6 +116,17 @@ def add_rest_constraints(model, works, num_residents, num_days):
                     required_rest = max(8, info1["duration"])
                     if rest_hours < required_rest:
                         model.AddImplication(works[(r, d, s1)], works[(r, d + 1, s2)].Not())
+
+    if prior_last_shifts:
+        for r, s1 in prior_last_shifts.items():
+            info1 = SHIFTS[s1]
+            end1 = info1["end"] + (24 if info1["type"] == "Overnight" else 0)
+            for s2, info2 in SHIFTS.items():
+                start2 = info2["start"] + 24
+                rest_hours = start2 - end1
+                required_rest = max(8, info1["duration"])
+                if rest_hours < required_rest:
+                    model.Add(works[(r, 0, s2)] == 0)
 
 
 def add_acgme_weekly_constraints(model, works, num_residents, num_days):
@@ -185,12 +196,13 @@ def add_wednesday_conference_protection(model, works, dates, residents):
 
 
 def add_all_hard_constraints(model, works, dates, residents, role_on,
-                              shift_min=SHIFT_MIN_PER_HALF, shift_max=SHIFT_MAX_PER_HALF):
+                              shift_min=SHIFT_MIN_PER_HALF, shift_max=SHIFT_MAX_PER_HALF,
+                              prior_last_shifts=None):
     num_residents = len(residents)
     num_days = len(dates)
     add_coverage_constraints(model, works, dates, num_residents)
     add_site_and_availability_constraints(model, works, dates, residents, role_on)
     add_shift_count_constraints(model, works, dates, residents, role_on, shift_min, shift_max)
-    add_rest_constraints(model, works, num_residents, num_days)
+    add_rest_constraints(model, works, num_residents, num_days, prior_last_shifts)
     add_acgme_weekly_constraints(model, works, num_residents, num_days)
     add_wednesday_conference_protection(model, works, dates, residents)

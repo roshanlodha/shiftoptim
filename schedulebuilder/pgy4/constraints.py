@@ -36,7 +36,7 @@ def add_availability_constraints(model, works, dates, residents, role_at):
                         model.Add(works[(r, d, s)] == 0)
 
 
-def add_rest_constraints(model, works, num_residents, num_days):
+def add_rest_constraints(model, works, num_residents, num_days, prior_last_shifts=None):
     """Time off after a shift must be >= that shift's duration (minimum 8h)."""
     for r in range(num_residents):
         for d in range(num_days - 1):
@@ -48,6 +48,17 @@ def add_rest_constraints(model, works, num_residents, num_days):
                     required_rest = max(8, info1["duration"])
                     if rest_hours < required_rest:
                         model.AddImplication(works[(r, d, s1)], works[(r, d + 1, s2)].Not())
+
+    if prior_last_shifts:
+        for r, s1 in prior_last_shifts.items():
+            info1 = SHIFTS[s1]
+            end1 = info1["end"] + (24 if info1["type"] == "Overnight" else 0)
+            for s2, info2 in SHIFTS.items():
+                start2 = info2["start"] + 24
+                rest_hours = start2 - end1
+                required_rest = max(8, info1["duration"])
+                if rest_hours < required_rest:
+                    model.Add(works[(r, 0, s2)] == 0)
 
 
 def add_acgme_weekly_constraints(model, works, num_residents, num_days):
@@ -89,12 +100,12 @@ def add_minimum_shift_constraints(model, works, residents, active_halves, num_da
 
 
 def add_all_hard_constraints(model, works, dates, residents, role_at, active_halves,
-                              shift_min_per_half=SHIFT_MIN_PER_HALF):
+                              shift_min_per_half=SHIFT_MIN_PER_HALF, prior_last_shifts=None):
     num_residents = len(residents)
     num_days = len(dates)
     add_coverage_constraints(model, works, dates, num_residents)
     add_availability_constraints(model, works, dates, residents, role_at)
-    add_rest_constraints(model, works, num_residents, num_days)
+    add_rest_constraints(model, works, num_residents, num_days, prior_last_shifts)
     add_acgme_weekly_constraints(model, works, num_residents, num_days)
     add_minimum_shift_constraints(model, works, residents, active_halves, num_days,
                                    shift_min_per_half)

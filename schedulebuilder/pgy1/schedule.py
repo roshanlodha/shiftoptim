@@ -12,6 +12,11 @@ from .solver import build_and_solve
 from .verify import verify
 
 
+def _last_day_shifts(result):
+    last = result["dates"][-1]
+    return {name: s for (d, name), s in result["assignments"].items() if d == last}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build PGY-1 ED schedule for a full 4-week block.")
     parser.add_argument("blocks", nargs="*", default=["4", "5"],
@@ -22,14 +27,16 @@ def main():
     args = parser.parse_args()
 
     history = {}
+    prior_last_shifts = None
     for block in args.blocks:
         result = build_and_solve(block, shift_min_per_half=args.min, max_time_seconds=args.time,
-                                 history=history)
+                                 history=history, prior_last_shifts=prior_last_shifts)
         if result is None:
             continue
         verify(result)
         export_outputs(result)
         history = result["history"]
+        prior_last_shifts = _last_day_shifts(result)
 
 
 if __name__ == "__main__":

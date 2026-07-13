@@ -8,8 +8,19 @@ from .history import empty_entry
 from .inputs import load_block, load_timeoff
 
 
+def _prior_shifts_by_index(residents, prior_last_shifts):
+    if not prior_last_shifts:
+        return None
+    by_index = {}
+    for r, name in enumerate(residents):
+        if name in prior_last_shifts:
+            by_index[r] = prior_last_shifts[name]
+    return by_index or None
+
+
 def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_seconds=60.0,
-                     block_input=None, timeoff=None, history=None, balance_weights=None):
+                     block_input=None, timeoff=None, history=None, balance_weights=None,
+                     prior_last_shifts=None):
     """Solves one full block for PGY-1."""
     dates, residents, role_on, active_halves = block_input if block_input is not None else load_block(block)
     num_residents = len(residents)
@@ -30,7 +41,8 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
     # Add hard constraints
     constraints.add_all_hard_constraints(
         model, works, dates, residents, role_on,
-        shift_min_per_half, shift_min_per_half + 1
+        shift_min_per_half, shift_min_per_half + 1,
+        _prior_shifts_by_index(residents, prior_last_shifts),
     )
 
     # Add soft constraints

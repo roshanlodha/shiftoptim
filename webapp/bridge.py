@@ -122,6 +122,38 @@ def load_history_from_db(conn, pgy_level):
     return history
 
 
+def load_prior_last_shifts(conn, pgy_level, block_number):
+    """Published assignments on the calendar day before this block starts."""
+    cfg, _ = _get_config(pgy_level)
+    halves = conn.execute(
+        "SELECT start_date FROM half_blocks "
+        "WHERE pgy_level = ? AND block_number = ? ORDER BY half",
+        (pgy_level, block_number),
+    ).fetchall()
+    if not halves:
+        return {}
+    start_date = min(dt.date.fromisoformat(h["start_date"]) for h in halves)
+    prior_day = (start_date - dt.timedelta(days=1)).isoformat()
+    canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
+    name_to_id = {info["name"]: sid for sid, info in cfg.SHIFTS.items()}
+
+    rows = conn.execute(
+        "SELECT res.last_name AS last_name, a.shift_name AS shift_name "
+        "FROM assignments a "
+        "JOIN residents res ON res.id = a.resident_id "
+        "JOIN runs r ON r.id = a.run_id "
+        "WHERE r.status = 'published' AND r.pgy_level = ? AND a.day = ?",
+        (pgy_level, prior_day),
+    ).fetchall()
+    prior = {}
+    for row in rows:
+        sname = canonicalize(row["shift_name"])
+        shift_id = name_to_id.get(sname)
+        if shift_id is not None:
+            prior[row["last_name"]] = shift_id
+    return prior
+
+
 def _empty_entry(shift_names):
     return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0, "hours_worked": 0}
 
@@ -173,6 +205,7 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     block_input = load_block_from_db(conn, pgy_level, block_number)
     timeoff = load_timeoff_from_db(conn)
     history = load_history_from_db(conn, pgy_level)
+    prior_last_shifts = load_prior_last_shifts(conn, pgy_level, block_number)
     balance_weights = load_balance_weights(conn)
 
     cfg, slv = _get_config(pgy_level)
@@ -185,6 +218,7 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
         timeoff=timeoff,
         history=history,
         balance_weights=balance_weights,
+        prior_last_shifts=prior_last_shifts,
     )
     if result is None:
         return None
@@ -264,6 +298,33 @@ def _load_run_assignments(conn, run_id):
         "SELECT resident_id, day, shift_name FROM assignments WHERE run_id = ?", (run_id,)
     ).fetchall()
     return {(r["resident_id"], r["day"]): r["shift_name"] for r in rows}
+
+
+def _load_run_assignments_with_prior(conn, run_id):
+    """Run assignments plus published prior-day shifts for cross-block rest checks."""
+    base = _load_run_assignments(conn, run_id)
+    run = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
+    if run is None:
+        return base
+    first_day_row = conn.execute(
+        "SELECT MIN(day) AS day FROM assignments WHERE run_id = ?", (run_id,)
+    ).fetchone()
+    if not first_day_row or not first_day_row["day"]:
+        return base
+    prior_day = (dt.date.fromisoformat(first_day_row["day"]) - dt.timedelta(days=1)).isoformat()
+    prior_rows = conn.execute(
+        "SELECT a.resident_id, a.day, a.shift_name "
+        "FROM assignments a "
+        "JOIN runs r ON r.id = a.run_id "
+        "WHERE r.status = 'published' AND r.pgy_level = ? AND a.day = ?",
+        (run["pgy_level"], prior_day),
+    ).fetchall()
+    merged = dict(base)
+    for row in prior_rows:
+        key = (row["resident_id"], row["day"])
+        if key not in merged:
+            merged[key] = row["shift_name"]
+    return merged
 
 
 def _shift_info_by_name(pgy_level):
@@ -363,7 +424,7 @@ def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, request
     pgy_level = run_row["pgy_level"] if run_row else 4
     cfg, _ = _get_config(pgy_level)
 
-    base = _load_run_assignments(conn, run_id)
+    base = _load_run_assignments_with_prior(conn, run_id)
     by_name = _shift_info_by_name(pgy_level)
 
     # Get all residents in this run (excluding requester)
