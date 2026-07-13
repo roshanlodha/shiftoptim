@@ -971,6 +971,9 @@ def _audit_groups(conn):
         ).fetchall()
         rows = []
         for res in residents:
+            # Off-service placeholders (PGY-1 solver) stay out of the wellness audit.
+            if res["full_name"].startswith("Off Service") or res["last_name"].startswith("Off Service"):
+                continue
             entry = history.get(
                 res["last_name"],
                 {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0},
