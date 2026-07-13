@@ -60,7 +60,7 @@
   {% endif %}
 </div>
 
-<div class="half-tabs">
+<div class="half-tabs" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
   {% for h in viewable_halves %}
   <a class="tab{% if h.half == half %} active{% endif %}"
      href="{{ url_for('admin_review_run', run_id=run.id, half=h.half) }}">
@@ -68,6 +68,11 @@
      Block {{ run.block_number }}{{ h.half | upper }}
   </a>
   {% endfor %}
+  <a class="button subtle" href="{{ url_for('admin_download_csv', run_id=run.id) }}"
+     style="margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;">
+    <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+    Download CSV
+  </a>
 </div>
 
 {% include "_grid.html" %}

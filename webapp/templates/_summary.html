@@ -1,82 +1,92 @@
-{% if summary %}
+{% set em_block = summary_block | selectattr('is_off_service', 'equalto', false) | list if summary_block else [] %}
+{% set em_half = summary_half | selectattr('is_off_service', 'equalto', false) | list if summary_half else [] %}
+{% set off_block = summary_block | selectattr('is_off_service', 'equalto', true) | list if summary_block else [] %}
+{% set off_half = summary_half | selectattr('is_off_service', 'equalto', true) | list if summary_half else [] %}
 
-{% set ns = namespace(has_em_proper=false, has_off_service=false) %}
-{% for row in summary %}
-  {% if row.is_off_service %}
-    {% set ns.has_off_service = true %}
-  {% else %}
-    {% set ns.has_em_proper = true %}
+{% macro summary_rows(rows) -%}
+  <div class="table-scroll">
+    <table class="summary">
+      <thead>
+        <tr>
+          <th>Resident</th>
+          <th>Assignment</th>
+          {% for c in category_columns %}
+            <th class="num" style="text-align: right;">{{ c }}</th>
+          {% endfor %}
+          <th class="num" style="text-align: right; background-color: rgba(244, 114, 182, 0.1);">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td style="font-weight: 700;">{{ row.full_name }}</td>
+          <td style="font-weight: 500; color: var(--muted-foreground);">{{ row.assignment }}</td>
+          {% for c in category_columns %}
+            <td class="num" style="text-align: right;">{{ row.totals[c] }}</td>
+          {% endfor %}
+          <td class="num" style="text-align: right; font-weight: 800; background-color: rgba(244, 114, 182, 0.05); color: var(--secondary);">
+            {{ row.total }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{%- endmacro %}
+
+{% if em_block or em_half or off_block or off_half %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem;">
+  <h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin: 0;">
+    <i data-lucide="bar-chart-3" style="color: var(--accent); width: 24px; height: 24px;"></i>
+    <span id="summary-title">EM Resident Summary</span>
+  </h2>
+  <div class="toggle-container summary-scope-toggle" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block; flex-shrink: 0;">
+    <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
+      <input type="checkbox" id="summary-half-toggle" style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+      <span>This half only ({{ half | upper }})</span>
+    </label>
+  </div>
+</div>
+
+<div id="summary-scope-block">
+  {% if em_block %}{{ summary_rows(em_block) }}{% endif %}
+  {% if off_block %}
+  <h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2.5rem;">
+    <i data-lucide="users" style="color: var(--secondary); width: 24px; height: 24px;"></i>
+    Off-Service Resident Summary
+  </h2>
+  {{ summary_rows(off_block) }}
   {% endif %}
-{% endfor %}
-
-{% if ns.has_em_proper %}
-<h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2rem;">
-  <i data-lucide="bar-chart-3" style="color: var(--accent); width: 24px; height: 24px;"></i>
-  EM Resident Summary (This Half)
-</h2>
-<div class="table-scroll">
-  <table class="summary">
-    <thead>
-      <tr>
-        <th>Resident</th>
-        <th>Assignment</th>
-        {% for c in category_columns %}
-          <th class="num" style="text-align: right;">{{ c }}</th>
-        {% endfor %}
-        <th class="num" style="text-align: right; background-color: rgba(244, 114, 182, 0.1);">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in summary if not row.is_off_service %}
-      <tr>
-        <td style="font-weight: 700;">{{ row.full_name }}</td>
-        <td style="font-weight: 500; color: var(--muted-foreground);">{{ row.assignment }}</td>
-        {% for c in category_columns %}
-          <td class="num" style="text-align: right;">{{ row.totals[c] }}</td>
-        {% endfor %}
-        <td class="num" style="text-align: right; font-weight: 800; background-color: rgba(244, 114, 182, 0.05); color: var(--secondary);">
-          {{ row.total }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
-{% endif %}
 
-{% if ns.has_off_service %}
-<h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2.5rem;">
-  <i data-lucide="users" style="color: var(--secondary); width: 24px; height: 24px;"></i>
-  Off-Service Resident Summary (This Half)
-</h2>
-<div class="table-scroll">
-  <table class="summary">
-    <thead>
-      <tr>
-        <th>Resident</th>
-        <th>Assignment</th>
-        {% for c in category_columns %}
-          <th class="num" style="text-align: right;">{{ c }}</th>
-        {% endfor %}
-        <th class="num" style="text-align: right; background-color: rgba(244, 114, 182, 0.1);">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in summary if row.is_off_service %}
-      <tr>
-        <td style="font-weight: 700;">{{ row.full_name }}</td>
-        <td style="font-weight: 500; color: var(--muted-foreground);">{{ row.assignment }}</td>
-        {% for c in category_columns %}
-          <td class="num" style="text-align: right;">{{ row.totals[c] }}</td>
-        {% endfor %}
-        <td class="num" style="text-align: right; font-weight: 800; background-color: rgba(244, 114, 182, 0.05); color: var(--secondary);">
-          {{ row.total }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div id="summary-scope-half" style="display: none;">
+  {% if em_half %}{{ summary_rows(em_half) }}{% endif %}
+  {% if off_half %}
+  <h2 style="display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2.5rem;">
+    <i data-lucide="users" style="color: var(--secondary); width: 24px; height: 24px;"></i>
+    Off-Service Resident Summary
+  </h2>
+  {{ summary_rows(off_half) }}
+  {% endif %}
 </div>
-{% endif %}
 
+<script>
+  (function() {
+    const toggle = document.getElementById('summary-half-toggle');
+    const blockEl = document.getElementById('summary-scope-block');
+    const halfEl = document.getElementById('summary-scope-half');
+    const title = document.getElementById('summary-title');
+    if (!toggle || !blockEl || !halfEl) return;
+    function sync() {
+      const halfOnly = toggle.checked;
+      blockEl.style.display = halfOnly ? 'none' : 'block';
+      halfEl.style.display = halfOnly ? 'block' : 'none';
+      if (title) title.textContent = halfOnly
+        ? 'EM Resident Summary (Half {{ half | upper }})'
+        : 'EM Resident Summary';
+    }
+    toggle.addEventListener('change', sync);
+    sync();
+  })();
+</script>
 {% endif %}

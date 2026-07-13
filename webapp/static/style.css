@@ -861,7 +861,7 @@ html, body {
   }
 
   /* Hide shift toggle on mobile */
-  .toggle-container {
+  .toggle-container:not(.summary-scope-toggle) {
     display: none !important;
   }
 }

@@ -1,11 +1,13 @@
 """Flask app factory. Admin flow is Run -> Review -> Publish; residents view
 the published schedule, manage their own time off, and see their history."""
 
+import csv
 import datetime as dt
+import io
 import json
 import os
 
-from flask import Flask, g, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, Response, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from schedulebuilder.pgy4.config import BALANCE_CATEGORIES, SHIFT_MIN_PER_HALF, SHIFTS, WEEKEND_DAYS
@@ -309,13 +311,25 @@ def register_routes(app, db_conn):
         half = request.args.get("half", "a")
         hb = _half_block(conn, pgy_level, run["block_number"], half)
         grid = _build_grid(conn, run_id, hb["start_date"], hb["end_date"]) if hb else None
-        summary = _half_summary(conn, run_id, run["block_number"], half) if hb else []
         viewable = _half_blocks(conn, pgy_level, run["block_number"])
+        summary_block = _range_summary(conn, run_id, run["block_number"]) if viewable else []
+        summary_half = _range_summary(conn, run_id, run["block_number"], half=half) if hb else []
         return render_template(
-            "admin_review_run.html", run=run, grid=grid, summary=summary,
+            "admin_review_run.html", run=run, grid=grid,
+            summary_block=summary_block, summary_half=summary_half,
             shift_names=shift_names, category_columns=category_columns,
             half=half, viewable_halves=viewable,
         )
+
+    @app.route("/admin/runs/<int:run_id>/csv")
+    @admin_required
+    def admin_download_csv(run_id):
+        conn = db_conn()
+        run = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if run is None:
+            return redirect(url_for("admin_dashboard"))
+        half = request.args.get("half")  # None / omit = whole block
+        return _schedule_csv_response(conn, run_id, run["pgy_level"], run["block_number"], half)
 
     @app.route("/admin/runs/<int:run_id>/publish", methods=["POST"])
     @admin_required
@@ -362,6 +376,7 @@ def register_routes(app, db_conn):
 
         grid = None
         viewable_halves = []
+        run_id = None
         if block_number is not None:
             viewable_halves = _half_blocks(conn, pgy_level, block_number)
             run = conn.execute(
@@ -370,14 +385,37 @@ def register_routes(app, db_conn):
             ).fetchone()
             hb = _half_block(conn, pgy_level, block_number, half)
             if run and hb:
-                grid = _build_grid(conn, run["id"], hb["start_date"], hb["end_date"])
+                run_id = run["id"]
+                grid = _build_grid(conn, run_id, hb["start_date"], hb["end_date"])
 
         return render_template(
             "resident_schedule.html", blocks=blocks, block_number=block_number,
             half=half, viewable_halves=viewable_halves,
             grid=grid, shift_names=shift_names,
-            resident_last_name=resident_last_name,
+            resident_last_name=resident_last_name, run_id=run_id,
         )
+
+    @app.route("/schedule/csv")
+    @login_required
+    def resident_download_csv():
+        conn = db_conn()
+        resident_id = g.user["resident_id"]
+        pgy_level = 4
+        if resident_id:
+            row = conn.execute("SELECT pgy_level FROM residents WHERE id = ?", (resident_id,)).fetchone()
+            if row:
+                pgy_level = row["pgy_level"]
+        block_number = request.args.get("block", type=int)
+        half = request.args.get("half")  # None = whole block
+        if block_number is None:
+            return redirect(url_for("resident_schedule"))
+        run = conn.execute(
+            "SELECT id FROM runs WHERE pgy_level = ? AND block_number = ? AND status = 'published'",
+            (pgy_level, block_number),
+        ).fetchone()
+        if run is None:
+            return redirect(url_for("resident_schedule", block=block_number, half=half or "a"))
+        return _schedule_csv_response(conn, run["id"], pgy_level, block_number, half)
 
     @app.route("/timeoff", methods=["GET", "POST"])
     @login_required
@@ -752,30 +790,43 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
     return {"weeks": weeks, "cells": cells, "colors": colors, "legend": legend}
 
 
-def _half_summary(conn, run_id, block_number, half):
-    """Per-resident shift counts for one half-block, with rotation assignment."""
+def _range_summary(conn, run_id, block_number, half=None):
+    """Per-resident shift counts for a half-block (half='a'|'b') or full block
+    (half=None), with rotation assignment(s)."""
     run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
     pgy_level = run_row["pgy_level"] if run_row else 4
-    hb = _half_block(conn, pgy_level, block_number, half)
-    if hb is None:
+    halves = _half_blocks(conn, pgy_level, block_number)
+    if not halves:
         return []
 
-    rotations = {
-        row["last_name"]: row["rotation"]
-        for row in conn.execute(
-            "SELECT res.last_name AS last_name, rot.rotation AS rotation "
-            "FROM rotations rot JOIN residents res ON res.id = rot.resident_id "
-            "WHERE rot.half_block_id = ?",
-            (hb["id"],),
-        ).fetchall()
-    }
+    if half is not None:
+        hb = next((h for h in halves if h["half"] == half), None)
+        if hb is None:
+            return []
+        start_date, end_date = hb["start_date"], hb["end_date"]
+        target_halves = [hb]
+    else:
+        start_date, end_date = halves[0]["start_date"], halves[-1]["end_date"]
+        target_halves = halves
+
+    rotations_by_half = {}
+    for hb in target_halves:
+        rotations_by_half[hb["half"]] = {
+            row["last_name"]: row["rotation"]
+            for row in conn.execute(
+                "SELECT res.last_name AS last_name, rot.rotation AS rotation "
+                "FROM rotations rot JOIN residents res ON res.id = rot.resident_id "
+                "WHERE rot.half_block_id = ?",
+                (hb["id"],),
+            ).fetchall()
+        }
 
     rows = conn.execute(
         "SELECT res.full_name AS full_name, res.last_name AS last_name, "
         "a.shift_name AS shift_name, a.day AS day "
         "FROM assignments a JOIN residents res ON res.id = a.resident_id "
         "WHERE a.run_id = ? AND a.day >= ? AND a.day <= ?",
-        (run_id, hb["start_date"], hb["end_date"]),
+        (run_id, start_date, end_date),
     ).fetchall()
 
     cfg, _ = bridge._get_config(pgy_level)
@@ -812,18 +863,86 @@ def _half_summary(conn, run_id, block_number, half):
 
     summary = []
     for ln, data in sorted(by_resident.items(), key=lambda x: x[1]["full_name"]):
+        roles = []
+        for hb in target_halves:
+            role = rotations_by_half.get(hb["half"], {}).get(ln)
+            if role and role not in roles:
+                roles.append(role)
+        assignment = " / ".join(roles) if roles else "—"
         entry = {"shifts": data["shifts"], "weekend": data["weekend"]}
         totals = cat_totals_fn(entry)
         is_off = (pgy_level == 1 and data["full_name"] not in EM_PROPER_INTERNS)
         summary.append({
             "full_name": data["full_name"],
-            "assignment": rotations.get(ln, "—"),
+            "assignment": assignment,
             "shifts": data["shifts"],
             "totals": totals,
             "total": sum(data["shifts"].values()),
             "is_off_service": is_off,
         })
     return summary
+
+
+def _half_summary(conn, run_id, block_number, half):
+    return _range_summary(conn, run_id, block_number, half=half)
+
+
+def _schedule_csv_response(conn, run_id, pgy_level, block_number, half=None):
+    """CSV grid matching schedulebuilder export format (week chunks)."""
+    cfg, _ = bridge._get_config(pgy_level)
+    shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+    canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
+
+    halves = _half_blocks(conn, pgy_level, block_number)
+    if not halves:
+        return Response("No schedule", status=404)
+    if half:
+        hb = next((h for h in halves if h["half"] == half), None)
+        if hb is None:
+            return Response("Half not found", status=404)
+        start_date, end_date = hb["start_date"], hb["end_date"]
+        label = f"{block_number}{half}"
+    else:
+        start_date, end_date = halves[0]["start_date"], halves[-1]["end_date"]
+        label = str(block_number)
+
+    rows = conn.execute(
+        "SELECT a.day AS day, a.shift_name AS shift_name, res.last_name AS last_name "
+        "FROM assignments a JOIN residents res ON res.id = a.resident_id "
+        "WHERE a.run_id = ? AND a.day >= ? AND a.day <= ?",
+        (run_id, start_date, end_date),
+    ).fetchall()
+
+    cells = {}
+    dates = set()
+    for row in rows:
+        sn = canonicalize(row["shift_name"])
+        cells[(sn, row["day"])] = row["last_name"]
+        dates.add(row["day"])
+
+    # Include empty days in range so weeks stay contiguous
+    start = dt.date.fromisoformat(start_date)
+    end = dt.date.fromisoformat(end_date)
+    all_dates = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    for i, week_dates in enumerate(_week_chunks(all_dates)):
+        if i:
+            writer.writerow([])
+        writer.writerow(["Shift"] + [d.isoformat() for d in week_dates])
+        for sn in shift_names:
+            writer.writerow(
+                [sn] + [cells.get((sn, d.isoformat()), "") for d in week_dates]
+            )
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="block{label}_schedule.csv"',
+        },
+    )
 
 
 def _audit_groups(conn):
