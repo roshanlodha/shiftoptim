@@ -11,7 +11,9 @@ def load_logged_in_user():
     user_id = session.get("user_id")
     g.user = None
     if user_id is not None:
-        g.user = get_db().execute(
+        from flask import current_app
+        db_path = current_app.config.get("DB_PATH")
+        g.user = get_db(db_path).execute(
             "SELECT u.id AS id, u.username AS username, u.role AS role, u.resident_id AS resident_id, r.full_name AS full_name "
             "FROM users u "
             "LEFT JOIN residents r ON r.id = u.resident_id "

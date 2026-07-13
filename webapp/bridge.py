@@ -2,8 +2,15 @@
 
 import datetime as dt
 
-from schedulebuilder.pgy4.config import ACTIVE_ROLES, SHIFTS, WEEKEND_DAYS
-from schedulebuilder.pgy4.solver import build_and_solve
+def _get_config(pgy_level):
+    if pgy_level == 1:
+        import schedulebuilder.pgy1.config as cfg
+        import schedulebuilder.pgy1.solver as slv
+    else:
+        import schedulebuilder.pgy4.config as cfg
+        import schedulebuilder.pgy4.solver as slv
+    return cfg, slv
+
 
 from .settings import load_balance_weights
 
@@ -14,6 +21,7 @@ def _daterange(start, end):
 
 def load_block_from_db(conn, pgy_level, block_number):
     """Returns (dates, residents, role_on, active_halves) keyed by last_name."""
+    cfg, _ = _get_config(pgy_level)
     halves = conn.execute(
         "SELECT id, half, start_date, end_date FROM half_blocks "
         "WHERE pgy_level = ? AND block_number = ? ORDER BY half",
@@ -37,7 +45,7 @@ def load_block_from_db(conn, pgy_level, block_number):
             "SELECT res.last_name AS last_name, rot.rotation AS rotation "
             "FROM rotations rot JOIN residents res ON res.id = rot.resident_id "
             "WHERE rot.half_block_id = ? AND rot.rotation IN (?, ?, ?)",
-            (half["id"], *ACTIVE_ROLES),
+            (half["id"], *cfg.ACTIVE_ROLES),
         ).fetchall()
         for row in rows:
             name = row["last_name"]
@@ -67,7 +75,8 @@ def load_timeoff_from_db(conn):
 
 def load_history_from_db(conn, pgy_level):
     """Cumulative totals from published runs only."""
-    shift_names = [info["name"] for info in SHIFTS.values()]
+    cfg, _ = _get_config(pgy_level)
+    shift_names = [info["name"] for info in cfg.SHIFTS.values()]
     history = {}
 
     assignment_rows = conn.execute(
@@ -84,12 +93,12 @@ def load_history_from_db(conn, pgy_level):
             entry["shifts"][row["shift_name"]] += 1
         
         # Accumulate hours
-        s_info = next((info for info in SHIFTS.values() if info["name"] == row["shift_name"]), None)
+        s_info = next((info for info in cfg.SHIFTS.values() if info["name"] == row["shift_name"]), None)
         if s_info:
             entry["hours_worked"] = entry.get("hours_worked", 0) + s_info["duration"]
 
         day = dt.date.fromisoformat(row["day"])
-        if day.weekday() in WEEKEND_DAYS:
+        if day.weekday() in cfg.WEEKEND_DAYS:
             entry["weekend"] += 1
 
     run_pairs = conn.execute(
@@ -115,14 +124,58 @@ def _empty_entry(shift_names):
     return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0, "hours_worked": 0}
 
 
-def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half, max_time_seconds):
+def _process_off_services(conn, pgy_level, block_number, off_services):
+    if not off_services:
+        return
+    for os_res in off_services:
+        name = os_res["name"].strip()
+        if not name:
+            continue
+        site = os_res["site"]
+        half = os_res["half"]
+        
+        # Find or insert resident
+        row = conn.execute(
+            "SELECT id FROM residents WHERE last_name = ? AND pgy_level = ?",
+            (name, pgy_level)
+        ).fetchone()
+        if row:
+            res_id = row["id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO residents (full_name, last_name, pgy_level) VALUES (?, ?, ?)",
+                (name, name, pgy_level)
+            )
+            res_id = cur.lastrowid
+            
+        # Insert/update rotation for target half-blocks
+        target_halves = ["a", "b"] if half == "both" else [half]
+        for h in target_halves:
+            hb_row = conn.execute(
+                "SELECT id FROM half_blocks WHERE pgy_level = ? AND block_number = ? AND half = ?",
+                (pgy_level, block_number, h)
+            ).fetchone()
+            if hb_row:
+                hb_id = hb_row["id"]
+                conn.execute(
+                    "INSERT INTO rotations (resident_id, half_block_id, rotation) VALUES (?, ?, ?) "
+                    "ON CONFLICT(resident_id, half_block_id) DO UPDATE SET rotation = excluded.rotation",
+                    (res_id, hb_id, site)
+                )
+    conn.commit()
+
+
+def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half, max_time_seconds, off_services=None):
     """Solves the block and inserts a new draft run + its assignments."""
+    _process_off_services(conn, pgy_level, block_number, off_services)
     block_input = load_block_from_db(conn, pgy_level, block_number)
     timeoff = load_timeoff_from_db(conn)
     history = load_history_from_db(conn, pgy_level)
     balance_weights = load_balance_weights(conn)
 
-    result = build_and_solve(
+    cfg, slv = _get_config(pgy_level)
+
+    result = slv.build_and_solve(
         block_number,
         shift_min_per_half=shift_min_per_half,
         max_time_seconds=max_time_seconds,
@@ -154,11 +207,21 @@ def run_solver_and_stage_draft(conn, pgy_level, block_number, shift_min_per_half
     )
     run_id = cur.fetchone()[0]
 
-    for (date, shift_id), name in result["assignments"].items():
-        conn.execute(
-            "INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, ?, ?)",
-            (run_id, resident_id_by_name[name], date.isoformat(), SHIFTS[shift_id]["name"]),
-        )
+    # result["assignments"] is dict:
+    # For PGY-1: (date, name) -> shift_id
+    # For PGY-4: (date, shift_id) -> name
+    if pgy_level == 1:
+        for (date, name), shift_id in result["assignments"].items():
+            conn.execute(
+                "INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, ?, ?)",
+                (run_id, resident_id_by_name[name], date.isoformat(), cfg.SHIFTS[shift_id]["name"]),
+            )
+    else:
+        for (date, shift_id), name in result["assignments"].items():
+            conn.execute(
+                "INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, ?, ?)",
+                (run_id, resident_id_by_name[name], date.isoformat(), cfg.SHIFTS[shift_id]["name"]),
+            )
     conn.commit()
     return run_id
 
@@ -201,9 +264,10 @@ def _load_run_assignments(conn, run_id):
     return {(r["resident_id"], r["day"]): r["shift_name"] for r in rows}
 
 
-def _shift_info_by_name():
-    """Name → SHIFTS entry mapping (cached once per import)."""
-    return {info["name"]: info for info in SHIFTS.values()}
+def _shift_info_by_name(pgy_level):
+    """Name → SHIFTS entry mapping dynamically fetched per pgy_level."""
+    cfg, _ = _get_config(pgy_level)
+    return {info["name"]: info for info in cfg.SHIFTS.values()}
 
 
 def _acgme_ok(assignments_map, resident_id, run_id, conn):
@@ -216,8 +280,11 @@ def _acgme_ok(assignments_map, resident_id, run_id, conn):
       - ≤60 ED hours in any rolling 7-day window
       - ≥1 completely free day per 7-day window
     """
-    by_name = _shift_info_by_name()
-    shifts_desc = [info for info in SHIFTS.values()]  # noqa: for reference
+    run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
+    pgy_level = run_row["pgy_level"] if run_row else 4
+    cfg, _ = _get_config(pgy_level)
+
+    by_name = _shift_info_by_name(pgy_level)
 
     # Collect this resident's assigned (date, shift_info) sorted by date
     entries = []
@@ -286,8 +353,12 @@ def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, request
     Each candidate: {target_id, target_name, target_day, target_shift}
     Only checks ACGME constraints (rest, 60h/wk, 1 free day/wk).
     """
+    run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
+    pgy_level = run_row["pgy_level"] if run_row else 4
+    cfg, _ = _get_config(pgy_level)
+
     base = _load_run_assignments(conn, run_id)
-    by_name = _shift_info_by_name()
+    by_name = _shift_info_by_name(pgy_level)
 
     # Get all residents in this run (excluding requester)
     other_ids = {rid for (rid, _) in base if rid != requester_resident_id}

@@ -1,31 +1,30 @@
 """One-shot (idempotent) seed script for the web app database.
 
-Populates:
-  - admin user (jaba/thehutt) and one resident login per PGY-4 resident
-  - the 26 half-blocks of AY 2026-2027 with dates, extracted from
-    data/AY 2026-2027 Block Schedule (Final) - PGY-4.csv
-  - each resident's rotation for every half-block (from the same CSV)
-  - jeopardy assignments per half-block
-  - time-off requests carried over from config.ini's [time off] section
-
-Run with: python -m webapp.seed
+Populates both PGY-4 and PGY-1:
+  - Admin login and resident logins
+  - Half-blocks for AY 2026-2027
+  - Rotations and jeopardy
+  - Time-off requests
 """
 
+import csv
 import configparser
 import os
+import re
 
 from werkzeug.security import generate_password_hash
-
 from . import db as dbmod
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_INI = os.path.join(REPO_ROOT, "config.ini")
+PGY1_CSV = os.path.join(REPO_ROOT, "data", "Final Intern Year 2026-2027 Block Schedules - PGY-1.csv")
 
 PGY4_LEVEL = 4
+PGY1_LEVEL = 1
 DEFAULT_RESIDENT_PASSWORD = "changeme"
 
-# R-code -> (last_name, full_name), in CSV row order (R1..R15).
-ROSTER = [
+# PGY-4 Roster
+ROSTER_PGY4 = [
     ("D'Amore", "Aaron D'Amore"),
     ("Raynor", "Abigail (Abby) Raynor"),
     ("Qi", "Xin Qi"),
@@ -44,8 +43,6 @@ ROSTER = [
 ]
 
 # 26 half-blocks in order (block_number, half, start_date, end_date), ISO dates.
-# Extracted from the CSV header rows; the academic year starts 6/29/2026 and
-# rolls into 2027 at block 7b (12/28/2026-1/10/2027).
 HALF_BLOCKS = [
     (1, "a", "2026-06-29", "2026-07-12"),
     (1, "b", "2026-07-13", "2026-07-26"),
@@ -75,9 +72,7 @@ HALF_BLOCKS = [
     (13, "b", "2027-06-14", "2027-06-27"),
 ]
 
-# Rotation per resident (row order matches ROSTER) for each of the 26 halves
-# in HALF_BLOCKS order. Extracted verbatim from the block schedule CSV.
-ROTATIONS = [
+ROTATIONS_PGY4 = [
     ["MGB", "MGB", "NWH", "NWH", "Vacation", "Flex", "MGB", "MGB", "MGB", "MGB Nights",
      "Elective/LTD", "MGB", "MGB", "Elective", "Elective", "Elective/LTD", "MGB", "MGB",
      "MGB", "MGB", "Teaching", "Teaching", "MGB", "Vacation", "Flex", "MGB"],
@@ -125,18 +120,14 @@ ROTATIONS = [
      "MGB", "MGB", "MGB", "NWH", "NWH", "MGB", "MGB", "Elective", "Elective"],
 ]
 
-# Jeopardy R-codes per half-block, in HALF_BLOCKS order. Some halves list two
-# residents (e.g. "R3/R4"); ponytail: we only record the first as the FK
-# target since jeopardy is informational, not solver input. Upgrade path:
-# switch jeopardy_resident_id to a join table if a second on-call is ever needed.
-JEOPARDY = [
+JEOPARDY_PGY4 = [
     "R3", "R3", "R6", "R6", "R10", "R10", "R15", "R15", "R11", "R11", "R13", "R13",
     "R2", "R2", "R14", "R14", "R9", "R9", "R7", "R7", "R1", "R1", "R5", "R8", "R8", "R12",
 ]
 
 
 def _r_index(code):
-    return int(code[1:]) - 1  # "R3" -> 2
+    return int(code[1:]) - 1
 
 
 def _parse_date(text):
@@ -156,41 +147,44 @@ def seed(conn):
     dbmod.init_db(conn)
     conn.execute("DROP TABLE IF EXISTS history_baseline")
 
-    resident_ids = {}
-    for last_name, full_name in ROSTER:
-        cur = conn.execute(
-            "INSERT INTO residents (full_name, last_name, pgy_level) VALUES (?, ?, ?) "
-            "ON CONFLICT (last_name, pgy_level) DO UPDATE SET full_name = excluded.full_name "
-            "RETURNING id",
-            (full_name, last_name, PGY4_LEVEL),
-        )
-        resident_ids[last_name] = cur.fetchone()[0]
+    # 1. Seed PGY-4
+    seed_pgy(conn, PGY4_LEVEL, ROSTER_PGY4, ROTATIONS_PGY4, JEOPARDY_PGY4)
 
-    _seed_users(conn, resident_ids)
-    half_block_ids = _seed_half_blocks_and_rotations(conn, resident_ids)
-    _seed_jeopardy(conn, half_block_ids, resident_ids)
-    _seed_time_off(conn, resident_ids)
+    # 2. Seed PGY-1
+    seed_pgy1_from_csv(conn)
 
     conn.commit()
 
 
-def _seed_users(conn, resident_ids):
-    conn.execute(
-        "INSERT INTO users (username, password_hash, role, resident_id) VALUES (?, ?, 'admin', NULL) "
-        "ON CONFLICT (username) DO NOTHING",
-        ("jaba", generate_password_hash("thehutt")),
-    )
-    for last_name, full_name in ROSTER:
+def seed_pgy(conn, pgy_level, roster, rotations, jeopardy):
+    resident_ids = {}
+    for last_name, full_name in roster:
+        cur = conn.execute(
+            "INSERT INTO residents (full_name, last_name, pgy_level) VALUES (?, ?, ?) "
+            "ON CONFLICT (last_name, pgy_level) DO UPDATE SET full_name = excluded.full_name "
+            "RETURNING id",
+            (full_name, last_name, pgy_level),
+        )
+        resident_ids[last_name] = cur.fetchone()[0]
+
+    # Seed logins
+    for last_name, full_name in roster:
         first_token = full_name.split()[0].strip("()").lower()
         username = f"{first_token}.{last_name.lower().replace(chr(39), '').replace(' ', '')}"
         conn.execute(
             "INSERT INTO users (username, password_hash, role, resident_id) VALUES (?, ?, 'resident', ?) "
             "ON CONFLICT (username) DO NOTHING",
-            (username, generate_password_hash(DEFAULT_RESIDENT_PASSWORD), resident_ids[last_name]),
+            (username, generate_password_hash(DEFAULT_RESIDENT_PASSWORD, method='pbkdf2:sha256'), resident_ids[last_name]),
         )
 
+    # Admin user
+    conn.execute(
+        "INSERT INTO users (username, password_hash, role, resident_id) VALUES (?, ?, 'admin', NULL) "
+        "ON CONFLICT (username) DO NOTHING",
+        ("jaba", generate_password_hash("thehutt", method='pbkdf2:sha256')),
+    )
 
-def _seed_half_blocks_and_rotations(conn, resident_ids):
+    # Seed half blocks and rotations
     half_block_ids = {}
     for idx, (block_number, half, start, end) in enumerate(HALF_BLOCKS):
         cur = conn.execute(
@@ -199,52 +193,134 @@ def _seed_half_blocks_and_rotations(conn, resident_ids):
             "ON CONFLICT (pgy_level, block_number, half) "
             "DO UPDATE SET start_date = excluded.start_date, end_date = excluded.end_date "
             "RETURNING id",
-            (PGY4_LEVEL, block_number, half, start, end),
+            (pgy_level, block_number, half, start, end),
         )
         hb_id = cur.fetchone()[0]
         half_block_ids[idx] = hb_id
 
-        for row, (last_name, _full_name) in enumerate(ROSTER):
-            rotation = ROTATIONS[row][idx]
+        for row, (last_name, _full_name) in enumerate(roster):
+            rotation = rotations[row][idx]
             conn.execute(
                 "INSERT INTO rotations (resident_id, half_block_id, rotation) VALUES (?, ?, ?) "
                 "ON CONFLICT (resident_id, half_block_id) DO UPDATE SET rotation = excluded.rotation",
                 (resident_ids[last_name], hb_id, rotation),
             )
-    return half_block_ids
 
-
-def _seed_jeopardy(conn, half_block_ids, resident_ids):
-    for idx, code in enumerate(JEOPARDY):
-        last_name = ROSTER[_r_index(code)][0]
+    # Jeopardy update
+    for idx, code in enumerate(jeopardy):
+        last_name = roster[_r_index(code)][0]
         conn.execute(
             "UPDATE half_blocks SET jeopardy_resident_id = ? WHERE id = ?",
             (resident_ids[last_name], half_block_ids[idx]),
         )
 
+    # Seed config.ini timeoff requests for PGY4
+    if pgy_level == PGY4_LEVEL and os.path.exists(CONFIG_INI):
+        parser = configparser.ConfigParser()
+        parser.optionxform = str
+        parser.read(CONFIG_INI)
+        if "time off" in parser:
+            for name, raw in parser["time off"].items():
+                res_id = resident_ids.get(name)
+                if res_id is None:
+                    continue
+                conn.execute("DELETE FROM time_off WHERE resident_id = ?", (res_id,))
+                for part in raw.split(","):
+                    part = part.strip()
+                    if not part:
+                        continue
+                    start, end = _parse_date_range(part)
+                    conn.execute(
+                        "INSERT INTO time_off (resident_id, start_date, end_date) VALUES (?, ?, ?)",
+                        (res_id, start, end),
+                    )
 
-def _seed_time_off(conn, resident_ids):
-    if not os.path.exists(CONFIG_INI):
+
+def seed_pgy1_from_csv(conn):
+    if not os.path.exists(PGY1_CSV):
+        print(f"PGY-1 CSV not found at {PGY1_CSV}")
         return
-    parser = configparser.ConfigParser()
-    parser.optionxform = str
-    parser.read(CONFIG_INI)
-    if "time off" not in parser:
-        return
-    for name, raw in parser["time off"].items():
-        resident_id = resident_ids.get(name)
-        if resident_id is None:
-            continue
-        conn.execute("DELETE FROM time_off WHERE resident_id = ?", (resident_id,))
-        for part in raw.split(","):
-            part = part.strip()
-            if not part:
-                continue
-            start, end = _parse_date_range(part)
+
+    with open(PGY1_CSV) as f:
+        r = csv.reader(f)
+        rows = list(r)
+
+    # Extract residents: row 5 to 19 (first token in column 0 is R1: name)
+    roster_pgy1 = []
+    rotations_raw = []
+    
+    # Jeopardy assignment (row 20)
+    jeopardy_row = [cell.strip() for cell in rows[20][1:21]]
+
+    for row in rows[5:20]:
+        label = row[0].strip()
+        m = re.match(r"(R\d+):\s*(.*)", label)
+        if m:
+            name = m.group(2).strip()
+            # CSV has 20 columns for Block 4a to 13b
+            blocks_raw = [cell.strip() for cell in row[1:21]]
+            roster_pgy1.append((name, name))
+            rotations_raw.append(blocks_raw)
+
+    resident_ids = {}
+    for last_name, full_name in roster_pgy1:
+        cur = conn.execute(
+            "INSERT INTO residents (full_name, last_name, pgy_level) VALUES (?, ?, ?) "
+            "ON CONFLICT (last_name, pgy_level) DO UPDATE SET full_name = excluded.full_name "
+            "RETURNING id",
+            (full_name, last_name, PGY1_LEVEL),
+        )
+        resident_ids[last_name] = cur.fetchone()[0]
+
+    # Seed logins for PGY-1s
+    for last_name, full_name in roster_pgy1:
+        username = f"{last_name.lower().replace(chr(39), '').replace(' ', '')}.pgy1"
+        conn.execute(
+            "INSERT INTO users (username, password_hash, role, resident_id) VALUES (?, ?, 'resident', ?) "
+            "ON CONFLICT (username) DO NOTHING",
+            (username, generate_password_hash(DEFAULT_RESIDENT_PASSWORD, method='pbkdf2:sha256'), resident_ids[last_name]),
+        )
+
+    # Seed half blocks and rotations
+    half_block_ids = {}
+    for idx, (block_number, half, start, end) in enumerate(HALF_BLOCKS):
+        cur = conn.execute(
+            "INSERT INTO half_blocks (pgy_level, block_number, half, start_date, end_date) "
+            "VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT (pgy_level, block_number, half) "
+            "DO UPDATE SET start_date = excluded.start_date, end_date = excluded.end_date "
+            "RETURNING id",
+            (PGY1_LEVEL, block_number, half, start, end),
+        )
+        hb_id = cur.fetchone()[0]
+        half_block_ids[idx] = hb_id
+
+        # Seeding rotations
+        for row_idx, (last_name, _) in enumerate(roster_pgy1):
+            # The CSV starts at block 4a (idx 6 in HALF_BLOCKS)
+            if idx >= 6:
+                csv_col_idx = idx - 6
+                rotation = rotations_raw[row_idx][csv_col_idx]
+            else:
+                # Default for blocks 1, 2, 3
+                rotation = "Vacation" if idx in [0, 1] else "Ultrasound"
+            
             conn.execute(
-                "INSERT INTO time_off (resident_id, start_date, end_date) VALUES (?, ?, ?)",
-                (resident_id, start, end),
+                "INSERT INTO rotations (resident_id, half_block_id, rotation) VALUES (?, ?, ?) "
+                "ON CONFLICT (resident_id, half_block_id) DO UPDATE SET rotation = excluded.rotation",
+                (resident_ids[last_name], hb_id, rotation),
             )
+
+    # Update Jeopardy for PGY-1 (blocks 4a to 13b)
+    for idx, code in enumerate(jeopardy_row):
+        half_block_idx = idx + 6
+        if "/" in code:
+            code = code.split("/")[0].strip()
+        last_name = roster_pgy1[_r_index(code)][0]
+        conn.execute(
+            "UPDATE half_blocks SET jeopardy_resident_id = ? WHERE id = ?",
+            (resident_ids[last_name], half_block_ids[half_block_idx]),
+        )
 
 
 def main():

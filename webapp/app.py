@@ -71,12 +71,12 @@ def create_app(db_path=None):
     return app
 
 
-def _half_blocks(conn, block_number=None):
+def _half_blocks(conn, pgy_level, block_number=None):
     query = (
         "SELECT id, block_number, half, start_date, end_date FROM half_blocks "
         "WHERE pgy_level = ?"
     )
-    params = [PGY_LEVEL]
+    params = [pgy_level]
     if block_number is not None:
         query += " AND block_number = ?"
         params.append(block_number)
@@ -84,20 +84,27 @@ def _half_blocks(conn, block_number=None):
     return conn.execute(query, params).fetchall()
 
 
-def _half_block(conn, block_number, half):
+def _half_block(conn, pgy_level, block_number, half):
     return conn.execute(
         "SELECT id, block_number, half, start_date, end_date FROM half_blocks "
         "WHERE pgy_level = ? AND block_number = ? AND half = ?",
-        (PGY_LEVEL, block_number, half),
+        (pgy_level, block_number, half),
     ).fetchone()
 
 
-def _full_blocks(conn):
+def _full_blocks(conn, pgy_level):
     return conn.execute(
         "SELECT block_number, MIN(start_date) AS start_date, MAX(end_date) AS end_date "
         "FROM half_blocks WHERE pgy_level = ? GROUP BY block_number ORDER BY block_number",
-        (PGY_LEVEL,),
+        (pgy_level,),
     ).fetchall()
+
+
+def _get_pgy_config(pgy_level):
+    cfg, _ = bridge._get_config(pgy_level)
+    category_columns = ["Total"] + list(cfg.BALANCE_CATEGORIES) + ["Weekend"]
+    shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+    return category_columns, shift_names
 
 
 def register_routes(app, db_conn):
@@ -134,9 +141,10 @@ def register_routes(app, db_conn):
 
     def _dashboard(error=None):
         conn = db_conn()
-        blocks = _full_blocks(conn)
+        pgy_level = session.get("pgy_level", 4)
+        blocks = _full_blocks(conn, pgy_level)
         runs_by_block = {}
-        for run in conn.execute("SELECT * FROM runs WHERE pgy_level = ?", (PGY_LEVEL,)).fetchall():
+        for run in conn.execute("SELECT * FROM runs WHERE pgy_level = ?", (pgy_level,)).fetchall():
             runs_by_block.setdefault(run["block_number"], {})[run["status"]] = run
         return render_template("admin_dashboard.html", blocks=blocks,
                                runs_by_block=runs_by_block, error=error)
@@ -146,6 +154,13 @@ def register_routes(app, db_conn):
     def admin_dashboard():
         return _dashboard()
 
+    @app.route("/admin/toggle_pgy/<int:pgy_level>")
+    @admin_required
+    def admin_toggle_pgy(pgy_level):
+        if pgy_level in (1, 4):
+            session["pgy_level"] = pgy_level
+        return redirect(url_for("admin_dashboard"))
+
     @app.route("/admin/audit")
     @admin_required
     def admin_audit():
@@ -153,8 +168,10 @@ def register_routes(app, db_conn):
         groups = _audit_groups(conn)
         show_prop_row = conn.execute("SELECT value FROM settings WHERE key = 'show_proportions'").fetchone()
         show_proportions = int(show_prop_row["value"]) if show_prop_row else 1
+        pgy_level = session.get("pgy_level", 4)
+        category_columns, _ = _get_pgy_config(pgy_level)
         return render_template("admin_audit.html", groups=groups,
-                               category_columns=CATEGORY_COLUMNS, show_proportions=show_proportions)
+                               category_columns=category_columns, show_proportions=show_proportions)
 
     @app.route("/admin/settings", methods=["GET", "POST"])
     @admin_required
@@ -187,11 +204,94 @@ def register_routes(app, db_conn):
         conn.commit()
         return redirect(url_for("admin_dashboard"))
 
+    @app.route("/admin/blocks/<int:block_number>/preview")
+    @admin_required
+    def admin_block_preview(block_number):
+        conn = db_conn()
+        pgy_level = session.get("pgy_level", 4)
+        halves = conn.execute(
+            "SELECT id, half FROM half_blocks WHERE pgy_level = ? AND block_number = ? ORDER BY half",
+            (pgy_level, block_number),
+        ).fetchall()
+        if not halves or len(halves) < 2:
+            return jsonify({"error": f"Half-blocks not found for block {block_number}"}), 404
+        half_a_id = halves[0]["id"]
+        half_b_id = halves[1]["id"]
+        
+        cfg, _ = bridge._get_config(pgy_level)
+        active_roles = cfg.ACTIVE_ROLES
+
+        residents = conn.execute(
+            "SELECT id, full_name FROM residents WHERE pgy_level = ? ORDER BY last_name",
+            (pgy_level,),
+        ).fetchall()
+        
+        rows = []
+        for res in residents:
+            rot_a_row = conn.execute(
+                "SELECT rotation FROM rotations WHERE resident_id = ? AND half_block_id = ?",
+                (res["id"], half_a_id)
+            ).fetchone()
+            rot_b_row = conn.execute(
+                "SELECT rotation FROM rotations WHERE resident_id = ? AND half_block_id = ?",
+                (res["id"], half_b_id)
+            ).fetchone()
+            
+            rot_a = rot_a_row["rotation"] if rot_a_row else None
+            rot_b = rot_b_row["rotation"] if rot_b_row else None
+            
+            is_active_a = rot_a in active_roles
+            is_active_b = rot_b in active_roles
+            
+            if is_active_a or is_active_b:
+                rows.append({
+                    "name": res["full_name"],
+                    "role_a": rot_a if is_active_a else "Off",
+                    "role_b": rot_b if is_active_b else "Off",
+                })
+        return jsonify({
+            "block_number": block_number,
+            "pgy_level": pgy_level,
+            "residents": rows
+        })
+
     @app.route("/admin/blocks/<int:block_number>/run", methods=["POST"])
     @admin_required
     def admin_run(block_number):
+        pgy_level = session.get("pgy_level", 4)
+        cfg, _ = bridge._get_config(pgy_level)
+        shift_min = cfg.SHIFT_MIN_PER_HALF
+        
+        names = request.form.getlist("off_service_name[]")
+        sites = request.form.getlist("off_service_site[]")
+        half_a_list = request.form.getlist("off_service_half_a[]")
+        half_b_list = request.form.getlist("off_service_half_b[]")
+        
+        off_services = []
+        for i in range(len(names)):
+            name = names[i].strip()
+            if not name:
+                continue
+            has_a = (i < len(half_a_list) and half_a_list[i] == "1")
+            has_b = (i < len(half_b_list) and half_b_list[i] == "1")
+            if not has_a and not has_b:
+                continue
+            
+            if has_a and has_b:
+                half = "both"
+            elif has_a:
+                half = "a"
+            else:
+                half = "b"
+                
+            off_services.append({
+                "name": name,
+                "site": sites[i],
+                "half": half
+            })
+
         run_id = bridge.run_solver_and_stage_draft(
-            db_conn(), PGY_LEVEL, block_number, SHIFT_MIN_PER_HALF, SOLVER_TIME_LIMIT)
+            db_conn(), pgy_level, block_number, shift_min, SOLVER_TIME_LIMIT, off_services=off_services)
         if run_id is None:
             return _dashboard(error=f"No feasible schedule found for block {block_number}. "
                                     "Check time-off requests and rotations.")
@@ -204,14 +304,16 @@ def register_routes(app, db_conn):
         run = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
         if run is None:
             return redirect(url_for("admin_dashboard"))
+        pgy_level = run["pgy_level"]
+        category_columns, shift_names = _get_pgy_config(pgy_level)
         half = request.args.get("half", "a")
-        hb = _half_block(conn, run["block_number"], half)
+        hb = _half_block(conn, pgy_level, run["block_number"], half)
         grid = _build_grid(conn, run_id, hb["start_date"], hb["end_date"]) if hb else None
         summary = _half_summary(conn, run_id, run["block_number"], half) if hb else []
-        viewable = _half_blocks(conn, run["block_number"])
+        viewable = _half_blocks(conn, pgy_level, run["block_number"])
         return render_template(
             "admin_review_run.html", run=run, grid=grid, summary=summary,
-            shift_names=SHIFT_NAMES, category_columns=CATEGORY_COLUMNS,
+            shift_names=shift_names, category_columns=category_columns,
             half=half, viewable_halves=viewable,
         )
 
@@ -233,14 +335,25 @@ def register_routes(app, db_conn):
     @login_required
     def resident_schedule():
         conn = db_conn()
+        resident_id = g.user["resident_id"]
+        pgy_level = 4
+        resident_last_name = ""
+        if resident_id:
+            row = conn.execute("SELECT last_name, pgy_level FROM residents WHERE id = ?", (resident_id,)).fetchone()
+            if row:
+                resident_last_name = row["last_name"]
+                pgy_level = row["pgy_level"]
+
+        category_columns, shift_names = _get_pgy_config(pgy_level)
+
         published = {
             row["block_number"]
             for row in conn.execute(
                 "SELECT DISTINCT block_number FROM runs WHERE status = 'published' AND pgy_level = ?",
-                (PGY_LEVEL,),
+                (pgy_level,),
             ).fetchall()
         }
-        blocks = [b for b in _full_blocks(conn) if b["block_number"] in published]
+        blocks = [b for b in _full_blocks(conn, pgy_level) if b["block_number"] in published]
 
         block_number = request.args.get("block", type=int)
         half = request.args.get("half", "a")
@@ -250,27 +363,19 @@ def register_routes(app, db_conn):
         grid = None
         viewable_halves = []
         if block_number is not None:
-            viewable_halves = _half_blocks(conn, block_number)
+            viewable_halves = _half_blocks(conn, pgy_level, block_number)
             run = conn.execute(
                 "SELECT id FROM runs WHERE pgy_level = ? AND block_number = ? AND status = 'published'",
-                (PGY_LEVEL, block_number),
+                (pgy_level, block_number),
             ).fetchone()
-            hb = _half_block(conn, block_number, half)
+            hb = _half_block(conn, pgy_level, block_number, half)
             if run and hb:
                 grid = _build_grid(conn, run["id"], hb["start_date"], hb["end_date"])
-
-        # Pass the real DB last_name so grid can identify the resident's own cells
-        resident_last_name = ""
-        resident_id = g.user["resident_id"]
-        if resident_id:
-            row = conn.execute("SELECT last_name FROM residents WHERE id = ?", (resident_id,)).fetchone()
-            if row:
-                resident_last_name = row["last_name"]
 
         return render_template(
             "resident_schedule.html", blocks=blocks, block_number=block_number,
             half=half, viewable_halves=viewable_halves,
-            grid=grid, shift_names=SHIFT_NAMES,
+            grid=grid, shift_names=shift_names,
             resident_last_name=resident_last_name,
         )
 
@@ -616,7 +721,9 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
         params.extend([start_date, end_date])
 
     rows = conn.execute(query, params).fetchall()
-    colors = color_map_for_residents(conn, PGY_LEVEL)
+    run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
+    pgy_level = run_row["pgy_level"] if run_row else 4
+    colors = color_map_for_residents(conn, pgy_level)
 
     cells = {}
     counts = {}
@@ -633,7 +740,7 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
         (
             {"full_name": meta[ln]["full_name"], "last_name": ln,
              "color": colors[ln], "count": counts[ln]}
-            for ln in meta
+             for ln in meta
         ),
         key=lambda item: item["last_name"],
     )
@@ -644,7 +751,9 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
 
 def _half_summary(conn, run_id, block_number, half):
     """Per-resident shift counts for one half-block, with rotation assignment."""
-    hb = _half_block(conn, block_number, half)
+    run_row = conn.execute("SELECT pgy_level FROM runs WHERE id = ?", (run_id,)).fetchone()
+    pgy_level = run_row["pgy_level"] if run_row else 4
+    hb = _half_block(conn, pgy_level, block_number, half)
     if hb is None:
         return []
 
@@ -666,29 +775,48 @@ def _half_summary(conn, run_id, block_number, half):
         (run_id, hb["start_date"], hb["end_date"]),
     ).fetchall()
 
+    cfg, _ = bridge._get_config(pgy_level)
+    if pgy_level == 1:
+        from schedulebuilder.pgy1.history import category_totals as pgy1_category_totals
+        cat_totals_fn = pgy1_category_totals
+    else:
+        from schedulebuilder.pgy4.history import category_totals as pgy4_category_totals
+        cat_totals_fn = pgy4_category_totals
+
+    shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+
     by_resident = {}
     for row in rows:
         ln = row["last_name"]
         if ln not in by_resident:
             by_resident[ln] = {
                 "full_name": row["full_name"],
-                "shifts": {sn: 0 for sn in SHIFT_NAMES},
+                "shifts": {sn: 0 for sn in shift_names},
                 "weekend": 0,
             }
-        by_resident[ln]["shifts"][row["shift_name"]] += 1
-        if dt.date.fromisoformat(row["day"]).weekday() in WEEKEND_DAYS:
+        if row["shift_name"] in by_resident[ln]["shifts"]:
+            by_resident[ln]["shifts"][row["shift_name"]] += 1
+        if dt.date.fromisoformat(row["day"]).weekday() in cfg.WEEKEND_DAYS:
             by_resident[ln]["weekend"] += 1
+
+    EM_PROPER_INTERNS = {
+        "Brian", "Ashleigh", "Sara", "Emily", "Isabella", "Wendy",
+        "Daem", "Bailey", "JP", "Roshan", "Mauranda", "Justin",
+        "Jethel", "Clifford", "Andrea"
+    }
 
     summary = []
     for ln, data in sorted(by_resident.items(), key=lambda x: x[1]["full_name"]):
         entry = {"shifts": data["shifts"], "weekend": data["weekend"]}
-        totals = category_totals(entry)
+        totals = cat_totals_fn(entry)
+        is_off = (pgy_level == 1 and data["full_name"] not in EM_PROPER_INTERNS)
         summary.append({
             "full_name": data["full_name"],
             "assignment": rotations.get(ln, "—"),
             "shifts": data["shifts"],
             "totals": totals,
             "total": sum(data["shifts"].values()),
+            "is_off_service": is_off,
         })
     return summary
 
@@ -701,6 +829,17 @@ def _audit_groups(conn):
     ).fetchall()
     for pgy_row in pgy_levels:
         pgy_level = pgy_row["pgy_level"]
+        cfg, _ = bridge._get_config(pgy_level)
+        if pgy_level == 1:
+            from schedulebuilder.pgy1.history import category_totals as pgy1_category_totals
+            cat_totals_fn = pgy1_category_totals
+        else:
+            from schedulebuilder.pgy4.history import category_totals as pgy4_category_totals
+            cat_totals_fn = pgy4_category_totals
+
+        category_columns = ["Total"] + list(cfg.BALANCE_CATEGORIES) + ["Weekend"]
+        shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+
         history = bridge.load_history_from_db(conn, pgy_level)
         residents = conn.execute(
             "SELECT full_name, last_name FROM residents WHERE pgy_level = ? ORDER BY last_name",
@@ -710,9 +849,9 @@ def _audit_groups(conn):
         for res in residents:
             entry = history.get(
                 res["last_name"],
-                {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in SHIFT_NAMES}, "weekend": 0},
+                {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0},
             )
-            totals = category_totals(entry)
+            totals = cat_totals_fn(entry)
             rows.append({
                 "full_name": res["full_name"],
                 "half_blocks_worked": entry["half_blocks_worked"],
@@ -722,7 +861,7 @@ def _audit_groups(conn):
             })
 
         # Calculate group averages for category columns to find anomalies
-        for c in CATEGORY_COLUMNS:
+        for c in category_columns:
             sum_totals = sum(r["totals"].get(c, 0) for r in rows)
             sum_shifts = sum(r["total_shifts"] for r in rows)
             group_avg_prop = sum_totals / sum_shifts if sum_shifts > 0 else 0
