@@ -170,6 +170,14 @@
 <script>
   let activeActionUrl = "";
   let offServiceCounter = 0;
+  const pgyLevel = {{ session.get('pgy_level', 4) }};
+
+  function showSolvingModal(blockNum) {
+    const solvingModal = document.getElementById('solving-modal');
+    const span = document.getElementById('solving-block-number');
+    if (span) span.textContent = blockNum;
+    if (solvingModal) solvingModal.style.display = 'flex';
+  }
 
   function openPreviewModal(blockNum, actionUrl) {
     activeActionUrl = actionUrl;
@@ -258,6 +266,16 @@
         e.preventDefault();
         const blockNum = this.getAttribute('data-block-number');
         const actionUrl = this.getAttribute('action');
+        // Preview/off-service modal: PGY-1 interns only. PGY-4 runs straight to solver.
+        if (pgyLevel !== 1) {
+          showSolvingModal(blockNum);
+          const finalForm = document.createElement('form');
+          finalForm.method = 'POST';
+          finalForm.action = actionUrl;
+          document.body.appendChild(finalForm);
+          finalForm.submit();
+          return;
+        }
         openPreviewModal(blockNum, actionUrl);
       });
     });
@@ -267,14 +285,7 @@
       closePreviewModal();
       
       const blockNum = document.getElementById('preview-block-num').innerText;
-      const solvingModal = document.getElementById('solving-modal');
-      const span = document.getElementById('solving-block-number');
-      if (span) {
-        span.textContent = blockNum;
-      }
-      if (solvingModal) {
-        solvingModal.style.display = 'flex';
-      }
+      showSolvingModal(blockNum);
       
       const finalForm = document.createElement('form');
       finalForm.method = 'POST';

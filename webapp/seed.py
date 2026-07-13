@@ -272,13 +272,17 @@ def seed_pgy1_from_csv(conn):
         )
         resident_ids[last_name] = cur.fetchone()[0]
 
-    # Seed logins for PGY-1s
+    # Seed logins for PGY-1s (firstname only — CSV has no surnames). Password: changeme.
     for last_name, full_name in roster_pgy1:
-        username = f"{last_name.lower().replace(chr(39), '').replace(' ', '')}.pgy1"
+        username = last_name.lower().replace(chr(39), "").replace(" ", "")
+        stale = f"{username}.pgy1"
+        conn.execute("DELETE FROM users WHERE username = ?", (stale,))
         conn.execute(
             "INSERT INTO users (username, password_hash, role, resident_id) VALUES (?, ?, 'resident', ?) "
-            "ON CONFLICT (username) DO NOTHING",
-            (username, generate_password_hash(DEFAULT_RESIDENT_PASSWORD, method='pbkdf2:sha256'), resident_ids[last_name]),
+            "ON CONFLICT (username) DO UPDATE SET "
+            "password_hash = excluded.password_hash, role = 'resident', resident_id = excluded.resident_id",
+            (username, generate_password_hash(DEFAULT_RESIDENT_PASSWORD, method="pbkdf2:sha256"),
+             resident_ids[last_name]),
         )
 
     # Seed half blocks and rotations
