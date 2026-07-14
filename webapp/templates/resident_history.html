@@ -20,8 +20,8 @@
         <p style="font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem;">Hours Worked</p>
       </div>
       <div>
-        <div class="history-stat-value" style="border-bottom-color: var(--quaternary);">{{ entry.half_blocks_worked }}</div>
-        <p style="font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem;">Half-Blocks</p>
+        <div class="history-stat-value" style="border-bottom-color: var(--quaternary);">{{ entry.hours_per_week | default(0) }}</div>
+        <p style="font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem;">Hrs / Week</p>
       </div>
     </div>
   </div>
@@ -33,7 +33,8 @@
     </div>
     <h3 style="margin-top: 0.5rem; margin-bottom: 1rem;">Wellness Balances</h3>
     <p style="color: var(--muted-foreground); font-size: 0.9rem; margin-bottom: 1rem;">Cumulative totals across balanced scheduling rules:</p>
-    
+
+    {% if category_columns %}
     <div class="table-scroll" style="box-shadow: none; border: none; margin-bottom: 0;">
       <table style="margin: 0; box-shadow: none; width: 100%;">
         <thead>
@@ -54,6 +55,9 @@
         </tbody>
       </table>
     </div>
+    {% else %}
+    <p style="color: var(--muted-foreground); font-size: 0.9rem; margin: 0;">No wellness activity yet.</p>
+    {% endif %}
   </div>
 </div>
 
@@ -62,31 +66,66 @@
 <!-- By Shift Type section -->
 <div class="card-sticker" style="margin-top: 2rem;">
   <div class="card-icon-badge mint-badge">
-    <i data-lucide="list-checks" style="width: 22px; height: 22px; color: #1E293B;"></i>
+    <i data-lucide="bar-chart-3" style="width: 22px; height: 22px; color: #1E293B;"></i>
   </div>
-  <h3 style="margin-top: 0.5rem; margin-bottom: 1rem;">Cumulative Shift Log</h3>
-  <p style="color: var(--muted-foreground); font-size: 0.9rem;">Distribution of shifts by schedule type:</p>
-  
-  <div class="table-scroll" style="box-shadow: none; border: none; margin-bottom: 0;">
-    <table style="margin: 0; box-shadow: none; width: 100%;">
-      <thead>
-        <tr>
-          {% for sn in shift_names %}
-            <th style="font-size: 0.75rem; padding: 0.5rem; text-align: center;">{{ sn }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          {% for sn in shift_names %}
-            <td style="text-align: center; font-weight: 700; font-size: 1rem; padding: 0.75rem;">
-              {{ entry.shifts[sn] }}
-            </td>
-          {% endfor %}
-        </tr>
-      </tbody>
-    </table>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+    <h3 style="margin: 0;">Cumulative Shift Log</h3>
+    <div class="toggle-container summary-scope-toggle" style="background-color: var(--background); border: 2px solid var(--border); padding: 0.5rem 1rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block; flex-shrink: 0;">
+      <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.9rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
+        <input type="checkbox" id="shift-log-toggle" style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
+        <span>Show shift counts</span>
+      </label>
+    </div>
   </div>
+  <p style="color: var(--muted-foreground); font-size: 0.9rem;" id="shift-log-hint">Hours worked at each shift type:</p>
+
+  {% if shift_log %}
+  <div class="shift-log-chart" id="shift-log-chart" data-mode="hours">
+    {% for row in shift_log %}
+    <div class="shift-log-row"
+         data-hours="{{ row.hours }}"
+         data-count="{{ row.count }}"
+         data-hours-pct="{{ (row.hours / max_hours * 100) | round(1) }}"
+         data-count-pct="{{ (row.count / max_count * 100) | round(1) }}">
+      <div class="shift-log-label" title="{{ row.name }}">{{ row.name }}</div>
+      <div class="shift-log-track">
+        <div class="shift-log-bar" style="width: {{ (row.hours / max_hours * 100) | round(1) }}%;"></div>
+      </div>
+      <div class="shift-log-value">{{ row.hours }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color: var(--muted-foreground); font-size: 0.9rem; margin: 0;">No shifts logged yet.</p>
+  {% endif %}
 </div>
+
+<script>
+(function() {
+  const toggle = document.getElementById('shift-log-toggle');
+  const chart = document.getElementById('shift-log-chart');
+  const hint = document.getElementById('shift-log-hint');
+  if (!toggle || !chart) return;
+
+  function applyMode(showShifts) {
+    chart.dataset.mode = showShifts ? 'shifts' : 'hours';
+    if (hint) {
+      hint.textContent = showShifts
+        ? 'Number of shifts worked at each type:'
+        : 'Hours worked at each shift type:';
+    }
+    chart.querySelectorAll('.shift-log-row').forEach(function(row) {
+      const pct = showShifts ? row.dataset.countPct : row.dataset.hoursPct;
+      const val = showShifts ? row.dataset.count : row.dataset.hours;
+      row.querySelector('.shift-log-bar').style.width = pct + '%';
+      row.querySelector('.shift-log-value').textContent = val;
+    });
+  }
+
+  toggle.addEventListener('change', function() {
+    applyMode(toggle.checked);
+  });
+})();
+</script>
 
 {% endblock %}

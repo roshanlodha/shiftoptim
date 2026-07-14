@@ -723,6 +723,68 @@ table tr:hover td {
   border-bottom: 4px solid var(--tertiary);
 }
 
+/* Cumulative shift log bar chart */
+.shift-log-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.shift-log-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) 1fr 3rem;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.shift-log-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shift-log-track {
+  height: 1.25rem;
+  background: var(--muted);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.shift-log-bar {
+  height: 100%;
+  background: var(--accent);
+  border-right: 2px solid var(--border);
+  transition: width 0.25s ease;
+  min-width: 4px;
+}
+
+.shift-log-value {
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--accent);
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .shift-log-row {
+    grid-template-columns: 1fr 2.5rem;
+    grid-template-rows: auto auto;
+  }
+  .shift-log-label {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .shift-log-track {
+    grid-column: 1;
+  }
+}
+
 /* Squiggles and dividers */
 .decorative-divider {
   height: 12px;

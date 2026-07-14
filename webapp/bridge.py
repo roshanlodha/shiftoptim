@@ -73,12 +73,20 @@ def load_timeoff_from_db(conn):
     return requests
 
 
+def hours_per_week(hours_worked, half_blocks_worked):
+    """Avg weekly hours over clinical half-blocks (~2 weeks each)."""
+    if not hours_worked or not half_blocks_worked:
+        return 0.0
+    return round(hours_worked / (half_blocks_worked * 2), 1)
+
+
 def load_history_from_db(conn, pgy_level):
     """Cumulative totals from published runs only."""
     cfg, _ = _get_config(pgy_level)
     shift_names = [info["name"] for info in cfg.SHIFTS.values()]
     history = {}
     canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
+    duration_by_name = {info["name"]: info["duration"] for info in cfg.SHIFTS.values()}
 
     assignment_rows = conn.execute(
         "SELECT res.last_name AS last_name, a.day AS day, a.shift_name AS shift_name "
@@ -93,11 +101,7 @@ def load_history_from_db(conn, pgy_level):
         sname = canonicalize(row["shift_name"])
         if sname in entry["shifts"]:
             entry["shifts"][sname] += 1
-        
-        # Accumulate hours
-        s_info = next((info for info in cfg.SHIFTS.values() if info["name"] == sname), None)
-        if s_info:
-            entry["hours_worked"] = entry.get("hours_worked", 0) + s_info["duration"]
+            entry["hours_worked"] = entry.get("hours_worked", 0) + duration_by_name.get(sname, 0)
 
         day = dt.date.fromisoformat(row["day"])
         if day.weekday() in cfg.WEEKEND_DAYS:
@@ -118,6 +122,11 @@ def load_history_from_db(conn, pgy_level):
         half_block_counts[row["last_name"]] = half_block_counts.get(row["last_name"], 0) + 1
     for last_name, halves in half_block_counts.items():
         history.setdefault(last_name, _empty_entry(shift_names))["half_blocks_worked"] += halves
+
+    for entry in history.values():
+        entry["hours_per_week"] = hours_per_week(
+            entry.get("hours_worked", 0), entry.get("half_blocks_worked", 0)
+        )
 
     return history
 
@@ -155,7 +164,13 @@ def load_prior_last_shifts(conn, pgy_level, block_number):
 
 
 def _empty_entry(shift_names):
-    return {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in shift_names}, "weekend": 0, "hours_worked": 0}
+    return {
+        "half_blocks_worked": 0,
+        "shifts": {sn: 0 for sn in shift_names},
+        "weekend": 0,
+        "hours_worked": 0,
+        "hours_per_week": 0.0,
+    }
 
 
 def _process_off_services(conn, pgy_level, block_number, off_services):

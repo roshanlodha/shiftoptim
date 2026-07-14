@@ -456,13 +456,41 @@ def register_routes(app, db_conn):
         resident = conn.execute(
             "SELECT last_name, pgy_level FROM residents WHERE id = ?", (resident_id,)
         ).fetchone()
-        history = bridge.load_history_from_db(conn, resident["pgy_level"])
-        entry = history.get(resident["last_name"],
-                            {"half_blocks_worked": 0, "shifts": {sn: 0 for sn in SHIFT_NAMES}, "weekend": 0})
-        totals = category_totals(entry)
+        pgy_level = resident["pgy_level"]
+        cfg, _ = bridge._get_config(pgy_level)
+        if pgy_level == 1:
+            from schedulebuilder.pgy1.history import category_totals as cat_totals_fn
+        else:
+            from schedulebuilder.pgy4.history import category_totals as cat_totals_fn
+        category_columns = list(cfg.BALANCE_CATEGORIES) + ["Weekend"]
+        shift_names = [info["name"] for info in cfg.SHIFTS.values()]
+        duration_by_name = {info["name"]: info["duration"] for info in cfg.SHIFTS.values()}
+
+        history = bridge.load_history_from_db(conn, pgy_level)
+        entry = history.get(
+            resident["last_name"],
+            bridge._empty_entry(shift_names),
+        )
+        totals = cat_totals_fn(entry)
+        # Hide empty wellness categories (Total already omitted from columns).
+        category_columns = [c for c in category_columns if totals.get(c, 0)]
+        # Bar chart rows: skip shifts with 0 hours. Hours = count * catalog duration.
+        shift_log = []
+        for sn in shift_names:
+            count = entry["shifts"].get(sn, 0)
+            hours = count * duration_by_name.get(sn, 0)
+            if hours:
+                shift_log.append({"name": sn, "count": count, "hours": hours})
+        max_hours = max((r["hours"] for r in shift_log), default=1)
+        max_count = max((r["count"] for r in shift_log), default=1)
         return render_template(
-            "resident_history.html", entry=entry, totals=totals,
-            category_columns=CATEGORY_COLUMNS, shift_names=SHIFT_NAMES,
+            "resident_history.html",
+            entry=entry,
+            totals=totals,
+            category_columns=category_columns,
+            shift_log=shift_log,
+            max_hours=max_hours,
+            max_count=max_count,
         )
 
     @app.route("/resident/settings", methods=["GET", "POST"])
