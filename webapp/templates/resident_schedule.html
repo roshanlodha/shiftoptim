@@ -69,6 +69,7 @@
 <p class="hint">No published schedules yet. Please check back later.</p>
 {% endif %}
 
+{% include "_shift_detail_modal.html" %}
 {% include "_trade_modal.html" %}
 
 <script>
@@ -112,19 +113,20 @@
 
     // 2. Filter schedule logic (only for residents)
     const toggle = document.getElementById('schedule-toggle');
-    const username = "{{ g.user.username }}";
-    // For resident, username is first_name.last_name. Extract last_name from the second token.
-    const userLastNamePart = (username && username.includes('.')) ? username.split('.')[1].toLowerCase().replace(/'/g, "").replace(/\s/g, "") : "";
+    const myLastName = "{{ resident_last_name | default('') }}".toLowerCase().replace(/'/g, "").replace(/\s/g, "");
+
+    function normalizeResident(name) {
+      return (name || "").toLowerCase().replace(/'/g, "").replace(/\s/g, "");
+    }
 
     function updateScheduleView() {
       if (!toggle) return;
       const showOnlyMine = toggle.checked;
-      const cells = document.querySelectorAll('.cell-shift.has-resident');
+      const cells = document.querySelectorAll('.cell-shift.has-resident, .timeline-shift-block.has-resident');
       
       cells.forEach(cell => {
         const resident = cell.getAttribute('data-resident') || "";
-        const normalized = resident.toLowerCase().replace(/'/g, "").replace(/\s/g, "");
-        const isMine = (normalized === userLastNamePart);
+        const isMine = (normalizeResident(resident) === myLastName);
         
         if (showOnlyMine && !isMine) {
           cell.classList.add('hide-resident');
@@ -138,8 +140,7 @@
       chips.forEach(chip => {
         const chipText = chip.textContent || "";
         const residentName = chipText.split('·')[0].trim();
-        const normalized = residentName.toLowerCase().replace(/'/g, "").replace(/\s/g, "");
-        const isMine = (normalized === userLastNamePart);
+        const isMine = (normalizeResident(residentName) === myLastName);
         
         if (showOnlyMine && !isMine) {
           chip.style.opacity = '0.25';

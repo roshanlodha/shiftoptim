@@ -1,4 +1,5 @@
 {% if grid and grid.weeks %}
+{% set shift_info = shift_info | default({}) %}
 
   {% if grid.weeks | length > 1 or prev_url or next_url %}
   <!-- Week navigation bar -->
@@ -35,6 +36,7 @@
       </thead>
       <tbody>
         {% for sn in shift_names %}
+        {% set si = shift_info.get(sn, {}) %}
         <tr>
           <td class="shift-col" style="background-color: var(--card); border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; font-size: 0.9rem; padding: 0.75rem;">
             {{ sn }}
@@ -48,8 +50,12 @@
               <td class="cell-shift has-resident{% if is_clickable %} cell-mine{% endif %}"
                   data-resident="{{ cell_data.last_name }}"
                   data-day="{{ d.isoformat() }}"
+                  data-start="{{ si.get('start', 0) }}"
+                  data-end="{{ si.get('end', 0) }}"
+                  data-site="{{ si.get('site', '') }}"
+                  data-duration="{{ si.get('duration', 0) }}"
                   style="background: {{ style.bg }}; color: {{ style.color }}; border: 2px solid var(--border); border-radius: var(--radius-sm); font-weight: 700; text-align: center; vertical-align: middle; padding: 0.5rem;{% if is_clickable %} cursor: pointer;{% endif %}"
-                  {% if is_clickable %}onclick="openTradeModal('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
+                  {% if is_clickable %}onclick="openShiftDetail('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
                 {{ cell_data.last_name }}
               </td>
             {% else %}
@@ -63,16 +69,108 @@
         {% endfor %}
       </tbody>
     </table>
+
+    {# Mobile day-at-a-time timeline #}
+    <div class="mobile-day-calendar" data-week-index="{{ loop.index0 }}">
+      <div class="day-strip">
+        {% for d in week %}
+        <button type="button" class="day-chip{% if loop.first %} active{% endif %}"
+                data-day="{{ d.isoformat() }}"
+                aria-label="{{ d.strftime('%A %B %-d') }}">
+          <span class="day-chip-dow">{{ d.strftime('%a') }}</span>
+          <span class="day-chip-date">{{ d.month }}/{{ d.day }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      {% for d in week %}
+      <div class="day-timeline-panel{% if loop.first %} active{% endif %}" data-day="{{ d.isoformat() }}">
+        <div class="day-timeline">
+          {% for hour in range(6, 32) %}
+          <div class="timeline-hour-row" data-hour="{{ hour }}">
+            <span class="timeline-hour-label">{% if hour == 24 %}12a{% elif hour == 12 %}12p{% elif hour < 12 %}{{ hour }}a{% elif hour < 24 %}{{ hour - 12 }}p{% else %}{{ hour - 24 }}a{% endif %}</span>
+            <div class="timeline-hour-line"></div>
+          </div>
+          {% endfor %}
+          <div class="timeline-blocks">
+            {% for sn in shift_names %}
+              {% set cell_data = grid.cells.get((sn, d.isoformat())) %}
+              {% set si = shift_info.get(sn, {}) %}
+              {% if cell_data and si %}
+                {% set style = grid.colors.get(cell_data.last_name) %}
+                {% set is_mine = (g.user.role == 'resident' and cell_data.last_name == resident_last_name | default('')) %}
+                {% set is_clickable = (g.user.role == 'admin') or is_mine %}
+                <div class="timeline-shift-block cell-shift has-resident{% if is_clickable %} cell-mine{% endif %}"
+                     data-resident="{{ cell_data.last_name }}"
+                     data-day="{{ d.isoformat() }}"
+                     data-start="{{ si.start }}"
+                     data-end="{{ si.end }}"
+                     data-shift="{{ sn }}"
+                     style="background: {{ style.bg }}; color: {{ style.color }};{% if is_clickable %} cursor: pointer;{% endif %}"
+                     {% if is_clickable %}onclick="openShiftDetail('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
+                  <span class="timeline-block-label">{{ sn }}</span>
+                  <span class="timeline-block-name">{{ cell_data.last_name }}</span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
   {% endfor %}
 
   <script>
     (function() {
+      const TIMELINE_START = 6;
+      const TIMELINE_HOURS = 26; // 6a through 8a next day
+
+      function positionTimelineBlocks(container) {
+        container.querySelectorAll('.timeline-shift-block').forEach(function(el) {
+          let start = parseInt(el.dataset.start, 10);
+          let end = parseInt(el.dataset.end, 10);
+          if (isNaN(start) || isNaN(end)) return;
+          if (end <= start) end += 24;
+          const top = ((start - TIMELINE_START) / TIMELINE_HOURS) * 100;
+          const height = ((end - start) / TIMELINE_HOURS) * 100;
+          el.style.top = Math.max(0, top) + '%';
+          el.style.height = Math.max(2, height) + '%';
+        });
+      }
+
+      function initMobileCalendars() {
+        document.querySelectorAll('.mobile-day-calendar').forEach(function(cal) {
+          positionTimelineBlocks(cal);
+
+          const chips = cal.querySelectorAll('.day-chip');
+          const panels = cal.querySelectorAll('.day-timeline-panel');
+
+          chips.forEach(function(chip) {
+            chip.addEventListener('click', function() {
+              const day = chip.dataset.day;
+              chips.forEach(function(c) { c.classList.remove('active'); });
+              chip.classList.add('active');
+              panels.forEach(function(p) {
+                p.classList.toggle('active', p.dataset.day === day);
+              });
+            });
+          });
+
+          // Default to today if in this week
+          const today = new Date();
+          const todayStr = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+          const todayChip = cal.querySelector('.day-chip[data-day="' + todayStr + '"]');
+          if (todayChip) todayChip.click();
+        });
+      }
+
       const weekContainers = document.querySelectorAll('.calendar-week-container');
       const totalWeeks = weekContainers.length;
       if (totalWeeks === 0) return;
       
-      // Parse current week from URL parameters if present
       const urlParams = new URLSearchParams(window.location.search);
       const weekParam = urlParams.get('week');
       let currentWeekIndex = 0;
@@ -88,7 +186,6 @@
       const nextBtn = document.getElementById('next-week-btn');
       const label = document.getElementById('week-label');
       
-      // Define previous/next URLs passed from parent template
       const prevUrl = "{{ prev_url | safe if prev_url else '' }}";
       const nextUrl = "{{ next_url | safe if next_url else '' }}";
       
@@ -96,36 +193,22 @@
         if (index < 0 || index >= totalWeeks) return;
         currentWeekIndex = index;
         
-        weekContainers.forEach((container, idx) => {
-          if (idx === currentWeekIndex) {
-            container.style.display = 'block';
-          } else {
-            container.style.display = 'none';
-          }
+        weekContainers.forEach(function(container, idx) {
+          container.style.display = idx === currentWeekIndex ? 'block' : 'none';
         });
         
         if (label) {
           const activeContainer = weekContainers[currentWeekIndex];
           const range = activeContainer ? activeContainer.getAttribute('data-week-range') : '';
-          label.innerHTML = `Week ${currentWeekIndex + 1} of ${totalWeeks} <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted-foreground); display: block; font-family: 'Plus Jakarta Sans', sans-serif;">(${range})</span>`;
+          label.innerHTML = 'Week ' + (currentWeekIndex + 1) + ' of ' + totalWeeks +
+            ' <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted-foreground); display: block; font-family: \'Plus Jakarta Sans\', sans-serif;">(' + range + ')</span>';
         }
         
-        // Visibility & behavior of prevBtn
         if (prevBtn) {
-          if (currentWeekIndex > 0 || prevUrl !== '') {
-            prevBtn.style.visibility = 'visible';
-          } else {
-            prevBtn.style.visibility = 'hidden';
-          }
+          prevBtn.style.visibility = (currentWeekIndex > 0 || prevUrl !== '') ? 'visible' : 'hidden';
         }
-        
-        // Visibility & behavior of nextBtn
         if (nextBtn) {
-          if (currentWeekIndex < totalWeeks - 1 || nextUrl !== '') {
-            nextBtn.style.visibility = 'visible';
-          } else {
-            nextBtn.style.visibility = 'hidden';
-          }
+          nextBtn.style.visibility = (currentWeekIndex < totalWeeks - 1 || nextUrl !== '') ? 'visible' : 'hidden';
         }
       }
       
@@ -152,6 +235,7 @@
       }
       
       showWeek(currentWeekIndex);
+      initMobileCalendars();
     })();
   </script>
 {% else %}

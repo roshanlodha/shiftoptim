@@ -1,0 +1,136 @@
+{# Shift detail modal — buddies first, trades via button #}
+<dialog id="shift-detail-modal">
+  <div class="shift-detail-inner">
+    <div class="shift-detail-header">
+      <div>
+        <h2 style="margin: 0 0 0.2rem; font-size: 1.4rem;">Shift</h2>
+        <p id="shift-detail-subtitle" style="margin: 0; color: var(--muted-foreground); font-size: 0.88rem; font-weight: 600;"></p>
+      </div>
+      <button type="button" id="shift-detail-close" class="subtle"
+              style="padding: 0.35rem 0.75rem; margin: 0; font-size: 1.1rem; line-height: 1; flex-shrink: 0;">✕</button>
+    </div>
+
+    <div id="shift-buddies-loading" style="text-align: center; padding: 2rem 1rem; display: none;">
+      <div class="trade-spinner"></div>
+      <p style="margin-top: 1rem; color: var(--muted-foreground); font-weight: 600; font-size: 0.9rem;">
+        Finding shift buddies…
+      </p>
+    </div>
+
+    <div id="shift-buddies-error" class="error" style="display: none;"></div>
+
+    <div id="shift-buddies-empty" style="display: none;">
+      <div class="hint" style="display: block; text-align: center; padding: 1.5rem;">
+        No overlapping coworkers at this site for this shift.
+      </div>
+    </div>
+
+    <div id="shift-buddies-results" style="display: none;">
+      <p style="margin: 0 0 0.75rem; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
+        Working with you
+      </p>
+      <ul id="shift-buddies-list" class="shift-buddies-list"></ul>
+    </div>
+
+    <div class="shift-detail-footer">
+      <button type="button" id="shift-find-trades-btn" class="button" style="margin: 0; display: none;">
+        Find trades
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  const modal = document.getElementById('shift-detail-modal');
+  const closeBtn = document.getElementById('shift-detail-close');
+  const subtitle = document.getElementById('shift-detail-subtitle');
+  const loading = document.getElementById('shift-buddies-loading');
+  const errorDiv = document.getElementById('shift-buddies-error');
+  const emptyDiv = document.getElementById('shift-buddies-empty');
+  const resultsDiv = document.getElementById('shift-buddies-results');
+  const listEl = document.getElementById('shift-buddies-list');
+  const tradesBtn = document.getElementById('shift-find-trades-btn');
+
+  let detailCtx = null;
+
+  function fmtHour(h) {
+    if (h >= 24) h -= 24;
+    if (h === 0 || h === 24) return '12a';
+    if (h === 12) return '12p';
+    return (h < 12 ? h + 'a' : (h - 12) + 'p');
+  }
+
+  function setState(state) {
+    loading.style.display = state === 'loading' ? 'block' : 'none';
+    errorDiv.style.display = state === 'error' ? 'block' : 'none';
+    emptyDiv.style.display = state === 'empty' ? 'block' : 'none';
+    resultsDiv.style.display = state === 'results' ? 'block' : 'none';
+  }
+
+  function renderBuddies(buddies) {
+    listEl.innerHTML = '';
+    buddies.forEach(function (b) {
+      const li = document.createElement('li');
+      li.className = 'shift-buddy-item';
+      const endDisp = b.end <= b.start ? b.end + 24 : b.end;
+      li.innerHTML =
+        '<span class="shift-buddy-name">' + b.name + '</span>' +
+        '<span class="shift-buddy-meta">PGY-' + b.pgy_level + ' · ' + b.shift_name + '</span>' +
+        '<span class="shift-buddy-time">' + fmtHour(b.start) + '–' + fmtHour(endDisp) + '</span>';
+      listEl.appendChild(li);
+    });
+  }
+
+  closeBtn.addEventListener('click', function () { modal.close(); });
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.close();
+  });
+
+  tradesBtn.addEventListener('click', function () {
+    if (!detailCtx || typeof window.openTradeModal !== 'function') return;
+    modal.close();
+    window.openTradeModal(
+      detailCtx.day,
+      detailCtx.shift,
+      detailCtx.displayDate,
+      detailCtx.residentId,
+      detailCtx.residentLastName
+    );
+  });
+
+  window.openShiftDetail = function (day, shift, displayDate, residentId, residentLastName) {
+    detailCtx = { day: day, shift: shift, displayDate: displayDate, residentId: residentId, residentLastName: residentLastName };
+    subtitle.textContent = shift + ' · ' + displayDate + (residentLastName ? ' (' + residentLastName + ')' : '');
+    tradesBtn.style.display = 'inline-flex';
+    setState('loading');
+    modal.showModal();
+
+    const fd = new FormData();
+    fd.append('day', day);
+    fd.append('shift', shift);
+    if (residentId) fd.append('resident_id', residentId);
+
+    fetch("{{ url_for('schedule_buddies') }}", { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) {
+          errorDiv.textContent = data.error;
+          setState('error');
+          return;
+        }
+        const buddies = data.buddies || [];
+        if (buddies.length === 0) {
+          setState('empty');
+          return;
+        }
+        renderBuddies(buddies);
+        setState('results');
+      })
+      .catch(function () {
+        errorDiv.textContent = 'Network error. Please try again.';
+        setState('error');
+      });
+  };
+})();
+</script>

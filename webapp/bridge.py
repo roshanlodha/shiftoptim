@@ -352,6 +352,61 @@ def _shift_info_by_name(pgy_level):
     return by_name
 
 
+def _hour_interval(start, end):
+    """Hours from midnight; end may exceed 24 for overnight shifts."""
+    if end <= start:
+        end += 24
+    return start, end
+
+
+def overlap_fraction(ref_start, ref_end, ref_duration, other_start, other_end):
+    """Fraction of ref shift duration covered by intersection with other shift."""
+    rs, re = _hour_interval(ref_start, ref_end)
+    os, oe = _hour_interval(other_start, other_end)
+    inter = max(0, min(re, oe) - max(rs, os))
+    return inter / ref_duration if ref_duration > 0 else 0.0
+
+
+def find_shift_buddies(conn, day, shift_name, resident_id, pgy_level):
+    """Residents at same site with >50% time overlap on the given day."""
+    by_name = _shift_info_by_name(pgy_level)
+    clicked = by_name.get(shift_name)
+    if clicked is None:
+        return []
+
+    site = clicked["site"]
+    ref_start, ref_end = clicked["start"], clicked["end"]
+    ref_duration = clicked["duration"]
+
+    rows = conn.execute(
+        "SELECT a.shift_name, a.resident_id, res.full_name, res.last_name, res.pgy_level "
+        "FROM assignments a "
+        "JOIN runs r ON r.id = a.run_id "
+        "JOIN residents res ON res.id = a.resident_id "
+        "WHERE r.status = 'published' AND a.day = ? AND a.resident_id != ?",
+        (day, resident_id),
+    ).fetchall()
+
+    buddies = []
+    for row in rows:
+        info = _shift_info_by_name(row["pgy_level"]).get(row["shift_name"])
+        if info is None or info["site"] != site:
+            continue
+        if overlap_fraction(ref_start, ref_end, ref_duration, info["start"], info["end"]) <= 0.5:
+            continue
+        buddies.append({
+            "name": row["full_name"],
+            "last_name": row["last_name"],
+            "pgy_level": row["pgy_level"],
+            "shift_name": row["shift_name"],
+            "start": info["start"],
+            "end": info["end"],
+        })
+
+    buddies.sort(key=lambda b: (b["start"], b["last_name"]))
+    return buddies
+
+
 def _acgme_ok(assignments_map, resident_id, run_id, conn):
     """
     Check ACGME hard constraints for one resident given a (possibly mutated)

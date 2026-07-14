@@ -672,6 +672,11 @@ table tr:hover td {
   pointer-events: none;
 }
 
+.timeline-shift-block.hide-resident {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 /* Review action headers */
 .review-actions {
   display: flex;
@@ -1106,6 +1111,240 @@ table.audit td.anomaly-low {
 }
 
 /* Trade modal dialog — styles live in _trade_modal.html to stay co-located */
+
+/* ---- Mobile day timeline ---- */
+.mobile-day-calendar {
+  display: none;
+  padding: 0.75rem;
+  background-color: var(--background);
+}
+
+.day-strip {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+
+.day-chip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0.65rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: var(--bounce-transition);
+}
+
+.day-chip.active {
+  background: var(--accent);
+  color: white;
+  outline: 2px solid var(--border);
+  outline-offset: -2px;
+}
+
+.day-chip-dow {
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.day-chip-date {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.day-timeline-panel {
+  display: none;
+}
+
+.day-timeline-panel.active {
+  display: block;
+}
+
+.day-timeline {
+  position: relative;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+  height: 520px;
+  overflow-y: auto;
+}
+
+.timeline-hour-row {
+  display: flex;
+  align-items: flex-start;
+  height: calc(100% / 26);
+  min-height: 1.25rem;
+  border-bottom: 1px dashed rgba(30, 41, 59, 0.08);
+}
+
+.timeline-hour-label {
+  flex: 0 0 2.5rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+  padding: 0.15rem 0.35rem;
+  text-align: right;
+}
+
+.timeline-hour-line {
+  flex: 1;
+  height: 100%;
+}
+
+.timeline-blocks {
+  position: absolute;
+  top: 0;
+  left: 2.75rem;
+  right: 0.5rem;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.timeline-shift-block {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  padding: 0.25rem 0.4rem;
+  overflow: hidden;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 1.5rem;
+}
+
+.timeline-shift-block.cell-mine {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.timeline-block-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0.95;
+}
+
+.timeline-block-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+/* ---- Shift detail / buddies modal ---- */
+#shift-detail-modal {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0;
+  max-width: 28rem;
+  width: calc(100% - 2rem);
+  box-shadow: 6px 6px 0 var(--shadow-color);
+  background: var(--card);
+}
+
+#shift-detail-modal::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.shift-detail-inner {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.shift-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.shift-buddies-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.shift-buddy-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 0.15rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.shift-buddy-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.shift-buddy-meta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.shift-buddy-time {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--accent);
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  white-space: nowrap;
+}
+
+.shift-detail-footer {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px), (max-height: 500px) {
+  .calendar-week-container table.calendar {
+    display: none !important;
+  }
+
+  .mobile-day-calendar {
+    display: block;
+  }
+
+  .calendar-week-container {
+    overflow-x: visible;
+  }
+}
 
 /* Status badges for trade states */
 .status-badge.trade-pending-peer  { background-color: var(--tertiary); }

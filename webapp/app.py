@@ -318,6 +318,7 @@ def register_routes(app, db_conn):
             "admin_review_run.html", run=run, grid=grid,
             summary_block=summary_block, summary_half=summary_half,
             shift_names=shift_names, category_columns=category_columns,
+            shift_info=bridge._shift_info_by_name(pgy_level),
             half=half, viewable_halves=viewable,
         )
 
@@ -392,6 +393,7 @@ def register_routes(app, db_conn):
             "resident_schedule.html", blocks=blocks, block_number=block_number,
             half=half, viewable_halves=viewable_halves,
             grid=grid, shift_names=shift_names,
+            shift_info=bridge._shift_info_by_name(pgy_level),
             resident_last_name=resident_last_name, run_id=run_id,
         )
 
@@ -588,6 +590,45 @@ def register_routes(app, db_conn):
             run_id = run["id"]
         swaps = bridge.find_valid_swaps(conn, run_id, resident_id, day, shift)
         return jsonify({"run_id": run_id, "swaps": swaps})
+
+    @app.route("/schedule/buddies", methods=["POST"])
+    @login_required
+    def schedule_buddies():
+        """JSON endpoint: shift buddies with >50% time overlap at same site."""
+        day = request.form.get("day")
+        shift = request.form.get("shift")
+        if not day or not shift:
+            return jsonify({"error": "day and shift required"}), 400
+
+        if g.user["role"] == "admin":
+            resident_id = request.form.get("resident_id", type=int)
+        else:
+            resident_id = g.user["resident_id"]
+        if resident_id is None:
+            return jsonify({"error": "No resident linked"}), 403
+
+        conn = db_conn()
+        row = conn.execute(
+            "SELECT pgy_level FROM residents WHERE id = ?", (resident_id,),
+        ).fetchone()
+        if row is None:
+            return jsonify({"error": "Resident not found"}), 404
+        pgy_level = row["pgy_level"]
+
+        if g.user["role"] != "admin":
+            cfg, _ = bridge._get_config(pgy_level)
+            canonicalize = getattr(cfg, "canonical_shift_name", lambda n: n)
+            rows = conn.execute(
+                "SELECT a.shift_name FROM assignments a "
+                "JOIN runs r ON r.id = a.run_id "
+                "WHERE r.status = 'published' AND a.resident_id = ? AND a.day = ?",
+                (resident_id, day),
+            ).fetchall()
+            if not any(canonicalize(r["shift_name"]) == shift for r in rows):
+                return jsonify({"error": "Forbidden"}), 403
+
+        buddies = bridge.find_shift_buddies(conn, day, shift, resident_id, pgy_level)
+        return jsonify({"buddies": buddies})
 
     @app.route("/admin/schedule/swap", methods=["POST"])
     @admin_required
