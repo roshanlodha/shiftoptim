@@ -1,8 +1,50 @@
 {% if grid and grid.weeks %}
 {% set shift_info = shift_info | default({}) %}
+{% macro day_timeline_panel(d) -%}
+<section class="day-timeline-panel" data-day="{{ d.isoformat() }}">
+  <header class="day-panel-header">
+    <span class="day-panel-dow">{{ d.strftime('%a') }}</span>
+    <span class="day-panel-date">{{ d.month }}/{{ d.day }}</span>
+  </header>
+  <div class="day-timeline">
+    <div class="timeline-hours">
+      {% for hour in range(6, 30) %}
+      <div class="timeline-hour-row">
+        <span class="timeline-hour-label">{% if hour == 12 %}12p{% elif hour == 0 or hour == 24 %}12a{% elif hour < 12 %}{{ hour }}a{% elif hour < 24 %}{{ hour - 12 }}p{% else %}{{ hour - 24 }}a{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="timeline-blocks">
+      {% for sn in shift_names %}
+        {% set cell_data = grid.cells.get((sn, d.isoformat())) %}
+        {% set si = shift_info.get(sn) %}
+        {% if cell_data %}
+          {% set style = grid.colors.get(cell_data.last_name, {"bg": "var(--accent)", "color": "#fff"}) %}
+          {% set is_mine = (g.user.role == 'resident' and cell_data.last_name == resident_last_name | default('')) %}
+          {% set is_clickable = (g.user.role == 'admin') or is_mine %}
+          {% set s_start = si.start if si else 7 %}
+          {% set s_end = si.end if si else 16 %}
+          <button type="button"
+             class="timeline-shift-block has-resident{% if is_clickable %} cell-mine{% endif %}"
+             data-resident="{{ cell_data.last_name }}"
+             data-day="{{ d.isoformat() }}"
+             data-start="{{ s_start }}"
+             data-end="{{ s_end }}"
+             data-shift="{{ sn }}"
+             style="--block-bg: {{ style.bg }}; --block-fg: {{ style.color }};"
+             {% if is_clickable %}onclick="openShiftDetail('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
+            <span class="timeline-block-name">{{ cell_data.last_name }}</span>
+            <span class="timeline-block-label">{{ sn }}</span>
+          </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{%- endmacro %}
 
   {% if grid.weeks | length > 1 or prev_url or next_url %}
-  <!-- Week navigation bar -->
+  <!-- Week navigation bar (desktop only) -->
   <div class="week-nav-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background-color: var(--card); border: 2px solid var(--border); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); box-shadow: 3px 3px 0 var(--shadow-color);">
     <button id="prev-week-btn" class="button subtle" style="padding: 0.5rem; margin: 0; min-width: 40px; height: 40px; border-radius: var(--radius-sm);" onclick="event.preventDefault();" title="Previous Week">
       <i data-lucide="arrow-left" style="width: 20px; height: 20px; display: block; margin: auto;"></i>
@@ -64,66 +106,47 @@
               </td>
             {% endif %}
           {% endfor %}
-
         </tr>
         {% endfor %}
       </tbody>
     </table>
-
-    {# Mobile: horizontal swipe between days, hours on Y (Apple Calendar-esque) #}
-    <div class="mobile-day-calendar" data-week-index="{{ loop.index0 }}">
-      <div class="mobile-day-scroller">
-        {% for d in week %}
-        <section class="day-timeline-panel" data-day="{{ d.isoformat() }}">
-          <header class="day-panel-header">
-            <span class="day-panel-dow">{{ d.strftime('%a') }}</span>
-            <span class="day-panel-date">{{ d.month }}/{{ d.day }}</span>
-          </header>
-          <div class="day-timeline">
-            <div class="timeline-hours">
-              {% for hour in range(6, 30) %}
-              <div class="timeline-hour-row">
-                <span class="timeline-hour-label">{% if hour == 12 %}12p{% elif hour == 0 or hour == 24 %}12a{% elif hour < 12 %}{{ hour }}a{% elif hour < 24 %}{{ hour - 12 }}p{% else %}{{ hour - 24 }}a{% endif %}</span>
-              </div>
-              {% endfor %}
-            </div>
-            <div class="timeline-blocks">
-              {% for sn in shift_names %}
-                {% set cell_data = grid.cells.get((sn, d.isoformat())) %}
-                {% set si = shift_info.get(sn) %}
-                {% if cell_data %}
-                  {% set style = grid.colors.get(cell_data.last_name, {"bg": "var(--accent)", "color": "#fff"}) %}
-                  {% set is_mine = (g.user.role == 'resident' and cell_data.last_name == resident_last_name | default('')) %}
-                  {% set is_clickable = (g.user.role == 'admin') or is_mine %}
-                  {% set s_start = si.start if si else 7 %}
-                  {% set s_end = si.end if si else 16 %}
-                  <button type="button"
-                     class="timeline-shift-block has-resident{% if is_clickable %} cell-mine{% endif %}"
-                     data-resident="{{ cell_data.last_name }}"
-                     data-day="{{ d.isoformat() }}"
-                     data-start="{{ s_start }}"
-                     data-end="{{ s_end }}"
-                     data-shift="{{ sn }}"
-                     style="--block-bg: {{ style.bg }}; --block-fg: {{ style.color }};"
-                     {% if is_clickable %}onclick="openShiftDetail('{{ d.isoformat() }}', '{{ sn | replace("'", "\\'") }}', '{{ d.strftime('%a %b %-d') }}', '{{ cell_data.resident_id }}', '{{ cell_data.last_name | replace("'", "\\'") }}')"{% endif %}>
-                    <span class="timeline-block-name">{{ cell_data.last_name }}</span>
-                    <span class="timeline-block-label">{{ sn }}</span>
-                  </button>
-                {% endif %}
-              {% endfor %}
-            </div>
-          </div>
-        </section>
-        {% endfor %}
-      </div>
-    </div>
   </div>
   {% endfor %}
+
+  {# Mobile: one continuous day scroller across all weeks in this half-block #}
+  <div class="mobile-day-calendar mobile-continuous"
+       data-prev-url="{{ prev_url or '' }}"
+       data-next-url="{{ next_url or '' }}">
+    <div class="mobile-day-scroller">
+      {% if prev_url %}
+      <section class="day-timeline-panel day-nav-sentinel" data-nav-url="{{ prev_url }}">
+        <div class="day-nav-sentinel-inner">
+          <span class="day-nav-sentinel-arrow">←</span>
+          <span class="day-nav-sentinel-label">Previous block</span>
+        </div>
+      </section>
+      {% endif %}
+      {% for week in grid.weeks %}
+        {% for d in week %}
+          {{ day_timeline_panel(d) }}
+        {% endfor %}
+      {% endfor %}
+      {% if next_url %}
+      <section class="day-timeline-panel day-nav-sentinel" data-nav-url="{{ next_url }}">
+        <div class="day-nav-sentinel-inner">
+          <span class="day-nav-sentinel-arrow">→</span>
+          <span class="day-nav-sentinel-label">Next block</span>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
 
   <script>
     (function() {
       const TIMELINE_START = 6;
       const HOUR_PX = 40; // must match CSS --timeline-hour-h
+      const MOBILE_MQ = window.matchMedia('(max-width: 768px), (max-height: 500px)');
 
       function positionTimelineBlocks(root) {
         (root || document).querySelectorAll('.timeline-shift-block').forEach(function(el) {
@@ -131,107 +154,117 @@
           let end = parseInt(el.getAttribute('data-end'), 10);
           if (isNaN(start) || isNaN(end)) return;
           if (end <= start) end += 24;
-          const top = (start - TIMELINE_START) * HOUR_PX;
-          const height = Math.max(HOUR_PX * 0.75, (end - start) * HOUR_PX);
-          el.style.top = top + 'px';
-          el.style.height = height + 'px';
+          el.style.top = ((start - TIMELINE_START) * HOUR_PX) + 'px';
+          el.style.height = Math.max(HOUR_PX * 0.75, (end - start) * HOUR_PX) + 'px';
         });
       }
 
-      function initMobileCalendars() {
-        document.querySelectorAll('.mobile-day-calendar').forEach(function(cal) {
-          positionTimelineBlocks(cal);
-          const scroller = cal.querySelector('.mobile-day-scroller');
-          if (!scroller) return;
+      function initContinuousMobile() {
+        const cal = document.querySelector('.mobile-day-calendar.mobile-continuous');
+        if (!cal) return;
+        positionTimelineBlocks(cal);
 
-          // Scroll to today if present in this week
+        const scroller = cal.querySelector('.mobile-day-scroller');
+        if (!scroller) return;
+
+        // Land on today, or first/last day when arriving from adjacent half-block
+        const urlParams = new URLSearchParams(window.location.search);
+        const weekParam = urlParams.get('week');
+        const dayPanels = cal.querySelectorAll('.day-timeline-panel:not(.day-nav-sentinel)');
+        let target = null;
+        if (weekParam === 'last' && dayPanels.length) {
+          target = dayPanels[dayPanels.length - 1];
+        } else if (weekParam === 'first' && dayPanels.length) {
+          target = dayPanels[0];
+        } else {
           const today = new Date();
           const todayStr = today.getFullYear() + '-' +
             String(today.getMonth() + 1).padStart(2, '0') + '-' +
             String(today.getDate()).padStart(2, '0');
-          const todayPanel = cal.querySelector('.day-timeline-panel[data-day="' + todayStr + '"]');
-          if (todayPanel) {
-            todayPanel.scrollIntoView({ inline: 'start', block: 'nearest' });
-          }
-        });
+          target = cal.querySelector('.day-timeline-panel[data-day="' + todayStr + '"]') || dayPanels[0];
+        }
+        if (target && MOBILE_MQ.matches) {
+          requestAnimationFrame(function() {
+            target.scrollIntoView({ inline: 'start', block: 'nearest' });
+          });
+        }
+
+        // Swipe past first/last day → adjacent half-block
+        const sentinels = cal.querySelectorAll('.day-nav-sentinel[data-nav-url]');
+        if (sentinels.length && 'IntersectionObserver' in window) {
+          let navLock = false;
+          const io = new IntersectionObserver(function(entries) {
+            if (!MOBILE_MQ.matches || navLock) return;
+            entries.forEach(function(entry) {
+              if (!entry.isIntersecting || entry.intersectionRatio < 0.55) return;
+              const url = entry.target.getAttribute('data-nav-url');
+              if (!url) return;
+              navLock = true;
+              window.location.href = url;
+            });
+          }, { root: scroller, threshold: 0.55 });
+          sentinels.forEach(function(s) { io.observe(s); });
+        }
       }
 
+      // ---- Desktop week pager (unchanged) ----
       const weekContainers = document.querySelectorAll('.calendar-week-container');
       const totalWeeks = weekContainers.length;
-      if (totalWeeks === 0) return;
-      
       const urlParams = new URLSearchParams(window.location.search);
       const weekParam = urlParams.get('week');
       let currentWeekIndex = 0;
       if (weekParam === 'last') {
-        currentWeekIndex = totalWeeks - 1;
+        currentWeekIndex = Math.max(0, totalWeeks - 1);
       } else if (weekParam === 'first') {
         currentWeekIndex = 0;
       } else if (weekParam !== null && !isNaN(parseInt(weekParam, 10))) {
         currentWeekIndex = parseInt(weekParam, 10);
       }
-      
+
       const prevBtn = document.getElementById('prev-week-btn');
       const nextBtn = document.getElementById('next-week-btn');
       const label = document.getElementById('week-label');
-      
       const prevUrl = "{{ prev_url | safe if prev_url else '' }}";
       const nextUrl = "{{ next_url | safe if next_url else '' }}";
-      
+
       function showWeek(index) {
         if (index < 0 || index >= totalWeeks) return;
         currentWeekIndex = index;
-        
         weekContainers.forEach(function(container, idx) {
           container.style.display = idx === currentWeekIndex ? 'block' : 'none';
         });
-        
         if (label) {
           const activeContainer = weekContainers[currentWeekIndex];
           const range = activeContainer ? activeContainer.getAttribute('data-week-range') : '';
           label.innerHTML = 'Week ' + (currentWeekIndex + 1) + ' of ' + totalWeeks +
             ' <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted-foreground); display: block; font-family: \'Plus Jakarta Sans\', sans-serif;">(' + range + ')</span>';
         }
-        
         if (prevBtn) {
           prevBtn.style.visibility = (currentWeekIndex > 0 || prevUrl !== '') ? 'visible' : 'hidden';
         }
         if (nextBtn) {
           nextBtn.style.visibility = (currentWeekIndex < totalWeeks - 1 || nextUrl !== '') ? 'visible' : 'hidden';
         }
-
-        // Reposition after week becomes visible (layout needs display:block first)
-        const active = weekContainers[currentWeekIndex];
-        if (active) positionTimelineBlocks(active.querySelector('.mobile-day-calendar'));
       }
-      
+
       if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          if (currentWeekIndex > 0) {
-            showWeek(currentWeekIndex - 1);
-          } else if (prevUrl !== '') {
-            window.location.href = prevUrl;
-          }
+          if (currentWeekIndex > 0) showWeek(currentWeekIndex - 1);
+          else if (prevUrl) window.location.href = prevUrl;
         });
       }
-      
       if (nextBtn) {
         nextBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          if (currentWeekIndex < totalWeeks - 1) {
-            showWeek(currentWeekIndex + 1);
-          } else if (nextUrl !== '') {
-            window.location.href = nextUrl;
-          }
+          if (currentWeekIndex < totalWeeks - 1) showWeek(currentWeekIndex + 1);
+          else if (nextUrl) window.location.href = nextUrl;
         });
       }
-      
-      showWeek(currentWeekIndex);
-      initMobileCalendars();
-      window.addEventListener('resize', function() {
-        positionTimelineBlocks(document);
-      });
+
+      if (totalWeeks > 0) showWeek(currentWeekIndex);
+      initContinuousMobile();
+      window.addEventListener('resize', function() { positionTimelineBlocks(document); });
     })();
   </script>
 {% else %}

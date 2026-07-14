@@ -68,7 +68,7 @@
      Block {{ run.block_number }}{{ h.half | upper }}
   </a>
   {% endfor %}
-  <a class="button subtle" href="{{ url_for('admin_download_csv', run_id=run.id) }}"
+  <a class="button subtle schedule-csv-download" href="{{ url_for('admin_download_csv', run_id=run.id) }}"
      style="margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;">
     <i data-lucide="download" style="width: 16px; height: 16px;"></i>
     Download CSV

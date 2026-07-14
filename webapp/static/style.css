@@ -1344,22 +1344,63 @@ table.audit td.anomaly-low {
 }
 
 @media (max-width: 768px), (max-height: 500px) {
-  .calendar-week-container > table.calendar {
+  .calendar-week-container {
     display: none !important;
   }
 
-  .mobile-day-calendar {
+  .week-nav-bar {
+    display: none !important;
+  }
+
+  .mobile-day-calendar.mobile-continuous {
     display: block !important;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    overflow: hidden;
   }
 
-  .calendar-week-container {
-    overflow-x: visible !important;
+  /* Mobile: mine-only locked — no checkbox, no CSV */
+  .schedule-mine-toggle,
+  .toggle-container.schedule-mine-toggle,
+  .schedule-csv-download {
+    display: none !important;
   }
+}
 
-  /* Keep "show only my shifts" usable on phones */
-  .toggle-container:not(.summary-scope-toggle) {
-    display: inline-block !important;
-  }
+.day-nav-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.day-nav-sentinel-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1.25rem;
+  border: 2px dashed rgba(30, 41, 59, 0.35);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  text-align: center;
+}
+
+.day-nav-sentinel-arrow {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.day-nav-sentinel-label {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--foreground);
 }
 
 /* Status badges for trade states */

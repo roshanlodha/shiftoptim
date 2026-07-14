@@ -48,7 +48,7 @@
   </div>
 
   {% if g.user.role == 'resident' %}
-  <div class="toggle-container" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block; flex-shrink: 0; margin-bottom: 0.5rem;">
+  <div class="toggle-container schedule-mine-toggle" style="background-color: var(--card); border: 2px solid var(--border); padding: 0.6rem 1.25rem; border-radius: var(--radius-md); box-shadow: 2px 2px 0 var(--shadow-color); display: inline-block; flex-shrink: 0; margin-bottom: 0.5rem;">
     <label class="switch-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; text-transform: none; font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; margin: 0;">
       <input type="checkbox" id="schedule-toggle" checked style="width: auto; height: auto; cursor: pointer; accent-color: var(--accent); margin: 0;">
       <span>Show only my shifts</span>
@@ -56,7 +56,7 @@
   </div>
   {% endif %}
   {% if run_id and block_number %}
-  <a class="button subtle" href="{{ url_for('resident_download_csv', block=block_number) }}"
+  <a class="button subtle schedule-csv-download" href="{{ url_for('resident_download_csv', block=block_number) }}"
      style="display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none; flex-shrink: 0; margin-bottom: 0.5rem;">
     <i data-lucide="download" style="width: 16px; height: 16px;"></i>
     Download CSV
@@ -114,23 +114,25 @@
     // 2. Filter schedule — trust server .cell-mine (name-string match broke PGY-1 & PGY-4)
     const toggle = document.getElementById('schedule-toggle');
     const myLastName = {{ resident_last_name | default('', true) | tojson }};
+    const mobileMq = window.matchMedia('(max-width: 768px), (max-height: 500px)');
 
     function normalizeResident(name) {
       return (name || "").toLowerCase().replace(/'/g, "").replace(/\s/g, "");
     }
     const myNorm = normalizeResident(myLastName);
 
+    function isMineCell(cell) {
+      return cell.classList.contains('cell-mine') ||
+        normalizeResident(cell.getAttribute('data-resident')) === myNorm;
+    }
+
     function updateScheduleView() {
-      if (!toggle) return;
-      const showOnlyMine = toggle.checked;
-      const cells = document.querySelectorAll('.cell-shift.has-resident, .timeline-shift-block.has-resident');
+      // Mobile: always mine-only (checkbox hidden / locked on)
+      const showOnlyMine = mobileMq.matches ? true : (toggle ? toggle.checked : false);
+      if (mobileMq.matches && toggle) toggle.checked = true;
 
-      cells.forEach(cell => {
-        // Prefer server-tagged .cell-mine; fall back to last-name match
-        const isMine = cell.classList.contains('cell-mine') ||
-          normalizeResident(cell.getAttribute('data-resident')) === myNorm;
-
-        if (showOnlyMine && !isMine) {
+      document.querySelectorAll('.cell-shift.has-resident, .timeline-shift-block.has-resident').forEach(cell => {
+        if (showOnlyMine && !isMineCell(cell)) {
           cell.classList.add('hide-resident');
         } else {
           cell.classList.remove('hide-resident');
@@ -147,8 +149,9 @@
 
     if (toggle) {
       toggle.addEventListener('change', updateScheduleView);
-      setTimeout(updateScheduleView, 10);
     }
+    mobileMq.addEventListener('change', updateScheduleView);
+    setTimeout(updateScheduleView, 10);
   })();
 </script>
 {% endblock %}
