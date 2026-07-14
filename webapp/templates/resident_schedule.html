@@ -111,50 +111,42 @@
       }
     {% endif %}
 
-    // 2. Filter schedule logic (only for residents)
+    // 2. Filter schedule — trust server .cell-mine (name-string match broke PGY-1 & PGY-4)
     const toggle = document.getElementById('schedule-toggle');
-    const myLastName = "{{ resident_last_name | default('') }}".toLowerCase().replace(/'/g, "").replace(/\s/g, "");
+    const myLastName = {{ resident_last_name | default('', true) | tojson }};
 
     function normalizeResident(name) {
       return (name || "").toLowerCase().replace(/'/g, "").replace(/\s/g, "");
     }
+    const myNorm = normalizeResident(myLastName);
 
     function updateScheduleView() {
       if (!toggle) return;
       const showOnlyMine = toggle.checked;
       const cells = document.querySelectorAll('.cell-shift.has-resident, .timeline-shift-block.has-resident');
-      
+
       cells.forEach(cell => {
-        const resident = cell.getAttribute('data-resident') || "";
-        const isMine = (normalizeResident(resident) === myLastName);
-        
+        // Prefer server-tagged .cell-mine; fall back to last-name match
+        const isMine = cell.classList.contains('cell-mine') ||
+          normalizeResident(cell.getAttribute('data-resident')) === myNorm;
+
         if (showOnlyMine && !isMine) {
           cell.classList.add('hide-resident');
         } else {
           cell.classList.remove('hide-resident');
         }
       });
-      
-      // Mute/dim non-user legend chips
-      const chips = document.querySelectorAll('.legend .chip');
-      chips.forEach(chip => {
-        const chipText = chip.textContent || "";
-        const residentName = chipText.split('·')[0].trim();
-        const isMine = (normalizeResident(residentName) === myLastName);
-        
-        if (showOnlyMine && !isMine) {
-          chip.style.opacity = '0.25';
-          chip.style.boxShadow = 'none';
-        } else {
-          chip.style.opacity = '1';
-          chip.style.boxShadow = '';
-        }
+
+      document.querySelectorAll('.legend .chip').forEach(chip => {
+        const residentName = (chip.textContent || "").split('·')[0].trim();
+        const isMine = normalizeResident(residentName) === myNorm;
+        chip.style.opacity = (showOnlyMine && !isMine) ? '0.25' : '1';
+        chip.style.boxShadow = (showOnlyMine && !isMine) ? 'none' : '';
       });
     }
 
     if (toggle) {
       toggle.addEventListener('change', updateScheduleView);
-      // Run once on initial load, but wait a tick for Lucide replacement or browser render
       setTimeout(updateScheduleView, 10);
     }
   })();

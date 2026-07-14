@@ -926,11 +926,6 @@ html, body {
   .week-nav-bar button, .week-nav-bar .button {
     width: auto !important;
   }
-
-  /* Hide shift toggle on mobile */
-  .toggle-container:not(.summary-scope-toggle) {
-    display: none !important;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1112,63 +1107,59 @@ table.audit td.anomaly-low {
 
 /* Trade modal dialog — styles live in _trade_modal.html to stay co-located */
 
-/* ---- Mobile day timeline ---- */
+/* ---- Mobile day timeline (Apple Calendar-esque) ---- */
 .mobile-day-calendar {
   display: none;
-  padding: 0.75rem;
+  --timeline-hour-h: 40px;
   background-color: var(--background);
 }
 
-.day-strip {
+.mobile-day-scroller {
   display: flex;
-  gap: 0.35rem;
   overflow-x: auto;
-  margin-bottom: 0.75rem;
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.25rem;
+  scrollbar-width: none;
 }
 
-.day-chip {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  padding: 0.4rem 0.65rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  box-shadow: 2px 2px 0 var(--shadow-color);
-  cursor: pointer;
-  font-family: 'Outfit', sans-serif;
-  transition: var(--bounce-transition);
-}
-
-.day-chip.active {
-  background: var(--accent);
-  color: white;
-  outline: 2px solid var(--border);
-  outline-offset: -2px;
-}
-
-.day-chip-dow {
-  font-weight: 800;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-}
-
-.day-chip-date {
-  font-size: 0.72rem;
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-.day-timeline-panel {
+.mobile-day-scroller::-webkit-scrollbar {
   display: none;
 }
 
-.day-timeline-panel.active {
+.day-timeline-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: block;
+  box-sizing: border-box;
+  padding: 0.5rem 0.5rem 0.75rem;
+}
+
+.day-panel-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--accent);
+  color: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  font-family: 'Outfit', sans-serif;
+}
+
+.day-panel-dow {
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+
+.day-panel-date {
+  font-weight: 700;
+  font-size: 0.85rem;
+  opacity: 0.9;
 }
 
 .day-timeline {
@@ -1177,74 +1168,94 @@ table.audit td.anomaly-low {
   border-radius: var(--radius-md);
   background: var(--card);
   box-shadow: 3px 3px 0 var(--shadow-color);
-  height: 520px;
+  height: calc(24 * var(--timeline-hour-h)); /* 6a → 6a next day */
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.timeline-hours {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .timeline-hour-row {
   display: flex;
   align-items: flex-start;
-  height: calc(100% / 26);
-  min-height: 1.25rem;
-  border-bottom: 1px dashed rgba(30, 41, 59, 0.08);
+  height: var(--timeline-hour-h);
+  border-bottom: 1px dashed rgba(30, 41, 59, 0.1);
+  box-sizing: border-box;
 }
 
 .timeline-hour-label {
-  flex: 0 0 2.5rem;
+  width: 1.6rem;
+  flex-shrink: 0;
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
+  line-height: 1;
   color: var(--muted-foreground);
-  padding: 0.15rem 0.35rem;
+  padding: 0.15rem 0.15rem 0 0;
   text-align: right;
-}
-
-.timeline-hour-line {
-  flex: 1;
-  height: 100%;
+  letter-spacing: -0.02em;
 }
 
 .timeline-blocks {
   position: absolute;
   top: 0;
-  left: 2.75rem;
-  right: 0.5rem;
+  left: 1.75rem;
+  right: 0.35rem;
   bottom: 0;
-  pointer-events: none;
 }
 
 .timeline-shift-block {
   position: absolute;
   left: 0;
   right: 0;
+  width: auto !important; /* don't inherit mobile `button { width: 100% }` */
+  z-index: 1;
+  margin: 0;
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: 2px 2px 0 var(--shadow-color);
-  padding: 0.25rem 0.4rem;
+  padding: 0.2rem 0.4rem;
   overflow: hidden;
-  pointer-events: auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 1.5rem;
+  justify-content: flex-start;
+  gap: 0.1rem;
+  background: var(--block-bg, var(--accent));
+  color: var(--block-fg, #fff);
+  text-align: left;
+  font: inherit;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .timeline-shift-block.cell-mine {
   outline: 3px solid var(--accent);
   outline-offset: -3px;
+  cursor: pointer;
 }
 
-.timeline-block-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.2;
-  opacity: 0.95;
+.timeline-shift-block.cell-mine:active {
+  translate: 1px 1px;
+  box-shadow: 1px 1px 0 var(--shadow-color);
 }
 
 .timeline-block-name {
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
+.timeline-block-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0.92;
 }
 
 /* ---- Shift detail / buddies modal ---- */
@@ -1333,16 +1344,21 @@ table.audit td.anomaly-low {
 }
 
 @media (max-width: 768px), (max-height: 500px) {
-  .calendar-week-container table.calendar {
+  .calendar-week-container > table.calendar {
     display: none !important;
   }
 
   .mobile-day-calendar {
-    display: block;
+    display: block !important;
   }
 
   .calendar-week-container {
-    overflow-x: visible;
+    overflow-x: visible !important;
+  }
+
+  /* Keep "show only my shifts" usable on phones */
+  .toggle-container:not(.summary-scope-toggle) {
+    display: inline-block !important;
   }
 }
 
