@@ -367,16 +367,42 @@ def overlap_fraction(ref_start, ref_end, ref_duration, other_start, other_end):
     return inter / ref_duration if ref_duration > 0 else 0.0
 
 
+def buddy_family(shift_name, site):
+    """Clinical team key shared across PGY levels (Acute / FT / East / …)."""
+    n = shift_name.lower()
+    if "pedi" in n or "peds" in n:
+        team = "Peds"
+    elif "east" in n:
+        team = "East"
+    elif "fast track" in n or " - ft " in n or n.startswith("ft "):
+        team = "FT"
+    elif "ac pgy" in n or "acute" in n:
+        team = "Acute"
+    elif "exe" in n:
+        team = "Exe"
+    elif "ff" in n:
+        team = "FF"
+    else:
+        team = shift_name
+    return f"{site}:{team}"
+
+
 def find_shift_buddies(conn, day, shift_name, resident_id, pgy_level):
-    """Residents at same site with >50% time overlap on the given day."""
+    """Split coworkers on the given day into shift buddies vs meal buddies.
+
+    shift_buddies: same site + >50% overlap + same clinical team (Acute/FT/…).
+    meal_buddies: same site + >50% overlap (any team), excluding shift_buddies.
+    """
+    empty = {"shift_buddies": [], "meal_buddies": []}
     by_name = _shift_info_by_name(pgy_level)
     clicked = by_name.get(shift_name)
     if clicked is None:
-        return []
+        return empty
 
     site = clicked["site"]
     ref_start, ref_end = clicked["start"], clicked["end"]
     ref_duration = clicked["duration"]
+    ref_family = buddy_family(shift_name, site)
 
     rows = conn.execute(
         "SELECT a.shift_name, a.resident_id, res.full_name, res.last_name, res.pgy_level "
@@ -387,24 +413,31 @@ def find_shift_buddies(conn, day, shift_name, resident_id, pgy_level):
         (day, resident_id),
     ).fetchall()
 
-    buddies = []
+    shift_buddies = []
+    meal_buddies = []
     for row in rows:
         info = _shift_info_by_name(row["pgy_level"]).get(row["shift_name"])
         if info is None or info["site"] != site:
             continue
         if overlap_fraction(ref_start, ref_end, ref_duration, info["start"], info["end"]) <= 0.5:
             continue
-        buddies.append({
+        entry = {
             "name": row["full_name"],
             "last_name": row["last_name"],
             "pgy_level": row["pgy_level"],
             "shift_name": row["shift_name"],
             "start": info["start"],
             "end": info["end"],
-        })
+        }
+        if buddy_family(row["shift_name"], info["site"]) == ref_family:
+            shift_buddies.append(entry)
+        else:
+            meal_buddies.append(entry)
 
-    buddies.sort(key=lambda b: (b["start"], b["last_name"]))
-    return buddies
+    key = lambda b: (b["start"], b["last_name"])
+    shift_buddies.sort(key=key)
+    meal_buddies.sort(key=key)
+    return {"shift_buddies": shift_buddies, "meal_buddies": meal_buddies}
 
 
 def _acgme_ok(assignments_map, resident_id, run_id, conn):
@@ -486,7 +519,7 @@ def _acgme_ok(assignments_map, resident_id, run_id, conn):
 
 def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, requester_shift):
     """
-    Return list of swap candidates that keep BOTH residents ACGME-compliant.
+    Return list of same-PGY swap candidates that keep BOTH residents ACGME-compliant.
     Each candidate: {target_id, target_name, target_day, target_shift}
     Only checks ACGME constraints (rest, 60h/wk, 1 free day/wk).
     """
@@ -494,16 +527,28 @@ def find_valid_swaps(conn, run_id, requester_resident_id, requester_day, request
     pgy_level = run_row["pgy_level"] if run_row else 4
     cfg, _ = _get_config(pgy_level)
 
+    req_row = conn.execute(
+        "SELECT pgy_level FROM residents WHERE id = ?", (requester_resident_id,)
+    ).fetchone()
+    if req_row is None:
+        return []
+    req_pgy = req_row["pgy_level"]
+
     base = _load_run_assignments_with_prior(conn, run_id)
     by_name = _shift_info_by_name(pgy_level)
 
-    # Get all residents in this run (excluding requester)
-    other_ids = {rid for (rid, _) in base if rid != requester_resident_id}
-
-    # Name lookup
-    res_rows = conn.execute("SELECT id, full_name, last_name FROM residents").fetchall()
+    # Name + PGY lookup — trades stay within the requester's PGY class only
+    res_rows = conn.execute(
+        "SELECT id, full_name, last_name, pgy_level FROM residents"
+    ).fetchall()
     name_by_id = {r["id"]: r["full_name"] for r in res_rows}
     last_by_id = {r["id"]: r["last_name"] for r in res_rows}
+    pgy_by_id = {r["id"]: r["pgy_level"] for r in res_rows}
+
+    other_ids = {
+        rid for (rid, _) in base
+        if rid != requester_resident_id and pgy_by_id.get(rid) == req_pgy
+    }
 
     # Active trades: block shifts already in a pending trade
     active_trades = conn.execute(
@@ -580,4 +625,118 @@ def apply_trade(conn, trade_id):
         (trade_id,),
     )
     conn.commit()
+
+
+# ---------------------------------------------------------------------------
+# Calendar subscription (ICS feed)
+# ---------------------------------------------------------------------------
+
+def ensure_calendar_token(conn, resident_id):
+    """Stable per-resident secret for unauthenticated calendar clients."""
+    import secrets
+    key = f"calendar_token_resident_{resident_id}"
+    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    if row:
+        return row["value"]
+    token = secrets.token_urlsafe(24)
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, token),
+    )
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (f"calendar_feed_{token}", str(resident_id)),
+    )
+    conn.commit()
+    return token
+
+
+def resident_id_for_calendar_token(conn, token):
+    row = conn.execute(
+        "SELECT value FROM settings WHERE key = ?", (f"calendar_feed_{token}",)
+    ).fetchone()
+    if not row:
+        return None
+    try:
+        return int(row["value"])
+    except (TypeError, ValueError):
+        return None
+
+
+def _ics_escape(text):
+    return (
+        str(text)
+        .replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
+    )
+
+
+def build_resident_ics(conn, resident_id):
+    """All published assignments for one resident as an ICS calendar string."""
+    res = conn.execute(
+        "SELECT full_name, last_name, pgy_level FROM residents WHERE id = ?",
+        (resident_id,),
+    ).fetchone()
+    if res is None:
+        return None
+
+    rows = conn.execute(
+        "SELECT a.day, a.shift_name "
+        "FROM assignments a "
+        "JOIN runs r ON r.id = a.run_id "
+        "WHERE r.status = 'published' AND a.resident_id = ? "
+        "ORDER BY a.day, a.shift_name",
+        (resident_id,),
+    ).fetchall()
+
+    by_name = _shift_info_by_name(res["pgy_level"])
+    now = dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    cal_name = _ics_escape(f"ShiftOptim — {res['full_name']}")
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//ShiftOptim//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{cal_name}",
+        "BEGIN:VTIMEZONE",
+        "TZID:America/New_York",
+        "X-LIC-LOCATION:America/New_York",
+        "END:VTIMEZONE",
+    ]
+
+    for row in rows:
+        info = by_name.get(row["shift_name"])
+        if info is None:
+            continue
+        day = dt.date.fromisoformat(row["day"])
+        start_h, end_h = info["start"], info["end"]
+        start_dt = dt.datetime(day.year, day.month, day.day, start_h, 0, 0)
+        if end_h <= start_h:
+            end_day = day + dt.timedelta(days=1)
+            end_dt = dt.datetime(end_day.year, end_day.month, end_day.day, end_h, 0, 0)
+        else:
+            end_dt = dt.datetime(day.year, day.month, day.day, end_h, 0, 0)
+
+        uid = f"shift-{resident_id}-{row['day']}-{''.join(c if c.isalnum() else '-' for c in row['shift_name'])}@shiftoptim"
+        summary = _ics_escape(row["shift_name"])
+        location = _ics_escape(info.get("site", ""))
+        lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now}",
+            f"DTSTART;TZID=America/New_York:{start_dt.strftime('%Y%m%dT%H%M%S')}",
+            f"DTEND;TZID=America/New_York:{end_dt.strftime('%Y%m%dT%H%M%S')}",
+            f"SUMMARY:{summary}",
+            f"LOCATION:{location}",
+            "END:VEVENT",
+        ])
+
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines) + "\r\n"
 

@@ -1,6 +1,5 @@
 """Hard constraints for the PGY-1 CP-SAT schedule model."""
 
-import datetime as dt
 from .config import (
     SHIFTS,
     NIGHT_SHIFT,
@@ -10,11 +9,12 @@ from .config import (
     MGH_SHIFTS,
     BWH_SHIFTS,
     WED,
+    is_em_proper,
 )
 
 
 def add_coverage_constraints(model, works, dates, num_residents):
-    """At most demand residents on any shift on any day."""
+    """Soft coverage: at most demand residents on any shift on any day (underfill OK)."""
     for d, date in enumerate(dates):
         weekday = date.weekday()
         for s in SHIFTS:
@@ -27,7 +27,7 @@ def add_site_and_availability_constraints(model, works, dates, residents, role_o
     - MGH residents work MGH shifts only.
     - BWH residents work BWH shifts only.
     - Flex residents work either site.
-    - Off-service/inactive days are blocked (0 shifts).
+    - Inactive days are blocked (0 shifts).
     - At most one shift per resident per day.
     """
     num_days = len(dates)
@@ -38,73 +38,64 @@ def add_site_and_availability_constraints(model, works, dates, residents, role_o
 
             role = role_on.get((name, date))
             if role is None:
-                # Inactive / off-service day
                 for s in SHIFTS:
                     model.Add(works[(r, d, s)] == 0)
             elif role == "MGH":
-                # MGH shifts only
                 for s in BWH_SHIFTS:
                     model.Add(works[(r, d, s)] == 0)
             elif role == "BWH":
-                # BWH shifts only
                 for s in MGH_SHIFTS:
                     model.Add(works[(r, d, s)] == 0)
             elif role == "Flex":
-                # Can work both sites, no site restriction
                 pass
+
+
+def _half_has_role(name, dates_half, role_on, site=None):
+    """True if resident is active on any day in the half (optionally at site)."""
+    for d in dates_half:
+        role = role_on.get((name, d))
+        if role is None:
+            continue
+        if site is None or role == site or role == "Flex":
+            return True
+    return False
 
 
 def add_shift_count_constraints(model, works, dates, residents, role_on,
                                 shift_min=SHIFT_MIN_PER_HALF, shift_max=SHIFT_MAX_PER_HALF):
-    """Enforce shift counts per half-block:
-    - Active half-block: between shift_min and shift_max for EM proper core.
-    - Inactive half-block: exactly 0.
-    - MGH active half-block: at least 3 overnight shifts (EM proper core only).
+    """Enforce shift counts per half-block for EM proper only:
+    - Active half: between shift_min and shift_max.
+    - Inactive half: exactly 0.
+    Off-service placeholders: no min/max (ACGME weekly caps still apply).
+    Night count is soft (see objective) — not enforced here.
     """
     mid = len(dates) // 2
     dates_a = dates[:mid]
     dates_b = dates[mid:]
 
-    EM_PROPER_INTERNS = {
-        "Brian", "Ashleigh", "Sara", "Emily", "Isabella", "Wendy",
-        "Daem", "Bailey", "JP", "Roshan", "Mauranda", "Justin",
-        "Jethel", "Clifford", "Andrea"
-    }
-
     for r, name in enumerate(residents):
-        is_em = name in EM_PROPER_INTERNS
-        min_limit = shift_min if is_em else 0
+        is_em = is_em_proper(name)
 
-        # Half A
-        active_a = any((name, d) in role_on for d in dates_a)
         sum_a = sum(works[(r, d, s)] for d in range(mid) for s in SHIFTS)
-        if active_a:
-            model.Add(sum_a >= min_limit)
-            model.Add(sum_a <= shift_max)
-            # MGH block night requirement (EM proper only)
-            role_a_sample = role_on.get((name, dates_a[0])) if dates_a else None
-            if role_a_sample == "MGH" and is_em:
-                model.Add(sum(works[(r, d, NIGHT_SHIFT)] for d in range(mid)) >= 3)
-        else:
+        active_a = _half_has_role(name, dates_a, role_on)
+        if not active_a:
             model.Add(sum_a == 0)
+        elif is_em:
+            model.Add(sum_a >= shift_min)
+            model.Add(sum_a <= shift_max)
 
-        # Half B
-        active_b = any((name, d) in role_on for d in dates_b)
         sum_b = sum(works[(r, d, s)] for d in range(mid, len(dates)) for s in SHIFTS)
-        if active_b:
-            model.Add(sum_b >= min_limit)
-            model.Add(sum_b <= shift_max)
-            # MGH block night requirement (EM proper only)
-            role_b_sample = role_on.get((name, dates_b[0])) if dates_b else None
-            if role_b_sample == "MGH" and is_em:
-                model.Add(sum(works[(r, d, NIGHT_SHIFT)] for d in range(mid, len(dates))) >= 3)
-        else:
+        active_b = _half_has_role(name, dates_b, role_on)
+        if not active_b:
             model.Add(sum_b == 0)
+        elif is_em:
+            model.Add(sum_b >= shift_min)
+            model.Add(sum_b <= shift_max)
 
 
 def add_rest_constraints(model, works, num_residents, num_days, prior_last_shifts=None):
-    """Enforce ACGME rest constraints: at least shift_duration (min 8h) rest
-    between consecutive shifts.
+    """ACGME rest: at least shift_duration (min 8h) between consecutive shifts.
+    Applies to EM proper and off-service placeholders alike.
     """
     for r in range(num_residents):
         for d in range(num_days - 1):
@@ -130,7 +121,7 @@ def add_rest_constraints(model, works, num_residents, num_days, prior_last_shift
 
 
 def add_acgme_weekly_constraints(model, works, num_residents, num_days):
-    """Enforce ACGME weekly constraints:
+    """ACGME weekly caps for everyone (EM + off-service):
     - <= 60 ED hours per rolling 7 days.
     - >= 1 completely free day per rolling 7 days.
     """
@@ -145,7 +136,6 @@ def add_acgme_weekly_constraints(model, works, num_residents, num_days):
     for r in range(num_residents):
         for d in range(num_days):
             fd = model.NewBoolVar(f"free_r{r}_d{d}")
-            # Prev night check
             night_prev = works[(r, d - 1, NIGHT_SHIFT)] if d > 0 else model.NewConstant(0)
             model.Add(fd == 0).OnlyEnforceIf(worked_day[(r, d)])
             model.Add(fd == 0).OnlyEnforceIf(night_prev)
@@ -164,16 +154,9 @@ def add_acgme_weekly_constraints(model, works, num_residents, num_days):
 
 
 def add_wednesday_conference_protection(model, works, dates, residents):
-    """Protect Wednesday conference (7am - 5pm) and Tuesday night for EM proper residents.
-    Off-service residents are exempt from both.
+    """Protect Wednesday conference (7am-5pm) and Tuesday night for EM proper only.
+    Off-service placeholders are exempt.
     """
-    EM_PROPER_INTERNS = {
-        "Brian", "Ashleigh", "Sara", "Emily", "Isabella", "Wendy",
-        "Daem", "Bailey", "JP", "Roshan", "Mauranda", "Justin",
-        "Jethel", "Clifford", "Andrea"
-    }
-    
-    # Wednesday conference protection
     for d, date in enumerate(dates):
         if date.weekday() == WED:
             for s, info in SHIFTS.items():
@@ -181,17 +164,14 @@ def add_wednesday_conference_protection(model, works, dates, residents):
                 end = info["end"]
                 if end < start:
                     end += 24
-                # Overlap with [7, 17]
                 if max(7, start) < min(17, end):
                     for r, name in enumerate(residents):
-                        if name in EM_PROPER_INTERNS:
+                        if is_em_proper(name):
                             model.Add(works[(r, d, s)] == 0)
 
-    # Tuesday night protection (overnight shift 5 ends Wednesday morning)
-    for d, date in enumerate(dates):
-        if date.weekday() == WED - 1:  # Tuesday
+        if date.weekday() == WED - 1:  # Tuesday night → Wed morning
             for r, name in enumerate(residents):
-                if name in EM_PROPER_INTERNS:
+                if is_em_proper(name):
                     model.Add(works[(r, d, NIGHT_SHIFT)] == 0)
 
 

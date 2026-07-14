@@ -389,20 +389,32 @@ def register_routes(app, db_conn):
                 run_id = run["id"]
                 grid = _build_grid(conn, run_id, hb["start_date"], hb["end_date"])
 
+        calendar_webcal_url = None
+        if g.user["role"] == "resident" and resident_id:
+            token = bridge.ensure_calendar_token(conn, resident_id)
+            https_url = url_for("calendar_feed", token=token, _external=True)
+            calendar_webcal_url = https_url.replace("https://", "webcal://").replace(
+                "http://", "webcal://"
+            )
+
         return render_template(
             "resident_schedule.html", blocks=blocks, block_number=block_number,
             half=half, viewable_halves=viewable_halves,
             grid=grid, shift_names=shift_names,
             shift_info=bridge._shift_info_by_name(pgy_level),
             resident_last_name=resident_last_name, run_id=run_id,
+            calendar_webcal_url=calendar_webcal_url,
         )
 
     @app.route("/schedule/csv")
     @login_required
     def resident_download_csv():
+        # Admins only — residents use the calendar subscribe feed.
+        if g.user["role"] != "admin":
+            return redirect(url_for("resident_schedule"))
         conn = db_conn()
         resident_id = g.user["resident_id"]
-        pgy_level = 4
+        pgy_level = session.get("pgy_level", 4)
         if resident_id:
             row = conn.execute("SELECT pgy_level FROM residents WHERE id = ?", (resident_id,)).fetchone()
             if row:
@@ -418,6 +430,25 @@ def register_routes(app, db_conn):
         if run is None:
             return redirect(url_for("resident_schedule", block=block_number, half=half or "a"))
         return _schedule_csv_response(conn, run["id"], pgy_level, block_number, half)
+
+    @app.route("/calendar/<token>.ics")
+    def calendar_feed(token):
+        """Unauthenticated ICS feed for calendar apps (token is the secret)."""
+        conn = db_conn()
+        resident_id = bridge.resident_id_for_calendar_token(conn, token)
+        if resident_id is None:
+            return "Not found", 404
+        body = bridge.build_resident_ics(conn, resident_id)
+        if body is None:
+            return "Not found", 404
+        return Response(
+            body,
+            mimetype="text/calendar; charset=utf-8",
+            headers={
+                "Content-Disposition": 'inline; filename="shiftoptim.ics"',
+                "Cache-Control": "no-cache",
+            },
+        )
 
     @app.route("/timeoff", methods=["GET", "POST"])
     @login_required
@@ -594,7 +625,7 @@ def register_routes(app, db_conn):
     @app.route("/schedule/buddies", methods=["POST"])
     @login_required
     def schedule_buddies():
-        """JSON endpoint: shift buddies with >50% time overlap at same site."""
+        """JSON: shift_buddies (same team) + meal_buddies (same site, overlap)."""
         day = request.form.get("day")
         shift = request.form.get("shift")
         if not day or not shift:
@@ -627,8 +658,7 @@ def register_routes(app, db_conn):
             if not any(canonicalize(r["shift_name"]) == shift for r in rows):
                 return jsonify({"error": "Forbidden"}), 403
 
-        buddies = bridge.find_shift_buddies(conn, day, shift, resident_id, pgy_level)
-        return jsonify({"buddies": buddies})
+        return jsonify(bridge.find_shift_buddies(conn, day, shift, resident_id, pgy_level))
 
     @app.route("/admin/schedule/swap", methods=["POST"])
     @admin_required
@@ -646,6 +676,15 @@ def register_routes(app, db_conn):
             return "Missing parameters", 400
 
         conn = db_conn()
+        # Same PGY class only
+        pgys = conn.execute(
+            "SELECT id, pgy_level FROM residents WHERE id IN (?, ?)",
+            (req_resident_id, tgt_resident_id),
+        ).fetchall()
+        pgy_map = {r["id"]: r["pgy_level"] for r in pgys}
+        if pgy_map.get(req_resident_id) != pgy_map.get(tgt_resident_id):
+            return "Cross-PGY swaps are not allowed", 400
+
         # Verify run exists
         run = conn.execute("SELECT status, block_number FROM runs WHERE id = ?", (run_id,)).fetchone()
         if not run:
@@ -692,6 +731,14 @@ def register_routes(app, db_conn):
             (run_id, resident_id, req_day, req_shift),
         ).fetchone()
         if not owns:
+            return redirect(url_for("resident_schedule"))
+        # Same PGY class only (PGY-1↔PGY-1, PGY-4↔PGY-4, …)
+        pgys = conn.execute(
+            "SELECT id, pgy_level FROM residents WHERE id IN (?, ?)",
+            (resident_id, tgt_id),
+        ).fetchall()
+        pgy_map = {r["id"]: r["pgy_level"] for r in pgys}
+        if pgy_map.get(resident_id) is None or pgy_map.get(resident_id) != pgy_map.get(tgt_id):
             return redirect(url_for("resident_schedule"))
         # Prevent duplicate active request on same shift
         dupe = conn.execute(
@@ -924,11 +971,7 @@ def _range_summary(conn, run_id, block_number, half=None):
         if dt.date.fromisoformat(row["day"]).weekday() in cfg.WEEKEND_DAYS:
             by_resident[ln]["weekend"] += 1
 
-    EM_PROPER_INTERNS = {
-        "Brian", "Ashleigh", "Sara", "Emily", "Isabella", "Wendy",
-        "Daem", "Bailey", "JP", "Roshan", "Mauranda", "Justin",
-        "Jethel", "Clifford", "Andrea"
-    }
+    from schedulebuilder.pgy1.config import is_em_proper
 
     summary = []
     for ln, data in sorted(by_resident.items(), key=lambda x: x[1]["full_name"]):
@@ -940,7 +983,7 @@ def _range_summary(conn, run_id, block_number, half=None):
         assignment = " / ".join(roles) if roles else "—"
         entry = {"shifts": data["shifts"], "weekend": data["weekend"]}
         totals = cat_totals_fn(entry)
-        is_off = (pgy_level == 1 and data["full_name"] not in EM_PROPER_INTERNS)
+        is_off = pgy_level == 1 and not is_em_proper(ln)
         summary.append({
             "full_name": data["full_name"],
             "assignment": assignment,

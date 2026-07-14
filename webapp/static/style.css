@@ -1265,16 +1265,34 @@ table.audit td.anomaly-low {
   padding: 0;
   max-width: 28rem;
   width: calc(100% - 2rem);
+  max-height: 85vh;
+  overflow: hidden;
   box-shadow: 6px 6px 0 var(--shadow-color);
   background: var(--card);
+  /* Force centering — same pattern as #trade-modal */
+  position: fixed;
+  inset: 0;
+  margin: auto;
 }
 
 #shift-detail-modal::backdrop {
   background: rgba(15, 23, 42, 0.45);
 }
 
+.shift-buddy-section-label {
+  margin: 0 0 0.75rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .shift-detail-inner {
   padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  max-height: 85vh;
 }
 
 .shift-detail-header {

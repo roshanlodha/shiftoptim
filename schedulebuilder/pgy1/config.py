@@ -58,9 +58,20 @@ ACTIVE_ROLES = ("MGH", "BWH", "Flex")
 SHIFT_MIN_PER_HALF = 10
 SHIFT_MAX_PER_HALF = 11
 
+# EM-proper core roster (placeholders like "Off Service 1" are not in this set).
+EM_PROPER_INTERNS = frozenset({
+    "Brian", "Ashleigh", "Sara", "Emily", "Isabella", "Wendy",
+    "Daem", "Bailey", "JP", "Roshan", "Mauranda", "Justin",
+    "Jethel", "Clifford", "Andrea",
+})
+
+# Soft target overnight shifts per MGH half for EM proper (not a hard floor).
+NIGHT_TARGET_PER_MGH_HALF = 3
+
 # Objective weights (identical/comparable to PGY4)
 W_TIMEOFF = 10_000
 W_NIGHTS_STRUCTURE = 200
+W_NIGHT_TARGET = 100  # |nights − NIGHT_TARGET| per MGH EM half
 W_TOTAL_SPREAD = 150
 BALANCE_WEIGHTS = {
     "Total": 150,
@@ -71,8 +82,24 @@ BALANCE_WEIGHTS = {
     "MGH": 15,
     "BWH": 15,
 }
+# Off-service placeholder pool: balance among themselves only (count > nights > weekends).
+OS_BALANCE_WEIGHTS = {
+    "Total": 200,
+    "Night": 100,
+    "Weekend": 50,
+}
 W_EXTRA_SHIFT = 50
 W_EXTRA_WEEKEND = 20
+
+
+def is_off_service(name):
+    """Admin placeholders entered at solve time (Off Service 1, …)."""
+    return name.startswith("Off Service")
+
+
+def is_em_proper(name):
+    return name in EM_PROPER_INTERNS
+
 
 # 26 half-blocks in order (block_number, half, start_date, end_date), ISO dates.
 HALF_BLOCKS = [

@@ -1,5 +1,5 @@
-"""Shift overlap fraction for buddy matching.
-Run: python3 tests/test_shift_overlap.py
+"""Shift overlap + buddy family splitting.
+Run: env/bin/python tests/test_shift_overlap.py
 """
 
 import os
@@ -38,10 +38,24 @@ def test_different_site_zero():
     assert bridge.overlap_fraction(11, 20, 9, 11, 20) == 1.0
 
 
+def test_buddy_family_cross_pgy():
+    assert bridge.buddy_family("MGH Jr. - AC PGY1 7a-4p", "MGH") == "MGH:Acute"
+    assert bridge.buddy_family("Acute 7a-4p (MGH)", "MGH") == "MGH:Acute"
+    assert bridge.buddy_family("MGH Jr. - FT 11a-8p", "MGH") == "MGH:FT"
+    assert bridge.buddy_family("Fast Track 2p-11p (MGH)", "MGH") == "MGH:FT"
+    assert bridge.buddy_family("MGH Jr. - East Jr 11p-7a", "MGH") == "MGH:East"
+    assert bridge.buddy_family("BWH Jr.  - FF Jr 8a-4p", "BWH") == "BWH:FF"
+    # Acute ≠ FT: overlap roommate is meal buddy only
+    assert bridge.buddy_family("MGH Jr. - AC PGY1 7a-4p", "MGH") != bridge.buddy_family(
+        "MGH Jr. - FT 11a-8p", "MGH"
+    )
+
+
 if __name__ == "__main__":
     test_exact_match()
     test_pgy1_ft_vs_pgy4_fast_track()
     test_under_threshold()
     test_overnight_wrap()
     test_different_site_zero()
+    test_buddy_family_cross_pgy()
     print("ok")

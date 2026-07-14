@@ -51,6 +51,7 @@ def build_and_solve(block, shift_min_per_half=SHIFT_MIN_PER_HALF, max_time_secon
         model, works, dates, residents, timeoff, penalties
     )
     objective.add_night_structure_penalties(model, works, dates, residents, penalties)
+    objective.add_night_target_penalties(model, works, dates, residents, role_on, penalties)
     objective.add_evenness_penalties(
         model, works, dates, residents, role_on, history, active_halves, penalties,
         balance_weights=balance_weights

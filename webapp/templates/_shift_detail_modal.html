@@ -1,4 +1,4 @@
-{# Shift detail modal — buddies first, trades via button #}
+{# Shift detail modal — shift buddies + meal buddies; trades via button #}
 <dialog id="shift-detail-modal">
   <div class="shift-detail-inner">
     <div class="shift-detail-header">
@@ -19,17 +19,18 @@
 
     <div id="shift-buddies-error" class="error" style="display: none;"></div>
 
-    <div id="shift-buddies-empty" style="display: none;">
-      <div class="hint" style="display: block; text-align: center; padding: 1.5rem;">
-        No overlapping coworkers at this site for this shift.
-      </div>
-    </div>
-
     <div id="shift-buddies-results" style="display: none;">
-      <p style="margin: 0 0 0.75rem; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
-        Working with you
-      </p>
+      <p class="shift-buddy-section-label">Working with you</p>
       <ul id="shift-buddies-list" class="shift-buddies-list"></ul>
+      <p id="shift-buddies-none" class="hint" style="display: none; text-align: center; padding: 0.75rem 0.5rem;">
+        No one else on this shift type.
+      </p>
+
+      <p class="shift-buddy-section-label" style="margin-top: 1.25rem;">Meal Buddies</p>
+      <ul id="meal-buddies-list" class="shift-buddies-list"></ul>
+      <p id="meal-buddies-none" class="hint" style="display: none; text-align: center; padding: 0.75rem 0.5rem;">
+        No overlapping coworkers at this hospital.
+      </p>
     </div>
 
     <div class="shift-detail-footer">
@@ -47,9 +48,11 @@
   const subtitle = document.getElementById('shift-detail-subtitle');
   const loading = document.getElementById('shift-buddies-loading');
   const errorDiv = document.getElementById('shift-buddies-error');
-  const emptyDiv = document.getElementById('shift-buddies-empty');
   const resultsDiv = document.getElementById('shift-buddies-results');
-  const listEl = document.getElementById('shift-buddies-list');
+  const shiftListEl = document.getElementById('shift-buddies-list');
+  const mealListEl = document.getElementById('meal-buddies-list');
+  const shiftNone = document.getElementById('shift-buddies-none');
+  const mealNone = document.getElementById('meal-buddies-none');
   const tradesBtn = document.getElementById('shift-find-trades-btn');
 
   let detailCtx = null;
@@ -64,22 +67,30 @@
   function setState(state) {
     loading.style.display = state === 'loading' ? 'block' : 'none';
     errorDiv.style.display = state === 'error' ? 'block' : 'none';
-    emptyDiv.style.display = state === 'empty' ? 'block' : 'none';
     resultsDiv.style.display = state === 'results' ? 'block' : 'none';
   }
 
-  function renderBuddies(buddies) {
+  function renderBuddyItem(b) {
+    const li = document.createElement('li');
+    li.className = 'shift-buddy-item';
+    const endDisp = b.end <= b.start ? b.end + 24 : b.end;
+    li.innerHTML =
+      '<span class="shift-buddy-name">' + b.name + '</span>' +
+      '<span class="shift-buddy-meta">PGY-' + b.pgy_level + ' · ' + b.shift_name + '</span>' +
+      '<span class="shift-buddy-time">' + fmtHour(b.start) + '–' + fmtHour(endDisp) + '</span>';
+    return li;
+  }
+
+  function renderList(listEl, noneEl, buddies) {
     listEl.innerHTML = '';
-    buddies.forEach(function (b) {
-      const li = document.createElement('li');
-      li.className = 'shift-buddy-item';
-      const endDisp = b.end <= b.start ? b.end + 24 : b.end;
-      li.innerHTML =
-        '<span class="shift-buddy-name">' + b.name + '</span>' +
-        '<span class="shift-buddy-meta">PGY-' + b.pgy_level + ' · ' + b.shift_name + '</span>' +
-        '<span class="shift-buddy-time">' + fmtHour(b.start) + '–' + fmtHour(endDisp) + '</span>';
-      listEl.appendChild(li);
-    });
+    if (!buddies.length) {
+      listEl.style.display = 'none';
+      noneEl.style.display = 'block';
+      return;
+    }
+    listEl.style.display = 'flex';
+    noneEl.style.display = 'none';
+    buddies.forEach(function (b) { listEl.appendChild(renderBuddyItem(b)); });
   }
 
   closeBtn.addEventListener('click', function () { modal.close(); });
@@ -119,12 +130,8 @@
           setState('error');
           return;
         }
-        const buddies = data.buddies || [];
-        if (buddies.length === 0) {
-          setState('empty');
-          return;
-        }
-        renderBuddies(buddies);
+        renderList(shiftListEl, shiftNone, data.shift_buddies || []);
+        renderList(mealListEl, mealNone, data.meal_buddies || []);
         setState('results');
       })
       .catch(function () {
