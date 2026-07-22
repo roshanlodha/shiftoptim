@@ -743,14 +743,7 @@ def build_resident_ics(conn, resident_id):
 
 def optimize_block_run(conn, run_id):
     """Applies shiftswap Complete Mode algorithm to optimize streak preferences on a solved block."""
-    import sys
-    import os
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if repo_root not in sys.path:
-        sys.path.insert(0, repo_root)
-
-    from shiftswap.shiftoptim.models import Shift, Resident, Schedule
-    from shiftswap.shiftoptim.optimizer import optimize_complete
+    from .optimizer import Shift, Resident, Schedule, optimize_complete
 
     rows = conn.execute(
         "SELECT a.resident_id, a.day, a.shift_name, r.last_name, u.preference "

@@ -901,7 +901,7 @@ def _build_grid(conn, run_id, start_date=None, end_date=None):
     legend = sorted(
         (
             {"full_name": meta[ln]["full_name"], "last_name": ln,
-             "color": colors[ln], "count": counts[ln]}
+             "color": colors.get(ln, "#3b82f6"), "count": counts[ln]}
              for ln in meta
         ),
         key=lambda item: item["last_name"],

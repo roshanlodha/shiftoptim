@@ -236,31 +236,50 @@ def seed_pgy(conn, pgy_level, roster, rotations, jeopardy):
                     )
 
 
+ROSTER_PGY1_DEFAULT = [
+    ("Alex", "Alex Intern"),
+    ("Ben", "Ben Intern"),
+    ("Chloe", "Chloe Intern"),
+    ("David", "David Intern"),
+    ("Emma", "Emma Intern"),
+    ("Felix", "Felix Intern"),
+    ("Grace", "Grace Intern"),
+    ("Hannah", "Hannah Intern"),
+    ("Ian", "Ian Intern"),
+    ("Julia", "Julia Intern"),
+    ("Kevin", "Kevin Intern"),
+    ("Liam", "Liam Intern"),
+    ("Maya", "Maya Intern"),
+    ("Noah", "Noah Intern"),
+    ("Olivia", "Olivia Intern"),
+]
+
+
 def seed_pgy1_from_csv(conn):
-    if not os.path.exists(PGY1_CSV):
-        print(f"PGY-1 CSV not found at {PGY1_CSV}")
-        return
-
-    with open(PGY1_CSV) as f:
-        r = csv.reader(f)
-        rows = list(r)
-
-    # Extract residents: row 5 to 19 (first token in column 0 is R1: name)
     roster_pgy1 = []
     rotations_raw = []
-    
-    # Jeopardy assignment (row 20)
-    jeopardy_row = [cell.strip() for cell in rows[20][1:21]]
+    jeopardy_row = []
 
-    for row in rows[5:20]:
-        label = row[0].strip()
-        m = re.match(r"(R\d+):\s*(.*)", label)
-        if m:
-            name = m.group(2).strip()
-            # CSV has 20 columns for Block 4a to 13b
-            blocks_raw = [cell.strip() for cell in row[1:21]]
-            roster_pgy1.append((name, name))
-            rotations_raw.append(blocks_raw)
+    if os.path.exists(PGY1_CSV):
+        with open(PGY1_CSV) as f:
+            r = csv.reader(f)
+            rows = list(r)
+        jeopardy_row = [cell.strip() for cell in rows[20][1:21]]
+        for row in rows[5:20]:
+            label = row[0].strip()
+            m = re.match(r"(R\d+):\s*(.*)", label)
+            if m:
+                name = m.group(2).strip()
+                blocks_raw = [cell.strip() for cell in row[1:21]]
+                roster_pgy1.append((name, name))
+                rotations_raw.append(blocks_raw)
+    else:
+        # Default fallback synthetic PGY-1 data
+        roster_pgy1 = ROSTER_PGY1_DEFAULT
+        default_rot = ["MGB", "MGB", "Flex", "NWH", "Vacation", "Ultrasound", "MGB", "MGB", "MGB Nights", "MGB",
+                       "Elective", "Elective", "MGB", "MGB", "Vacation", "Flex", "NWH", "NWH", "MGB", "MGB"]
+        rotations_raw = [default_rot for _ in roster_pgy1]
+        jeopardy_row = [f"R{(i % 15) + 1}" for i in range(20)]
 
     resident_ids = {}
     for last_name, full_name in roster_pgy1:
@@ -272,7 +291,6 @@ def seed_pgy1_from_csv(conn):
         )
         resident_ids[last_name] = cur.fetchone()[0]
 
-    # Seed logins for PGY-1s (firstname only — CSV has no surnames). Password: changeme.
     for last_name, full_name in roster_pgy1:
         username = last_name.lower().replace(chr(39), "").replace(" ", "")
         stale = f"{username}.pgy1"
@@ -285,7 +303,6 @@ def seed_pgy1_from_csv(conn):
              resident_ids[last_name]),
         )
 
-    # Seed half blocks and rotations
     half_block_ids = {}
     for idx, (block_number, half, start, end) in enumerate(HALF_BLOCKS):
         cur = conn.execute(
@@ -299,14 +316,11 @@ def seed_pgy1_from_csv(conn):
         hb_id = cur.fetchone()[0]
         half_block_ids[idx] = hb_id
 
-        # Seeding rotations
         for row_idx, (last_name, _) in enumerate(roster_pgy1):
-            # The CSV starts at block 4a (idx 6 in HALF_BLOCKS)
             if idx >= 6:
                 csv_col_idx = idx - 6
                 rotation = rotations_raw[row_idx][csv_col_idx]
             else:
-                # Default for blocks 1, 2, 3
                 rotation = "Vacation" if idx in [0, 1] else "Ultrasound"
             
             conn.execute(
@@ -315,7 +329,6 @@ def seed_pgy1_from_csv(conn):
                 (resident_ids[last_name], hb_id, rotation),
             )
 
-    # Update Jeopardy for PGY-1 (blocks 4a to 13b)
     for idx, code in enumerate(jeopardy_row):
         half_block_idx = idx + 6
         if "/" in code:
