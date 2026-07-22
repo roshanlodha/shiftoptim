@@ -45,7 +45,12 @@
   </div>
 
   {% if run.status == 'draft' %}
-  <div class="review-actions" style="margin-bottom: 0;">
+  <div class="review-actions" style="margin-bottom: 0; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <form method="post" action="{{ url_for('admin_optimize_run', run_id=run.id, half=half) }}" class="inline-form">
+      <button type="submit" class="button secondary" style="background-color: var(--tertiary); color: var(--border); border-color: var(--border); box-shadow: 2px 2px 0 var(--shadow-color);">
+        Optimize Block Preferences <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
+      </button>
+    </form>
     <form method="post" action="{{ url_for('admin_publish_run', run_id=run.id) }}" class="inline-form">
       <button type="submit">
         Publish schedule <i data-lucide="check" style="width: 18px; height: 18px;"></i>
@@ -59,6 +64,13 @@
   </div>
   {% endif %}
 </div>
+
+{% if opt_msg %}
+<p class="hint" style="background-color: #ecfdf5; border-color: #10b981; color: #065f46; box-shadow: 2px 2px 0px #10b981; margin-bottom: 1.5rem;">
+  <i data-lucide="info" style="display: inline-block; vertical-align: middle; width: 18px; height: 18px; margin-right: 6px;"></i>
+  {{ opt_msg }}
+</p>
+{% endif %}
 
 <div class="half-tabs" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
   {% for h in viewable_halves %}

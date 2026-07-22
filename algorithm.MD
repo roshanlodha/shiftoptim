@@ -1,24 +1,22 @@
-# A Greedy, Bounded Graph-Based Pareto Exchange Algorithm for Resident Shift Scheduling
+# A Unified Constraint-Satisfaction and Graph-Based Pareto Optimization System for Resident Shift Scheduling
 
 ## Abstract
 
-Emergency medicine residents work schedules that are simultaneously constrained by federal duty-hour regulations and shaped by strong individual preferences about location, time of day, and consecutive-day run lengths. Hand-built schedules rarely satisfy all constraints and preferences, yet they often contain latent, mutually beneficial trades. We present a mechanism that automatically discovers and ranks these trades. By modeling the schedule as a directed trade graph, the method searches for short improving cycles and applies them greedily under two guarantees: every executed trade strictly increases total satisfaction while making no resident worse off, and every resulting schedule remains compliant with ACGME duty-hour rules and day-off requests. Users can control the number and complexity of trades. This approach is transparent, auditable, and produces human-readable swap recommendations rather than an opaque recalculated schedule.
+Emergency medicine resident scheduling requires satisfying complex federal duty-hour regulations (ACGME), multi-site clinical coverage demands, and individual resident wellness preferences (such as break/streak frequency). We present a complete, two-phase scheduling framework: **Phase 1** employs a Constraint Satisfaction Programming (CSP) model solved via Google OR-Tools CP-SAT to construct a legal, coverage-fulfilled, and globally balanced initial schedule from scratch. **Phase 2** applies a directed trade graph Pareto exchange algorithm that optimizes resident-specific streak preferences on top of solved blocks without violating any hard constraints or decreasing any resident's individual utility. This dual-phase approach delivers both global operational feasibility and personalized resident optimization.
 
 ---
 
-## 1. Problem Statement
+## 1. Problem Framing: Full Scheduler & Optimizer
 
-Consider a residency program (here, the 15-resident Harvard-Affiliated Emergency Medicine Residency) with a fixed block schedule already assigning every clinical shift to a resident. We do not wish to rebuild this schedule from scratch; it encodes staffing decisions, seniority, and educational requirements that are expensive to re-derive and politically sensitive to overturn. Instead we ask a narrower, safer question:
+Rather than relying on hand-built schedules or treating schedule generation and preference optimization as disconnected steps, the system operates as an end-to-end scheduler and optimizer:
 
-> Given the existing schedule, what set of voluntary shift trades would make the group happier, without harming any individual and without violating any rule?
+1. **Phase 1: Initial Roster Generation (CP-SAT CSP Solver).** Formulates clinical coverage, rest windows, rolling ACGME 60-hour/week limits, and historical shift-type balance across residents as a Constraint Satisfaction Problem. Solved using CP-SAT to yield a fully compliant base schedule $A^{(0)}$.
+2. **Phase 2: Post-Solve Pareto Optimization (Trade Graph Exchange).** Accepts the solved base schedule $A^{(0)}$ and discovers Pareto-improving shift exchanges that maximize individual resident satisfaction (e.g. "Frequent Breaks" vs "Longer Breaks") while preserving workload conservation, legal feasibility, and non-decreasing utility for every participant.
 
-Three design commitments follow from this framing:
-
-1. **Conservation of workload.** Trades move shifts between residents but never create or delete them. Each resident ends with exactly as many shifts as they started with; only the composition changes. No one is handed extra work.
-
-2. **No forced losses.** A resident will never be assigned a trade that lowers their own satisfaction. This makes the recommendations socially acceptable because participation is rational for everyone involved.
-
-3. **Hard rules are inviolable.** Duty-hour law and personal day-off requests are constraints, not preferences. A trade that breaks them is never proposed, regardless of how much happiness it would create.
+### Design Commitments
+- **Feasibility First:** The initial CSP solver guarantees baseline coverage, legal rest, and ACGME compliance.
+- **Workload Conservation:** Optimization trades move shifts between residents but never create or delete shifts.
+- **No Forced Losses:** Every optimization step guarantees weak Pareto improvement for all participants ($U_i(A_i') \ge U_i(A_i)$) and strict improvement for total satisfaction.
 
 ---
 

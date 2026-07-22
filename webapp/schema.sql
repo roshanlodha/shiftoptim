@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('admin', 'resident')),
-    resident_id INTEGER REFERENCES residents(id)
+    resident_id INTEGER REFERENCES residents(id),
+    preference TEXT NOT NULL DEFAULT 'frequent' CHECK (preference IN ('frequent', 'longer'))
 );
 
 CREATE TABLE IF NOT EXISTS half_blocks (

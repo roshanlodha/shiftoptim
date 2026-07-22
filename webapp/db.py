@@ -26,4 +26,8 @@ def get_db(db_path=None):
 def init_db(conn):
     with open(SCHEMA_PATH) as f:
         conn.executescript(f.read())
+    # Auto-migration for existing DBs missing preference column
+    user_cols = [r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    if "preference" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN preference TEXT NOT NULL DEFAULT 'frequent'")
     conn.commit()

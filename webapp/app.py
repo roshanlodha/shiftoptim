@@ -21,7 +21,7 @@ from .settings import CATEGORY_ORDER, load_balance_weights, save_balance_weights
 
 CATEGORY_COLUMNS = ["Total"] + list(BALANCE_CATEGORIES) + ["Weekend"]
 SHIFT_NAMES = [info["name"] for info in SHIFTS.values()]
-SOLVER_TIME_LIMIT = 60.0
+SOLVER_TIME_LIMIT = float(os.environ.get("SOLVER_TIME_LIMIT", 60.0))
 PGY_LEVEL = 4
 
 
@@ -314,12 +314,13 @@ def register_routes(app, db_conn):
         viewable = _half_blocks(conn, pgy_level, run["block_number"])
         summary_block = _range_summary(conn, run_id, run["block_number"]) if viewable else []
         summary_half = _range_summary(conn, run_id, run["block_number"], half=half) if hb else []
+        msg = request.args.get("msg")
         return render_template(
             "admin_review_run.html", run=run, grid=grid,
             summary_block=summary_block, summary_half=summary_half,
             shift_names=shift_names, category_columns=category_columns,
             shift_info=bridge._shift_info_by_name(pgy_level),
-            half=half, viewable_halves=viewable,
+            half=half, viewable_halves=viewable, opt_msg=msg,
         )
 
     @app.route("/admin/runs/<int:run_id>/csv")
@@ -343,6 +344,18 @@ def register_routes(app, db_conn):
     def admin_discard_run(run_id):
         bridge.discard_run(db_conn(), run_id)
         return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/runs/<int:run_id>/optimize", methods=["POST"])
+    @admin_required
+    def admin_optimize_run(run_id):
+        conn = db_conn()
+        run = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if run is None:
+            return redirect(url_for("admin_dashboard"))
+        res = bridge.optimize_block_run(conn, run_id)
+        swaps = res["swaps_applied"]
+        half = request.args.get("half", "a")
+        return redirect(url_for("admin_review_run", run_id=run_id, half=half, msg=f"Optimization finished: {swaps} shift swap(s) executed."))
 
     # --- Resident -----------------------------------------------------------
 
@@ -558,27 +571,19 @@ def register_routes(app, db_conn):
                     conn.commit()
                     success = "Password changed successfully!"
             elif form_type == "preferences":
-                weights = {cat: int(request.form.get(cat, 0)) for cat in CATEGORY_ORDER}
-                import json
-                conn.execute(
-                    "INSERT INTO settings (key, value) VALUES (?, ?) "
-                    "ON CONFLICT (key) DO UPDATE SET value = excluded.value",
-                    (pref_key, json.dumps(weights))
-                )
+                pref = request.form.get("preference", "frequent")
+                if pref not in ("frequent", "longer"):
+                    pref = "frequent"
+                conn.execute("UPDATE users SET preference = ? WHERE id = ?", (pref, g.user["id"]))
                 conn.commit()
-                success = "Preferences saved! (Note: preferences are currently in Beta and do not affect the active solver yet)."
+                success = "Preferences saved!"
                 
-        import json
-        pref_row = conn.execute("SELECT value FROM settings WHERE key = ?", (pref_key,)).fetchone()
-        if pref_row:
-            weights = json.loads(pref_row["value"])
-        else:
-            weights = load_balance_weights(conn)
+        user_row = conn.execute("SELECT preference FROM users WHERE id = ?", (g.user["id"],)).fetchone()
+        user_pref = user_row["preference"] if user_row and user_row["preference"] else "frequent"
             
         return render_template(
             "resident_settings.html",
-            weights=weights,
-            categories=CATEGORY_ORDER,
+            preference=user_pref,
             error=error,
             success=success
         )

@@ -740,3 +740,125 @@ def build_resident_ics(conn, resident_id):
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines) + "\r\n"
 
+
+def optimize_block_run(conn, run_id):
+    """Applies shiftswap Complete Mode algorithm to optimize streak preferences on a solved block."""
+    import sys
+    import os
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+    from shiftswap.shiftoptim.models import Shift, Resident, Schedule
+    from shiftswap.shiftoptim.optimizer import optimize_complete
+
+    rows = conn.execute(
+        "SELECT a.resident_id, a.day, a.shift_name, r.last_name, u.preference "
+        "FROM assignments a "
+        "JOIN residents r ON r.id = a.resident_id "
+        "LEFT JOIN users u ON u.resident_id = r.id "
+        "WHERE a.run_id = ?",
+        (run_id,)
+    ).fetchall()
+
+    if not rows:
+        return {"swaps_applied": 0, "total_delta": 0.0}
+
+    time_off_rows = conn.execute("SELECT resident_id, start_date, end_date FROM time_off").fetchall()
+    res_days_off = {}
+    for r in time_off_rows:
+        rid = r["resident_id"]
+        s_date = dt.date.fromisoformat(r["start_date"])
+        e_date = dt.date.fromisoformat(r["end_date"])
+        curr = s_date
+        while curr <= e_date:
+            res_days_off.setdefault(rid, set()).add(curr)
+            curr += dt.timedelta(days=1)
+
+    residents = {}
+    res_id_by_name = {}
+    assignment = {}
+    shifts = {}
+
+    for row in rows:
+        rid = row["resident_id"]
+        name = row["last_name"]
+        pref = row["preference"] or "frequent"
+        res_id_by_name[name] = rid
+
+        if name not in residents:
+            days_pref = 6 if pref == "longer" else 2
+            days_off_set = frozenset(res_days_off.get(rid, set()))
+            residents[name] = Resident(
+                name=name,
+                loc_pref="ANY",
+                loc_weight=0.0,
+                type_pref="ANY",
+                type_weight=0.0,
+                days_pref=days_pref,
+                days_weight=1.0,
+                days_off=days_off_set
+            )
+            assignment[name] = set()
+
+        day_obj = dt.date.fromisoformat(row["day"])
+        shift_name = row["shift_name"]
+        uid = f"{rid}_{row['day']}_{shift_name}"
+        
+        is_jeopardy = "jeopardy" in shift_name.lower() or "backup" in shift_name.lower()
+        if "night" in shift_name.lower() or "overnight" in shift_name.lower():
+            shift_type = "Overnight"
+            t_start = dt.datetime.combine(day_obj, dt.time(23, 0))
+            t_end = dt.datetime.combine(day_obj + dt.timedelta(days=1), dt.time(7, 0))
+        elif "swing" in shift_name.lower():
+            shift_type = "Swing"
+            t_start = dt.datetime.combine(day_obj, dt.time(15, 0))
+            t_end = dt.datetime.combine(day_obj, dt.time(23, 0))
+        else:
+            shift_type = "Morning"
+            t_start = dt.datetime.combine(day_obj, dt.time(7, 0))
+            t_end = dt.datetime.combine(day_obj, dt.time(15, 0))
+
+        loc = "MGH" if "MGH" in shift_name else ("BWH" if "BWH" in shift_name else None)
+        if is_jeopardy:
+            loc = None
+            shift_type = None
+
+        shift_obj = Shift(
+            uid=uid,
+            owner=name,
+            t_start=t_start,
+            t_end=t_end,
+            loc=loc,
+            type=shift_type,
+            work_date=day_obj,
+            summary=shift_name,
+            is_jeopardy=is_jeopardy
+        )
+        shifts[uid] = shift_obj
+        assignment[name].add(uid)
+
+    sched = Schedule(assignment=assignment, shifts=shifts, residents=residents)
+    log = optimize_complete(sched, max_swaps_per_person=-1, n_max=2)
+
+    if log:
+        conn.execute("DELETE FROM assignments WHERE run_id = ?", (run_id,))
+        new_assignments = []
+        for name, uids in sched.assignment.items():
+            rid = res_id_by_name[name]
+            for uid in uids:
+                s = sched.shifts[uid]
+                new_assignments.append((run_id, rid, s.work_date.isoformat(), s.summary))
+        
+        conn.executemany(
+            "INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, ?, ?)",
+            new_assignments
+        )
+        conn.commit()
+
+    return {
+        "swaps_applied": len(log),
+        "total_delta": sum(res.total_delta for res in log)
+    }
+
+

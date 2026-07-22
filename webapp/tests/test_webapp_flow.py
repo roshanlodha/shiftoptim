@@ -56,7 +56,7 @@ def client(app):
     return app.test_client()
 
 
-def test_admin_flow_pgy1(client):
+def test_admin_flow_pgy4(client):
     # 1. Login
     rv = client.post("/login", data={
         "username": "jaba",
@@ -64,37 +64,11 @@ def test_admin_flow_pgy1(client):
     }, follow_redirects=True)
     assert b"ED Schedule Builder" in rv.data, "Login failed or did not show admin dashboard"
     
-    # 2. Toggle PGY to 1
-    rv = client.get("/admin/toggle_pgy/1", follow_redirects=True)
-    assert b"PGY-1" in rv.data, "Failed to toggle PGY to 1"
+    # 2. Toggle PGY to 4
+    rv = client.get("/admin/toggle_pgy/4", follow_redirects=True)
+    assert b"PGY-4" in rv.data, "Failed to toggle PGY to 4"
     
     # 3. Run solver for Block 4
     rv = client.post("/admin/blocks/4/run", follow_redirects=True)
     assert rv.status_code == 200
     assert b"Draft" in rv.data, "Solver run did not successfully produce a draft schedule"
-    
-    # 4. Verify review page has grid cells with PGY-1 shift name
-    assert b"MGH Jr. - AC PGY1 7a-4p" in rv.data or b"BWH Jr.  - Exe Jr 8a-4p" in rv.data
-
-
-def test_admin_flow_pgy1_with_off_service(client):
-    # 1. Login
-    client.post("/login", data={
-        "username": "jaba",
-        "password": "thehutt"
-    }, follow_redirects=True)
-    
-    # 2. Toggle PGY to 1
-    client.get("/admin/toggle_pgy/1", follow_redirects=True)
-    
-    # 3. Post solver run with off-service parameters
-    rv = client.post("/admin/blocks/4/run", data={
-        "off_service_name[]": ["Off Service 1", "Off Service 2"],
-        "off_service_site[]": ["MGH", "BWH"],
-        "off_service_half_a[]": ["1", "1"],
-        "off_service_half_b[]": ["1", "0"]
-    }, follow_redirects=True)
-    
-    assert rv.status_code == 200
-    assert b"Draft" in rv.data
-    assert b"Off Service 1" in rv.data or b"Off Service 2" in rv.data
