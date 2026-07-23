@@ -248,9 +248,14 @@ def apply_cycle(result: CycleResult, sched: Schedule):
         sched.shifts[v] = Shift(**{**sched.shifts[v].__dict__, "owner": giver})
 
 
-def optimize_complete(sched: Schedule, max_swaps_per_person: int = -1, n_max: int = 2) -> list[CycleResult]:
+def optimize_complete(
+    sched: Schedule,
+    max_swaps_per_person: int = -1,
+    n_max: int = 2,
+    initial_locked: Optional[set[str]] = None
+) -> list[CycleResult]:
     swap_count: Counter = Counter()
-    locked: set[str] = set()
+    locked: set[str] = set(initial_locked) if initial_locked else set()
     log: list[CycleResult] = []
 
     while True:

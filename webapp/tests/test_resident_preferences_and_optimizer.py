@@ -89,3 +89,31 @@ def test_admin_block_optimization_route(client, app):
     assert rv.status_code == 200
     assert b"Optimization finished" in rv.data
     conn.close()
+
+
+def test_mgb_nights_exclusion_in_optimizer(client, app):
+    db_path = app.config["DB_PATH"]
+    conn = get_db(db_path)
+
+    cur = conn.execute(
+        "INSERT INTO runs (pgy_level, block_number, status, min_shifts, time_limit) "
+        "VALUES (4, 4, 'draft', 18, 60.0) RETURNING id"
+    )
+    run_id = cur.fetchone()["id"]
+
+    res1 = conn.execute("SELECT id FROM residents LIMIT 1").fetchone()["id"]
+    res2 = conn.execute("SELECT id FROM residents LIMIT 1 OFFSET 1").fetchone()["id"]
+
+    # Set res2 rotation to MGB Nights on half block 4a
+    hb4a = conn.execute("SELECT id FROM half_blocks WHERE pgy_level = 4 AND block_number = 4 AND half = 'a'").fetchone()["id"]
+    conn.execute("UPDATE rotations SET rotation = 'MGB Nights' WHERE resident_id = ? AND half_block_id = ?", (res2, hb4a))
+    conn.commit()
+
+    conn.execute("INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, '2026-09-21', 'MGB Day')", (run_id, res1))
+    conn.execute("INSERT INTO assignments (run_id, resident_id, day, shift_name) VALUES (?, ?, '2026-09-21', 'Acute 11p-8a')", (run_id, res2))
+    conn.commit()
+
+    res = optimize_block_run(conn, run_id)
+    # res2's shift is locked due to MGB Nights rotation on this half block date
+    assert res["swaps_applied"] == 0
+    conn.close()

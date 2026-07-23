@@ -742,8 +742,17 @@ def build_resident_ics(conn, resident_id):
 
 
 def optimize_block_run(conn, run_id):
-    """Applies shiftswap Complete Mode algorithm to optimize streak preferences on a solved block."""
+    """Applies Complete Mode algorithm to optimize streak preferences on a solved block.
+    
+    Only shifts for residents on an active 'MGB' rotation during the specific half block date
+    window are eligible for trade optimization. Non-MGB rotations (e.g. MGB Nights, Vacation,
+    NWH, Elective, Flex) are locked and excluded from optimization.
+    """
     from .optimizer import Shift, Resident, Schedule, optimize_complete
+
+    run = conn.execute("SELECT pgy_level, block_number FROM runs WHERE id = ?", (run_id,)).fetchone()
+    if run is None:
+        return {"swaps_applied": 0, "total_delta": 0.0}
 
     rows = conn.execute(
         "SELECT a.resident_id, a.day, a.shift_name, r.last_name, u.preference "
@@ -756,6 +765,26 @@ def optimize_block_run(conn, run_id):
 
     if not rows:
         return {"swaps_applied": 0, "total_delta": 0.0}
+
+    # Fetch rotation per resident per half block date
+    rot_rows = conn.execute(
+        "SELECT rot.resident_id, rot.rotation, hb.start_date, hb.end_date "
+        "FROM rotations rot "
+        "JOIN half_blocks hb ON hb.id = rot.half_block_id "
+        "WHERE hb.pgy_level = ? AND hb.block_number = ?",
+        (run["pgy_level"], run["block_number"])
+    ).fetchall()
+
+    rot_by_res_date = {}
+    for r in rot_rows:
+        rid = r["resident_id"]
+        rot = r["rotation"]
+        s_date = dt.date.fromisoformat(r["start_date"])
+        e_date = dt.date.fromisoformat(r["end_date"])
+        curr = s_date
+        while curr <= e_date:
+            rot_by_res_date[(rid, curr)] = rot
+            curr += dt.timedelta(days=1)
 
     time_off_rows = conn.execute("SELECT resident_id, start_date, end_date FROM time_off").fetchall()
     res_days_off = {}
@@ -772,6 +801,7 @@ def optimize_block_run(conn, run_id):
     res_id_by_name = {}
     assignment = {}
     shifts = {}
+    locked_uids = set()
 
     for row in rows:
         rid = row["resident_id"]
@@ -797,7 +827,12 @@ def optimize_block_run(conn, run_id):
         day_obj = dt.date.fromisoformat(row["day"])
         shift_name = row["shift_name"]
         uid = f"{rid}_{row['day']}_{shift_name}"
-        
+
+        # Lock shifts for residents who are not on 'MGB' rotation on this specific date/half-block
+        res_rot = rot_by_res_date.get((rid, day_obj), "")
+        if res_rot.strip() != "MGB":
+            locked_uids.add(uid)
+
         is_jeopardy = "jeopardy" in shift_name.lower() or "backup" in shift_name.lower()
         if "night" in shift_name.lower() or "overnight" in shift_name.lower():
             shift_type = "Overnight"
@@ -832,7 +867,7 @@ def optimize_block_run(conn, run_id):
         assignment[name].add(uid)
 
     sched = Schedule(assignment=assignment, shifts=shifts, residents=residents)
-    log = optimize_complete(sched, max_swaps_per_person=-1, n_max=2)
+    log = optimize_complete(sched, max_swaps_per_person=-1, n_max=2, initial_locked=locked_uids)
 
     if log:
         conn.execute("DELETE FROM assignments WHERE run_id = ?", (run_id,))
